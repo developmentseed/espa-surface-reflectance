@@ -3,7 +3,7 @@
 #
 # Project Name: surface reflectance
 #-----------------------------------------------------------------------------
-.PHONY: check-environment all install clean all-script install-script clean-script all-ledaps install-ledaps clean-ledaps all-ledaps-aux install-ledaps-aux clean-ledaps-aux all-lasrc install-lasrc clean-lasrc all-lasrc-aux install-lasrc-aux clean-lasrc-aux all-aux install-aux
+.PHONY: check-environment all install clean all-script install-script clean-script all-ledaps install-ledaps clean-ledaps all-ledaps-aux install-ledaps-aux clean-ledaps-aux all-lasrc install-lasrc clean-lasrc all-lasrc-aux install-lasrc-aux clean-lasrc-aux all-aux install-aux build tests docs deploy
 
 include make.config
 
@@ -16,6 +16,17 @@ all: all-script all-ledaps all-lasrc
 install: check-environment install-script install-ledaps install-lasrc
 
 clean: clean-script clean-ledaps clean-lasrc
+
+#-----------------------------------------------------------------------------
+# ESPA Standard Makefile targets.  Do not remove.
+#
+build: all
+
+tests:
+
+docs:
+
+deploy: 
 
 #-----------------------------------------------------------------------------
 all-script:
