@@ -1,5 +1,5 @@
-## LaSRC Version 2.1.0 Release Notes
-Release Date: May 2020
+## LaSRC Version X.X.X Release Notes
+Release Date: TBD 2020
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [lasrc-version_2.1.0]
+See git tag [lasrc-version_X.X.X]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)

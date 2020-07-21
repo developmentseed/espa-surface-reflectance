@@ -691,8 +691,8 @@ void usage ()
             "OLI-only scenes are corrected up through TOA and not surface "
             "reflectance.\n"
             "Sentinel 2: Surface reflectance correction is applied and "
-            "written for bands 1-12.\n\n");
-
+            "written for bands 1-12.\n");
+    printf ("version: %s\n\n", SR_VERSION);
 
     printf ("usage: lasrc "
             "--xml=input_xml_filename "
