@@ -14,7 +14,7 @@ typedef char byte;
 #endif
 
 /* Surface reflectance version */
-#define SR_VERSION "dev_python3 (Collection 1)"
+#define SR_VERSION "2.1.0 (Collection 1)"
 
 /* Define the default aerosol value */
 #define DEFAULT_AERO 0.05
