@@ -1,20 +1,20 @@
-## LaSRC Version 2.0.1 Release Notes
-Release Date: Jan. 2020
+## LaSRC Version 2.1.0 Release Notes
+Release Date: September 2020
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
 
-    git clone https://github.com/USGS-EROS/espa-surface-reflectance.git
+    git clone https://eroslab.cr.usgs.gov/lsrd/espa-surface-reflectance.git
 
 LaSRC auxiliary files
 
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [lasrc-version_2.0.1]
+See git tag [lasrc-version_2.1.0]
 
 ### Installation
-  * Install dependent libraries - ESPA product formatter (https://github.com/USGS-EROS/espa-product-formatter)
+  * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
   * Set up environment variables.  Can create an environment shell file or add the following to your bash shell.  For C shell, use 'setenv VAR "directory"'.
 ```
     export PREFIX="path_to_directory_for_lasrc_build_data"
@@ -61,6 +61,7 @@ See git tag [lasrc-version_2.0.1]
   * Note that the FORTRAN version contains the code as delivered from Eric Vermote and team at NASA Goddard Space Flight Center.  The C version contains the converted FORTRAN code into C to work in the ESPA environment.  It also contains any bug fixes, agreed upon by Eric's team, along with performance enhancements.  The FORTRAN code contains debugging and validation code, which is not needed for production processing.
 
 ### Dependencies
+  * Python >= 3.6.X
   * ESPA raw binary and ESPA common libraries from ESPA product formatter and associated dependencies
   * XML2 library
   * Auxiliary data products
@@ -86,6 +87,4 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Fixed a bug when masking fill values in the internal QA band.
-2. Modified the aerosol interpolation to not overwrite fill masks in the
-   ipflag. Fill values remain masked as fill.
+1. Converted the scripts to utilize Python 3, since Python 2.x is obsolete.

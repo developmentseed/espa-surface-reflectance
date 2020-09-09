@@ -13,7 +13,7 @@ def list_gdal_drivers():
     """
 
     return [gdal.GetDriver(index).ShortName
-            for index in xrange(gdal.GetDriverCount())]
+            for index in range(gdal.GetDriverCount())]
 
 
 def delete_gdal_drivers(exclusions=list()):

@@ -2,7 +2,7 @@
 ## the LAADS processing.
 
 import os
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 def get_cfg_file_path(filename):
     """Build the full path to the config file

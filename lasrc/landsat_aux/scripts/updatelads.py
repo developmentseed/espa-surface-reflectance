@@ -6,20 +6,16 @@ import os
 import shutil
 import fnmatch
 import datetime
-import commands
+import subprocess
 import re
 import time
 import subprocess
 from optparse import OptionParser
 import requests
 import logging
-from config_utils import get_cfg_file_path, retrieve_cfg
+from config_utils import retrieve_cfg
 from api_interface import api_connect
-
-try:
-    from StringIO import StringIO   # python2
-except ImportError:
-    from io import StringIO         # python3
+from io import StringIO
 
 # Global static variables
 ERROR = 1
@@ -93,7 +89,7 @@ def geturl(url, token=None, out=None):
         # Setup CURL command using silent mode and change location if reported
         args = ['curl', '--fail', '-sS', '-L', '--retry', '5',
                 '--retry-delay', '60', '--get', url]
-        for (k,v) in headers.items():
+        for (k,v) in list(headers.items()):
             args.extend(['-H', ': '.join([k, v])])
         if out is None:
             # python3's subprocess.check_output returns stdout as a
@@ -190,7 +186,7 @@ def downloadLads (year, doy, destination, token=None):
     if not os.path.exists(destination):
         msg = '{} does not exist... creating'.format(destination)
         logger.info(msg)
-        os.makedirs(destination, 0777)
+        os.makedirs(destination, 0o777)
     else:
         # directory already exists and possibly has files in it.  any old
         # files need to be cleaned up
@@ -283,7 +279,7 @@ def getLadsData (auxdir, year, today, token):
     if not os.path.exists(outputDir):
         msg = '{} does not exist... creating'.format(outputDir)
         logger.info(msg)
-        os.makedirs(outputDir, 0777)
+        os.makedirs(outputDir, 0o777)
 
     # if the specified year is the current year, only process up through
     # today (actually 2 days earlier due to the LAADS data lag) otherwise
@@ -464,7 +460,7 @@ def getLadsData (auxdir, year, today, token):
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
 
-        (status, output) = commands.getstatusoutput (cmdstr)
+        (status, output) = subprocess.getstatusoutput (cmdstr)
         logger.info(output)
         exit_code = status >> 8
         if exit_code != 0:

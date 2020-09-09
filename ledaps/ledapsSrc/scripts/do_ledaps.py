@@ -2,7 +2,7 @@
 import sys
 import os
 import re
-import commands
+import subprocess
 import datetime
 import logging
 from optparse import OptionParser
@@ -158,7 +158,7 @@ class Ledaps():
 
             # Get version number
             cmdstr = ('lndsr --version')
-            (status, self.version) = commands.getstatusoutput(cmdstr)
+            (status, self.version) = subprocess.getstatusoutput(cmdstr)
 
             # Get the command line argument for the XML file
             parser = OptionParser(version = self.version)
@@ -238,7 +238,7 @@ class Ledaps():
             # band 4 (representative band) and the thermal band(s)
             cmdstr = ('create_landsat_angle_bands --xml {}'
                       .format(base_xmlfile))
-            (status, output) = commands.getstatusoutput(cmdstr)
+            (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
             exit_code = status >> 8
             if exit_code != 0:
@@ -249,7 +249,7 @@ class Ledaps():
             # Mask the angle bands to match the band quality band
             cmdstr = ('mask_per_pixel_angles.py --xml {}'
                       .format(base_xmlfile))
-            (status, output) = commands.getstatusoutput(cmdstr)
+            (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
             exit_code = status >> 8
             if exit_code != 0:
@@ -268,7 +268,7 @@ class Ledaps():
             # Exit if any errors occur.
             cmdstr = ('lndpm --xml {} {}'
                       .format(base_xmlfile, process_sr_opt_str))
-            (status, output) = commands.getstatusoutput(cmdstr)
+            (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
             exit_code = status >> 8
             if exit_code != 0:
@@ -276,7 +276,7 @@ class Ledaps():
                 return ERROR
 
             cmdstr = 'lndcal --pfile lndcal.{}.txt'.format(xml)
-            (status, output) = commands.getstatusoutput(cmdstr)
+            (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
             exit_code = status >> 8
             if exit_code != 0:
@@ -285,7 +285,7 @@ class Ledaps():
 
             if process_sr == 'True':
                 cmdstr = 'lndsr --pfile lndsr.{}.txt'.format(xml)
-                (status, output) = commands.getstatusoutput(cmdstr)
+                (status, output) = subprocess.getstatusoutput(cmdstr)
                 logger.info(output)
                 exit_code = status >> 8
                 if exit_code != 0:

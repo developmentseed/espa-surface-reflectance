@@ -61,7 +61,7 @@ class APIServer(object):
 
         resp, status = self.request('get', config_url, status=200)
 
-        if key in resp.keys():
+        if key in list(resp.keys()):
             return resp[key]
 
     @staticmethod

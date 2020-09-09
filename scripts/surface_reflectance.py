@@ -25,7 +25,7 @@ import os
 import sys
 import logging
 import argparse
-import commands
+import subprocess
 
 
 class ExecuteError(Exception):
@@ -46,7 +46,7 @@ def execute_cmd(cmd_string):
         output:The stdout and/or stderr from the executed command.
     '''
 
-    (status, output) = commands.getstatusoutput(cmd_string)
+    (status, output) = subprocess.getstatusoutput(cmd_string)
 
     if status < 0:
         message = ('Application terminated by signal [{0}]'

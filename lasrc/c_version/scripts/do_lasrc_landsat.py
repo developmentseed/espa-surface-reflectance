@@ -2,7 +2,7 @@
 import sys
 import os
 import re
-import commands
+import subprocess
 import datetime
 from optparse import OptionParser
 import logging
@@ -60,7 +60,7 @@ class SurfaceReflectance():
         if xml_infile == None:
             # Get version number
             cmdstr = ('lasrc --version')
-            (status, self.version) = commands.getstatusoutput(cmdstr)
+            (status, self.version) = subprocess.getstatusoutput(cmdstr)
 
             # get the command line argument for the XML file
             parser = OptionParser(version = self.version)
@@ -150,7 +150,7 @@ class SurfaceReflectance():
         # generate per-pixel angle bands for band 4 (representative band)
         cmdstr = 'create_l8_angle_bands --xml {}'.format(base_xmlfile)
         logger.debug('per-pixel angles command: {0}'.format(cmdstr))
-        (status, output) = commands.getstatusoutput(cmdstr)
+        (status, output) = subprocess.getstatusoutput(cmdstr)
         logger.info(output)
         exit_code = status >> 8
         if exit_code != 0:
@@ -162,7 +162,7 @@ class SurfaceReflectance():
         # Mask the angle bands to match the band quality band
         cmdstr = ('mask_per_pixel_angles.py --xml {}'
                   .format(base_xmlfile))
-        (status, output) = commands.getstatusoutput(cmdstr)
+        (status, output) = subprocess.getstatusoutput(cmdstr)
         logger.info(output)
         exit_code = status >> 8
         if exit_code != 0:
@@ -185,7 +185,7 @@ class SurfaceReflectance():
                           write_toa_opt_str))
         msg = 'Executing lasrc command: {}'.format(cmdstr)
         logger.debug (msg)
-        (status, output) = commands.getstatusoutput (cmdstr)
+        (status, output) = subprocess.getstatusoutput (cmdstr)
         logger.info (output)
         exit_code = status >> 8
         if exit_code != 0:

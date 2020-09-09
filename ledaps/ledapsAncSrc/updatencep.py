@@ -14,7 +14,7 @@ import sys
 import os.path
 import ftplib
 import datetime
-import commands
+import subprocess
 import os
 import re
 import time
@@ -176,7 +176,7 @@ def executeNcep (fullinputpath, outputdir, year, clean):
     # make sure the output directory exists or create it recursively
     if not os.path.exists(outputdir):
         logger.warn('{0} does not exist... creating'.format(outputdir))
-        os.makedirs(outputdir, 0777)
+        os.makedirs(outputdir, 0o777)
 
     # loop through each day in the year and process the NCEP REANALYSIS HDF
     # file for each day
@@ -196,7 +196,7 @@ def executeNcep (fullinputpath, outputdir, year, clean):
             os.remove(fulloutputpath)
         cmdstr = 'ncep_repackage %s %s %s' % (fullinputpath,fulloutputpath,doy)
         logger.info('\nExecuting {0}'.format(cmdstr))
-        (status, output) = commands.getstatusoutput (cmdstr)
+        (status, output) = subprocess.getstatusoutput (cmdstr)
         logger.info(output)
         exit_code = status >> 8
         if exit_code == 157:  # return value of -99 (2s complement of 157)
@@ -276,7 +276,7 @@ def downloadNcep (sourcefilename, destination):
     # make sure the path exists or create it recursively
     if not os.path.exists(destination):
         logger.info('{0} does not exist... creating'.format(destination))
-        os.makedirs(destination, 0777)
+        os.makedirs(destination, 0o777)
 
     # make sure the file to be downloaded doesn't exist, remove it if it does
     localfile = '%s/%s' % (destination, sourcefilename)

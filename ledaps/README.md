@@ -1,19 +1,19 @@
-## Ledaps Version 3.4.0 Release Notes
-Release Date: August 2019
+## Ledaps Version 4.0.0 Release Notes
+Release Date: September 2020
 
 ### Downloads
 Ledaps source code
 
-    git clone https://github.com/USGS-EROS/espa-surface-reflectance.git
+    git clone https://eroslab.cr.usgs.gov/lsrd/espa-surface-reflectance.git
 
 Ledaps auxiliary files
 
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/ledaps_auxiliary/ledaps_aux.1978-2017.tar.gz
 
-See git tag [ledaps-version_3.4.0]
+See git tag [ledaps-version_4.0.0]
 
 ### Installation
-  * Install dependent projects and libraries - ESPA product formatter (https://github.com/USGS-EROS/espa-product-formatter) and ESPA python library (https://github.com/USGS-EROS/espa-python-library)
+  * Install dependent projects and libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git) and ESPA python library (https://eroslab.cr.usgs.gov/lsrd/espa-python-library.git)
   * Set up environment variables.  Can create an environment shell file or add the following to your bash shell.  For C shell, use 'setenv VAR "directory"'.
 ```
     export PREFIX="path_to_directory_for_ledaps_build_data"
@@ -69,6 +69,7 @@ See git tag [ledaps-version_3.4.0]
 ```
 
 ### Dependencies
+  * Python >= 3.6.X
   * ESPA raw binary and ESPA common libraries from ESPA product formatter and associated dependencies
   * XML2 library
   * Auxiliary data products
@@ -92,10 +93,4 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-  1. The TOMS and OMI data are no longer available on the NASA ftp site.
-     Removed access to ftp://toms.gsfc.nasa.gov and changed the source to
-     https://acd-ext.gsfc.nasa.gov/anonftp/toms/. This site has the TOMS-line
-     OMI data as well as the archived NIMBUS7, METEOR3, and EP/TOMS data files
-     in the same text format and 1.0 x 1.0 degree resolution for the global
-     product. These changes were applied to updatetoms.py in the LEDAPS
-     auxiliary download scripts.
+  1. Converted the scripts to utilize Python 3, since Python 2.x is obsolete.

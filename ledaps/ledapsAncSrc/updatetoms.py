@@ -14,7 +14,7 @@ import sys
 import os
 import fnmatch
 import datetime
-import commands
+import subprocess
 import re
 import time
 import subprocess
@@ -371,7 +371,7 @@ def downloadToms (year, DOY, destination):
     # it recursively
     if not os.path.exists(destination):
         logger.info('{0} does not exist... creating'.format(destination))
-        os.makedirs(destination, 0777)
+        os.makedirs(destination, 0o777)
     else:
         # directory already exists and possibly has files in it.  any old
         # files need to be cleaned up
@@ -460,7 +460,7 @@ def getTomsData (ancdir, year):
     outputDir = "%s/EP_TOMS/ozone_%d" % (ancdir, year)
     if not os.path.exists(outputDir):
         logger.info('{0} does not exist... creating'.format(outputDir))
-        os.makedirs(outputDir, 0777)
+        os.makedirs(outputDir, 0o777)
 
     # loop through each day in the year and process the TOMS data
     for doy in range(1, day_of_year + 1):
@@ -511,7 +511,7 @@ def getTomsData (ancdir, year):
             cmdstr = 'convert_ozone %s %s %s' % (fullInputPath, fullOutputPath,
                 ozoneSource)
             logger.info('Executing {0}'.format(cmdstr))
-            (status, output) = commands.getstatusoutput (cmdstr)
+            (status, output) = subprocess.getstatusoutput (cmdstr)
             logger.info(output)
             exit_code = status >> 8
             if exit_code != 0:
