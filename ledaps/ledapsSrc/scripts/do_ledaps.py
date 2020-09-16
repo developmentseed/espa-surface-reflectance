@@ -240,8 +240,7 @@ class Ledaps():
                       .format(base_xmlfile))
             (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
-            exit_code = status >> 8
-            if exit_code != 0:
+            if status != 0:
                 logger.error('Error running create_landsat_angle_bands. '
                              'Processing will terminate.')
                 return ERROR
@@ -251,8 +250,7 @@ class Ledaps():
                       .format(base_xmlfile))
             (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
-            exit_code = status >> 8
-            if exit_code != 0:
+            if status != 0:
                 logger.error('Error masking angle bands with the band '
                              'quality band. Processing will terminate.')
                 return ERROR
@@ -270,16 +268,14 @@ class Ledaps():
                       .format(base_xmlfile, process_sr_opt_str))
             (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
-            exit_code = status >> 8
-            if exit_code != 0:
+            if status != 0:
                 logger.error('Error running lndpm.  Processing will terminate.')
                 return ERROR
 
             cmdstr = 'lndcal --pfile lndcal.{}.txt'.format(xml)
             (status, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
-            exit_code = status >> 8
-            if exit_code != 0:
+            if status != 0:
                 logger.error('Error running lndcal. Processing will terminate.')
                 return ERROR
 
@@ -287,8 +283,7 @@ class Ledaps():
                 cmdstr = 'lndsr --pfile lndsr.{}.txt'.format(xml)
                 (status, output) = subprocess.getstatusoutput(cmdstr)
                 logger.info(output)
-                exit_code = status >> 8
-                if exit_code != 0:
+                if status != 0:
                     logger.error('Error running lndsr. Processing will '
                                  'terminate.')
                     return ERROR
