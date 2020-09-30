@@ -132,7 +132,7 @@ int main (int argc, char *argv[])
     /* Write the parameter data to the lndcal parameter file */
     fprintf (out, "PARAMETER_FILE\n");
     fprintf (out, "XML_FILE = %s\n", xml_infile);
-    fprintf (out, "LEDAPSVersion = %s\n", LEDAPS_VERSION);
+    fprintf (out, "LEDAPSVersion = \"%s\"\n", LEDAPS_VERSION);
     fprintf (out, "END\n");
     fclose (out);
 
@@ -231,7 +231,7 @@ int main (int argc, char *argv[])
         fprintf (out, "OZON_FIL = %s\n", ozone);
     }
     fprintf (out, "PRWV_FIL = %s\n", reanalysis);
-    fprintf (out, "LEDAPSVersion = %s\n", LEDAPS_VERSION);
+    fprintf (out, "LEDAPSVersion = \"%s\"\n", LEDAPS_VERSION);
     fprintf (out, "END\n");
     fclose (out);
 
