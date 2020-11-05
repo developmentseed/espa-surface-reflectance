@@ -52,11 +52,14 @@ int init_sr_refl
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
     char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    float *eps,         /* O: angstrom coefficient */
+    int *iaots,         /* O: index for AOTs */
     float *xtv,         /* O: observation zenith angle (deg) */
     float *xmuv,        /* O: cosine of observation zenith angle */
     float *xfi,         /* O: azimuthal difference between sun and
                               observation (deg) */
     float *cosxfi,      /* O: cosine of azimuthal difference */
+    float *raot550nm,   /* O: nearest value of AOT */
     float *pres,        /* O: surface pressure */
     float *uoz,         /* O: total column ozone */
     float *uwv,         /* O: total column water vapor (precipital water
@@ -139,6 +142,8 @@ int init_sr_refl
     }
 
     /* Initialize the look up tables */
+    *eps = 1.0;
+    *iaots = 0;
     *xtsmin = 0;
     *xtsstep = 4.0;
     *xtvmin = 2.84090;
@@ -231,6 +236,7 @@ int init_sr_refl
         *pres = ATMOS_PRES_0 * exp (-dem[dem_pix] * ONE_DIV_8500);
     else
         *pres = ATMOS_PRES_0;
+    *raot550nm = 0.05;
 
     /* Successful completion */
     return (SUCCESS);

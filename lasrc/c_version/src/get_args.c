@@ -32,6 +32,8 @@ int get_args
                                 water vapor and ozone */
     bool *process_sr,     /* O: process the surface reflectance products */
     bool *write_toa,      /* O: write intermediate TOA products flag */
+    bool *use_orig_aero,  /* O: use the original aerosol interpolation algorithm
+                                flag; O/W use the semi-empirical approach */
     bool *verbose         /* O: verbose flag */
 )
 {
@@ -39,6 +41,7 @@ int get_args
     int option_index;                /* index for the command-line option */
     static int verbose_flag=0;       /* verbose flag */
     static int write_toa_flag=0;     /* write TOA flag */
+    static int use_orig_aero_flag=0; /* original aerosol algorithm flag */
     char errmsg[STR_SIZE];           /* error message */
     char FUNC_NAME[] = "get_args";   /* function name */
     static int version_flag=0;       /* flag to print version number instead
@@ -47,6 +50,7 @@ int get_args
     {
         {"verbose", no_argument, &verbose_flag, 1},
         {"write_toa", no_argument, &write_toa_flag, 1},
+        {"use_orig_aero_alg", no_argument, &use_orig_aero_flag, 1},
         {"xml", required_argument, 0, 'i'},
         {"aux", required_argument, 0, 'a'},
         {"process_sr", required_argument, 0, 'p'},
@@ -58,6 +62,7 @@ int get_args
     /* Initialize the flags to false */
     *verbose = false;
     *write_toa = false;
+    *use_orig_aero = false;
     *process_sr = true;    /* default is to process SR products */
 
     /* Loop through all the cmd-line options */
@@ -148,6 +153,8 @@ int get_args
         *verbose = true;
     if (write_toa_flag)
         *write_toa = true;
+    if (use_orig_aero_flag)
+        *use_orig_aero = true;
 
     return (SUCCESS);
 }

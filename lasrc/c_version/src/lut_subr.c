@@ -202,7 +202,7 @@ int atmcorlamb2
     float *satm,                 /* O: spherical albedo */
     float *xrorayp,              /* O: reflectance of the atmosphere due to
                                        molecular (Rayleigh) scattering */
-    float *next,                 /* O: */
+    float *next,                 /* O: GAIL TODO -- this can be removed */
     float eps                    /* I: angstrom coefficient; spectral
                                        dependency of the AOT */
 )
@@ -532,7 +532,7 @@ void compsalb
                               wavelength (normalized at 550nm) 
                               [NSR_BANDS x NPRES_VALS x NAOT_VALS] */
     float *satm,        /* O: spherical albedo */
-    float *next         /* O: */
+    float *next         /* O: GAIL TODO -- this can be removed */
 )
 {
     float xtiaot1, xtiaot2;         /* spherical albedo trans value */
@@ -582,6 +582,7 @@ void compsalb
     xtiaot2 = normext[iband_ip2_iaot2_indx];
     next2 = xtiaot1 + (xtiaot2 - xtiaot1) * deltaaot;
 
+    /* GAIL TODO this can be removed */
     *next = next1 + (next2 - next1) * dpres;
 }
 
@@ -1724,7 +1725,12 @@ int memory_allocation_main
     Sat_t sat,           /* I: satellite */
     int nlines,          /* I: number of lines in the scene */
     int nsamps,          /* I: number of samples in the scene */
+    bool use_orig_aero,  /* I: use the original aerosol handling if specified,
+                               o/w use the semi-empirical approach */
     int16 **sza,         /* O: solar zenith angle, nlines x nsamps  */
+    int16 **saa,         /* O: solar azimuth angle table, nlines x nsamps */
+    int16 **vza,         /* O: view zenith angle, nlines x nsamps  */
+    int16 **vaa,         /* O: view azimuth angle table, nlines x nsamps */
     uint16 **qaband,     /* O: QA band for the input image, nlines x nsamps */
     uint16 **out_band,   /* O: scaled output, nlines x nsamps */
     float ***sband,      /* O: unscaled surface reflectance and brightness temp
@@ -1747,6 +1753,35 @@ int memory_allocation_main
             sprintf (errmsg, "Error allocating memory for sza");
             error_handler (true, FUNC_NAME, errmsg);
             return (ERROR);
+        }
+
+        /* Allocate the rest of the per-pixel angles only if we are using
+           the original aerosol application */
+        if (use_orig_aero)
+        {
+            *saa = calloc (nlines*nsamps, sizeof (int16));
+            if (*saa == NULL)
+            {
+                sprintf (errmsg, "Error allocating memory for saa");
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
+
+            *vza = calloc (nlines*nsamps, sizeof (int16));
+            if (*vza == NULL)
+            {
+                sprintf (errmsg, "Error allocating memory for vza");
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
+
+            *vaa = calloc (nlines*nsamps, sizeof (int16));
+            if (*vaa == NULL)
+            {
+                sprintf (errmsg, "Error allocating memory for vaa");
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
         }
 
         nband_ttl = NBANDL_TTL_OUT;
@@ -1849,6 +1884,10 @@ int landsat_memory_allocation_sr
                               (unscaled TOA refl), nlines x nsamps */
     uint8 **ipflag,      /* O: QA flag to assist with aerosol interpolation,
                                nlines x nsamps */
+    float **twvi,        /* O: interpolated water vapor value,
+                               nlines x nsamps */
+    float **tozi,        /* O: interpolated ozone value, nlines x nsamps */
+    float **tp,          /* O: interpolated pressure value, nlines x nsamps */
     float **taero,       /* O: aerosol values for each pixel, nlines x nsamps */
     float **teps,        /* O: eps (angstrom coefficient) for each pixel,
                                nlines x nsamps*/
@@ -1930,6 +1969,30 @@ int landsat_memory_allocation_sr
     if (*aerob7 == NULL)
     {
         sprintf (errmsg, "Error allocating memory for aerob7");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    *twvi = calloc (nlines*nsamps, sizeof (float));
+    if (*twvi == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for twvi");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    *tozi = calloc (nlines*nsamps, sizeof (float));
+    if (*tozi == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for tozi");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    *tp = calloc (nlines*nsamps, sizeof (float));
+    if (*tp == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for tp");
         error_handler (true, FUNC_NAME, errmsg);
         return (ERROR);
     }

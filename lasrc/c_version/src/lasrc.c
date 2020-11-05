@@ -77,6 +77,12 @@ int main (int argc, char *argv[])
 
     int16 *sza = NULL;       /* Landsat per-pixel solar zenith angles,
                                 nlines x nsamps */
+    int16 *saa = NULL;       /* Landsat per-pixel solar azimuth angles,
+                                nlines x nsamps */
+    int16 *vza = NULL;       /* Landsat per-pixel view zenith angles,
+                                nlines x nsamps */
+    int16 *vaa = NULL;       /* Landsat per-pixel view azimuth angles,
+                                nlines x nsamps */
     float **toaband = NULL;  /* Sentinel TOA unscaled reflectance bands,
                                 nlines x nsamps */
     float **sband = NULL;    /* output surface reflectance and brightness
@@ -94,6 +100,10 @@ int main (int argc, char *argv[])
                                 done */
     bool write_toa = false;  /* this is set to true if the user specifies
                                 TOA products should be output for delivery */
+    bool use_orig_aero=false;/* this is set to true if the user specifies
+                                the original aerosol algorithm should be used,
+                                o/w the semi-empirical approach is used for
+                                faster processing */
     float pixsize;           /* pixel size for the reflectance bands */
     int nlines, nsamps;      /* number of lines/samples in the reflectance and
                                 thermal (Landsat) bands */
@@ -112,13 +122,17 @@ int main (int argc, char *argv[])
 
     /* Read the command-line arguments */
     retval = get_args (argc, argv, &xml_infile, &aux_infile, &process_sr,
-        &write_toa, &verbose);
+        &write_toa, &use_orig_aero, &verbose);
     if (retval != SUCCESS)
     {   /* get_args already printed the error message */
         exit (ERROR);
     }
 
     printf ("Starting TOA and surface reflectance processing ...\n");
+    if (use_orig_aero)
+        printf ("Using the original aerosol inversion algorithm\n");
+    else
+        printf ("Using the semi-empirical approach for aerosol inversion\n");
 
     /* Provide user information if verbose is turned on */
     if (verbose)
@@ -152,7 +166,7 @@ int main (int argc, char *argv[])
 
     /* Open the reflectance product, set up the input data structure, and
        allocate memory for the data buffers */
-    input = open_input (&xml_metadata, process_sr);
+    input = open_input (&xml_metadata, use_orig_aero, process_sr);
     if (input == (Input_t *) NULL)
     {
         sprintf (errmsg, "Error opening/reading the input DN data: %s",
@@ -217,7 +231,6 @@ int main (int argc, char *argv[])
         error_handler (false, FUNC_NAME, errmsg);
     }
 
-
     /* The surface reflectance algorithm cannot be implemented for solar
        zenith angles greater than 76 degrees.  Need to flag if the current
        scene falls into that category. */
@@ -232,12 +245,12 @@ int main (int argc, char *argv[])
         exit (ERROR);
     }
 
-    /* Allocate memory for all the data arrays. Note: sza is only used for
-       Landsat, toaband is for Sentinel only. */
+    /* Allocate memory for all the data arrays. Note: per-pixel solar/view
+       angles are only used for Landsat, toaband is for Sentinel only. */
     if (verbose)
         printf ("Allocating memory for the data arrays ...\n");
-    retval = memory_allocation_main (sat, nlines, nsamps, &sza, &qaband,
-        &out_band, &sband, &toaband);
+    retval = memory_allocation_main (sat, nlines, nsamps, use_orig_aero, &sza,
+        &saa, &vza, &vaa, &qaband, &out_band, &sband, &toaband);
     if (retval != SUCCESS)
     {   /* get_args already printed the error message */
         sprintf (errmsg, "Error allocating memory for the data arrays from "
@@ -261,7 +274,8 @@ int main (int argc, char *argv[])
        Landsat */
     if (sat == SAT_LANDSAT_8 || sat == SAT_LANDSAT_9)
     {
-        if (get_input_ppa_lines (input, 0, nlines, sza) != SUCCESS)
+        if (get_input_ppa_lines (input, 0, nlines, use_orig_aero, sza, saa,
+            vza, vaa) != SUCCESS)
         {
             sprintf (errmsg, "Reading per-pixel solar angle bands");
             error_handler (true, FUNC_NAME, errmsg);
@@ -555,9 +569,9 @@ int main (int argc, char *argv[])
         if (sat == SAT_LANDSAT_8 || sat == SAT_LANDSAT_9)
         {
             retval = compute_landsat_sr_refl (input, &xml_metadata, xml_infile,
-                qaband, out_band, nlines, nsamps, pixsize, sband, xts, xmus,
-                anglehdf, intrefnm, transmnm, spheranm, cmgdemnm, rationm,
-                auxnm);
+                qaband, out_band, nlines, nsamps, pixsize, sband, sza, saa,
+                vza, vaa, xts, xmus, use_orig_aero, anglehdf, intrefnm,
+                transmnm, spheranm, cmgdemnm, rationm, auxnm);
             if (retval != SUCCESS)
             {
                 sprintf (errmsg, "Error computing Landat surface reflectance");
@@ -569,8 +583,8 @@ int main (int argc, char *argv[])
         {
             retval = compute_sentinel_sr_refl (input, &xml_metadata, xml_infile,
                 qaband, nlines, nsamps, pixsize, toaband, sband, out_band, xts,
-                xmus, anglehdf, intrefnm, transmnm, spheranm, cmgdemnm, rationm,
-                auxnm);
+                xmus, use_orig_aero, anglehdf, intrefnm, transmnm, spheranm,
+                cmgdemnm, rationm, auxnm);
             if (retval != SUCCESS)
             {
                 sprintf (errmsg, "Error computing Sentinel-2 surface "
@@ -586,8 +600,8 @@ int main (int argc, char *argv[])
 
     /* Close the input product */
     printf ("Closing input/output and freeing pointers ...\n");
-    close_input (input);
-    free_input (input);
+    close_input (input, use_orig_aero);
+    free_input (input, use_orig_aero);
 
     /* Free the filename pointers */
     free (xml_infile);
@@ -599,6 +613,12 @@ int main (int argc, char *argv[])
     if (sat == SAT_LANDSAT_8 || sat == SAT_LANDSAT_9)
     {
         free (sza);
+        if (use_orig_aero)
+        {
+            free (saa);
+            free (vza);
+            free (vaa);
+        }
         for (i = 0; i < NBANDL_TTL_OUT-1; i++)
             free (sband[i]);
     }
@@ -648,7 +668,8 @@ void usage ()
     printf ("usage: lasrc "
             "--xml=input_xml_filename "
             "--aux=input_auxiliary_filename "
-            "--process_sr=true:false --write_toa [--verbose] [--version]\n");
+            "--process_sr=true:false --write_toa [--use_orig_aero_alg] "
+            "[--verbose] [--version]\n");
 
     printf ("\nwhere the following parameters are required:\n");
     printf ("    -xml: name of the input XML file to be processed\n");
@@ -668,6 +689,10 @@ void usage ()
             "to the output file. This argument has no relevance for Sentinel-2 "
             "products, since they are input as TOA reflectance, and therefore "
             "is ignored.\n");
+    printf ("    -use_orig_aero_alg: specifies if the original FORTRAN-based "
+            "algorithm should be used for the aerosol inversion. (default is "
+            "to use the semi-empirical approach for accessing the look-up "
+            "table which provides a speed-up in processing)\n");
     printf ("    -verbose: should intermediate messages be printed? (default "
             "is false)\n");
     printf ("    -version: print the LaSRC version. When this parameter is "
@@ -675,19 +700,19 @@ void usage ()
 
     printf ("\nlasrc --help will print the usage statement\n");
     printf ("\nExample: lasrc "
-            "--xml=LC08_L1TP_041027_20130630_20140312_01_T1.xml "
+            "--xml=LC08_L1TP_041027_20130630_20140312_02_T1.xml "
             "--aux=L8ANC2013181.hdf_fused --verbose\n");
     printf ("   ==> Writes bands 9-11 as TOA reflectance and brightness "
             "temperature.  Writes bands 1-7 as surface reflectance.\n\n");
 
     printf ("\nExample: lasrc "
-            "--xml=LC08_L1TP_041027_20130630_20140312_01_T1.xml "
+            "--xml=LC08_L1TP_041027_20130630_20140312_02_T1.xml "
             "--aux=L8ANC2013181.hdf_fused --write_toa --verbose\n");
     printf ("   ==> Writes bands 1-11 as TOA reflectance and brightness "
             "temperature.  Writes bands 1-7 as surface reflectance.\n");
 
     printf ("\nExample: lasrc "
-            "--xml=LC08_L1TP_041027_20130630_20140312_01_T1.xml "
+            "--xml=LC08_L1TP_041027_20130630_20140312_02_T1.xml "
             "--aux=L8ANC2013181.hdf_fused --process_sr=false --verbose\n");
     printf ("   ==> Writes bands 1-11 as TOA reflectance and brightness "
             "temperature.  Surface reflectance corrections are not applied.\n");
@@ -696,6 +721,12 @@ void usage ()
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
             "--aux=L8ANC2018228.hdf_fused --verbose\n");
     printf ("   ==> Writes bands 1-12 as surface reflectance.\n\n");
+
+    printf ("\nExample: lasrc "
+            "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
+            "--aux=L8ANC2018228.hdf_fused --use_orig_aero_alg --verbose\n");
+    printf ("   ==> Writes bands 1-12 as surface reflectance but uses the "
+            "original FORTRAN aerosol inversion algorithm.\n\n");
 
     printf ("\nExample: lasrc "
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "

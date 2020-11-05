@@ -21,6 +21,7 @@
 /* Defines */
 #define ESPA_EPSILON 0.00001
 #define LOW_EPS 1.0
+#define WATER_EPS 1.5
 #define MOD_EPS 1.75
 #define HIGH_EPS 2.5
 
@@ -36,10 +37,10 @@ int get_args
                                 water vapor and ozone */
     bool *process_sr,     /* O: process the surface reflectance products */
     bool *write_toa,      /* O: write intermediate TOA products flag */
+    bool *use_orig_aero,  /* O: use the original aerosol interpolation algorithm
+                                flag; O/W use the semi-empirical approach */
     bool *verbose         /* O: verbose flag */
 );
-
-void usage ();
 
 bool btest
 (
@@ -83,8 +84,18 @@ int compute_landsat_sr_refl
     float pixsize,      /* I: pixel size for the reflectance bands */
     float **sband,      /* I/O: input TOA (unscaled) and output surface
                                 reflectance (unscaled) */
+    int16 *sza,         /* I: scaled per-pixel solar zenith angles (degrees),
+                              nlines x nsamps */
+    int16 *saa,         /* I: scaled per-pixel solar azimuth angles (degrees),
+                              nlines x nsamps */
+    int16 *vza,         /* I: scaled per-pixel view zenith angles (degrees),
+                              nlines x nsamps */
+    int16 *vaa,         /* I: scaled per-pixel view azimuth angles (degrees),
+                              nlines x nsamps */
     float xts,          /* I: scene center solar zenith angle (deg) */
     float xmus,         /* I: cosine of solar zenith angle */
+    bool use_orig_aero, /* I: use the original aerosol handling if specified,
+                              o/w use the semi-empirical approach */
     char *anglehdf,     /* I: angle HDF filename */
     char *intrefnm,     /* I: intrinsic reflectance filename */
     char *transmnm,     /* I: transmission filename */
@@ -109,6 +120,8 @@ int compute_sentinel_sr_refl
     uint16 *out_band,   /* I: allocated array for writing scaled output */
     float xts,          /* I: scene center solar zenith angle (deg) */
     float xmus,         /* I: cosine of solar zenith angle */
+    bool use_orig_aero, /* I: use the original aerosol handling if specified,
+                              o/w use the semi-empirical approach */
     char *anglehdf,     /* I: angle HDF filename */
     char *intrefnm,     /* I: intrinsic reflectance filename */
     char *transmnm,     /* I: transmission filename */
@@ -131,11 +144,14 @@ int init_sr_refl
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
     char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    float *eps,         /* O: angstrom coefficient */
+    int *iaots,         /* O: index for AOTs */
     float *xtv,         /* O: observation zenith angle (deg) */
     float *xmuv,        /* O: cosine of observation zenith angle */
     float *xfi,         /* O: azimuthal difference between sun and
                               observation (deg) */
     float *cosxfi,      /* O: cosine of azimuthal difference */
+    float *raot550nm,   /* O: nearest value of AOT */
     float *pres,        /* O: surface pressure */
     float *uoz,         /* O: total column ozone */
     float *uwv,         /* O: total column water vapor (precipital water

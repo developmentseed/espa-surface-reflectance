@@ -43,10 +43,16 @@ typedef struct {
     uint16 fill;           /* fill value */
     bool gain_set;         /* are the gains and biases set? */
     float gain_sza;        /* solar zenith angle gain (Landsat only) */
+    float gain_saa;        /* solar azimuth angle gain (Landsat only) */
+    float gain_vza;        /* view zenith angle gain (Landsat only) */
+    float gain_vaa;        /* view azimuth angle gain (Landsat only) */
     float gain[NBAND_REFL_MAX];  /* reflectance band TOA refl gain (Landsat) */
     float gain_th[NBANDL_THM_MAX];/* therm band brightness temp gain (Landsat)*/
     float gain_pan[NBANDL_PAN_MAX];/* pan band TOA refl gain (Landsat only) */
-    float bias_sza;                /* solar zenith angle bias (Landsat only) */
+    float bias_sza;        /* solar zenith angle bias (Landsat only) */
+    float bias_saa;        /* solar azimuth angle bias (Landsat only) */
+    float bias_vza;        /* view zenith angle bias (Landsat only) */
+    float bias_vaa;        /* view azimuth angle bias (Landsat only) */
     float bias[NBAND_REFL_MAX];    /* reflectance band bias (Landsat only) */
     float bias_th[NBANDL_THM_MAX]; /* thermal band bias (Landsat only) */
     float bias_pan[NBANDL_PAN_MAX];/* pan band bias (Landsat only) */
@@ -77,6 +83,9 @@ typedef struct {
     char *file_name_pan[NBANDL_PAN_MAX]; /* name of input pan files (Landsat) */
     char *file_name_qa[NBANDL_QA_MAX];   /* name of input QA files (Landsat) */
     char *file_name_sza;                 /* name of input solar zenith files */
+    char *file_name_saa;                 /* name of input solar azimuth files */
+    char *file_name_vza;                 /* name of input view zenith files */
+    char *file_name_vaa;                 /* name of input view azimuth files */
 
     bool open[NBAND_REFL_MAX]; /* flag to indicate whether the specific input
                                   file is open for access; 'true' = open, 
@@ -91,23 +100,33 @@ typedef struct {
     FILE *fp_bin_pan[NBANDL_PAN_MAX];/* ptr pan binary files (Landsat only) */
     FILE *fp_bin_qa[NBANDL_QA_MAX];  /* ptr QA binary files (Landsat only) */
     FILE *fp_bin_sza;    /* ptr for solar zenith binary files (Landsat only) */
+    FILE *fp_bin_saa;    /* ptr for solar azimuth binary files (Landsat only) */
+    FILE *fp_bin_vza;    /* ptr for view zenith binary files (Landsat only) */
+    FILE *fp_bin_vaa;    /* ptr for view azimuth binary files (Landsat only) */
 } Input_t;
 
 /* Prototypes */
 Input_t *open_input
 (
-    Espa_internal_meta_t *metadata,     /* I: input metadata */
-    bool process_sr                     /* I: will SR data be processed? */
+    Espa_internal_meta_t *metadata,   /* I: input metadata */
+    bool use_orig_aero,               /* I: use the original aerosol handling
+                                            if specified, o/w use the
+                                            semi-empirical approach */
+    bool process_sr                   /* I: will SR data be processed? */
 );
 
 void close_input
 (
-    Input_t *this    /* I: pointer to input data structure */
+    Input_t *this,       /* I: pointer to input data structure */
+    bool use_orig_aero   /* I: use the original aerosol handling if specified,
+                               o/w use the semi-empirical approach */
 );
 
 void free_input
 (
-    Input_t *this    /* I: pointer to input data structure */
+    Input_t *this,      /* I: pointer to input data structure */
+    bool use_orig_aero  /* I: use the original aerosol handling if specified,
+                              o/w use the semi-empirical approach */
 );
 
 int get_input_refl_lines
@@ -154,13 +173,21 @@ int get_input_ppa_lines
     Input_t *this,   /* I: pointer to input data structure */
     int iline,       /* I: current line to read (0-based) */
     int nlines,      /* I: number of lines to read */
-    int16 *sza_arr  /* O: output solar zenith array to populate */
+    bool use_orig_aero,  /* I: use the original aerosol handling if specified,
+                               o/w use the semi-empirical approach */
+    int16 *sza_arr,  /* O: output solar zenith array to populate */
+    int16 *saa_arr,  /* O: output solar azimuth array to populate */
+    int16 *vza_arr,  /* O: output view zenith array to populate */
+    int16 *vaa_arr   /* O: output view azimuth array to populate */
 );
 
 int get_xml_input
 (
     Espa_internal_meta_t *metadata,  /* I: XML metadata */
     bool process_sr,                 /* I: will SR data be processed? */
+    bool use_orig_aero,              /* I: use the original aerosol handling if
+                                           specified, o/w use the
+                                           semi-empirical approach */
     Input_t *this                    /* O: data structure for the input file */
 );
 

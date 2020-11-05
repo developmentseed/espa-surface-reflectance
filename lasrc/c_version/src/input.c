@@ -36,8 +36,11 @@ NOTES:
 ******************************************************************************/
 Input_t *open_input
 (
-    Espa_internal_meta_t *metadata,     /* I: input metadata */
-    bool process_sr                     /* I: will SR data be processed? */
+    Espa_internal_meta_t *metadata,   /* I: input metadata */
+    bool use_orig_aero,               /* I: use the original aerosol handling
+                                            if specified, o/w use the
+                                            semi-empirical approach */
+    bool process_sr                   /* I: will SR data be processed? */
 )
 {
     char FUNC_NAME[] = "open_input";   /* function name */
@@ -56,7 +59,7 @@ Input_t *open_input
     }
 
     /* Initialize and get input from metadata file */
-    if (get_xml_input (metadata, process_sr, this) != SUCCESS)
+    if (get_xml_input (metadata, process_sr, use_orig_aero, this) != SUCCESS)
     {
         strcpy (errmsg, "Error getting input information from the metadata "
             "file.");
@@ -85,7 +88,7 @@ Input_t *open_input
             sprintf (errmsg, "Opening reflectance raw binary file: %s",
                 this->file_name[ib]);
             error_handler (true, FUNC_NAME, errmsg);
-            free_input (this);
+            free_input (this, use_orig_aero);
             return (NULL);
         }
         this->open[ib] = true;
@@ -99,7 +102,7 @@ Input_t *open_input
             sprintf (errmsg, "Opening thermal raw binary file: %s",
                 this->file_name_th[ib]);
             error_handler (true, FUNC_NAME, errmsg);
-            free_input (this);
+            free_input (this, use_orig_aero);
             return (NULL);
         }
         this->open_th[ib] = true;
@@ -113,7 +116,7 @@ Input_t *open_input
             sprintf (errmsg, "Opening pan raw binary file: %s",
                 this->file_name_pan[ib]);
             error_handler (true, FUNC_NAME, errmsg);
-            free_input (this);
+            free_input (this, use_orig_aero);
             return (NULL);
         }
         this->open_pan[ib] = true;
@@ -127,13 +130,13 @@ Input_t *open_input
             sprintf (errmsg, "Opening QA raw binary file: %s",
                 this->file_name_qa[ib]);
             error_handler (true, FUNC_NAME, errmsg);
-            free_input (this);
+            free_input (this, use_orig_aero);
             return (NULL);
         }
         this->open_qa[ib] = true;
     }
 
-    /* Open the per-pixel solar zenith angle bands for Landsat */
+    /* Open the per-pixel solar and view angle bands for Landsat */
     if (this->meta.sat == SAT_LANDSAT_8 || this->meta.sat == SAT_LANDSAT_9)
     {
         this->fp_bin_sza = open_raw_binary (this->file_name_sza, "rb");
@@ -142,10 +145,45 @@ Input_t *open_input
             sprintf (errmsg, "Opening solar zenith raw binary file: %s",
                 this->file_name_sza);
             error_handler (true, FUNC_NAME, errmsg);
-            free_input (this);
+            free_input (this, use_orig_aero);
             return (NULL);
         }
         this->open_ppa = true;
+
+        /* Only open the rest of these bands if we are using the original
+           aerosol algorithm */
+        if (use_orig_aero)
+        {
+            this->fp_bin_saa = open_raw_binary (this->file_name_saa, "rb");
+            if (this->fp_bin_saa == NULL)
+            {
+                sprintf (errmsg, "Opening solar zenith raw binary file: %s",
+                    this->file_name_saa);
+                error_handler (true, FUNC_NAME, errmsg);
+                free_input (this, use_orig_aero);
+                return (NULL);
+            }
+        
+            this->fp_bin_vza = open_raw_binary (this->file_name_vza, "rb");
+            if (this->fp_bin_vza == NULL)
+            {
+                sprintf (errmsg, "Opening view zenith raw binary file: %s",
+                    this->file_name_vza);
+                error_handler (true, FUNC_NAME, errmsg);
+                free_input (this, use_orig_aero);
+                return (NULL);
+            }
+        
+            this->fp_bin_vaa = open_raw_binary (this->file_name_vaa, "rb");
+            if (this->fp_bin_vaa == NULL)
+            {
+                sprintf (errmsg, "Opening view zenith raw binary file: %s",
+                    this->file_name_vaa);
+                error_handler (true, FUNC_NAME, errmsg);
+                free_input (this, use_orig_aero);
+                return (NULL);
+            }
+        }
     }
 
     /* Do a cursory check to make sure the bands and QA band exist and have
@@ -154,7 +192,7 @@ Input_t *open_input
     {
         sprintf (errmsg, "Reflectance band 1 is not open.");
         error_handler (true, FUNC_NAME, errmsg);
-        free_input (this);
+        free_input (this, use_orig_aero);
         return (NULL);
     }
 
@@ -162,7 +200,7 @@ Input_t *open_input
     {
         sprintf (errmsg, "Thermal band 10 is not open.");
         error_handler (true, FUNC_NAME, errmsg);
-        free_input (this);
+        free_input (this, use_orig_aero);
         return (NULL);
     }
 
@@ -172,7 +210,7 @@ Input_t *open_input
     {
         sprintf (errmsg, "Landsat QA band is not open.");
         error_handler (true, FUNC_NAME, errmsg);
-        free_input (this);
+        free_input (this, use_orig_aero);
         return (NULL);
     }
 
@@ -182,7 +220,7 @@ Input_t *open_input
     {
         sprintf (errmsg, "Landsat per-pixel angle bands are not open.");
         error_handler (true, FUNC_NAME, errmsg);
-        free_input (this);
+        free_input (this, use_orig_aero);
         return (NULL);
     }
 
@@ -202,7 +240,9 @@ NOTES:
 ******************************************************************************/
 void close_input
 (
-    Input_t *this    /* I: pointer to input data structure */
+    Input_t *this,       /* I: pointer to input data structure */
+    bool use_orig_aero   /* I: use the original aerosol handling if specified,
+                               o/w use the semi-empirical approach */
 )
 {
     int ib;      /* loop counter for bands */
@@ -254,6 +294,12 @@ void close_input
         if (this->open_ppa)
         {
             close_raw_binary (this->fp_bin_sza);
+            if (use_orig_aero)
+            {
+                close_raw_binary (this->fp_bin_saa);
+                close_raw_binary (this->fp_bin_vza);
+                close_raw_binary (this->fp_bin_vaa);
+            }
             this->open_ppa = false;
         }
     }
@@ -272,7 +318,9 @@ NOTES:
 ******************************************************************************/
 void free_input
 (
-    Input_t *this    /* I: pointer to input data structure */
+    Input_t *this,      /* I: pointer to input data structure */
+    bool use_orig_aero  /* I: use the original aerosol handling if specified,
+                              o/w use the semi-empirical approach */
 )
 {
     char FUNC_NAME[] = "free_input";   /* function name */
@@ -303,6 +351,12 @@ void free_input
             for (ib = 0; ib < this->nband_qa; ib++)
                 free (this->file_name_qa[ib]);
             free(this->file_name_sza);
+            if (use_orig_aero)
+            {
+                free(this->file_name_saa);
+                free(this->file_name_vza);
+                free(this->file_name_vaa);
+            }
         }
 
         /* Free the data structure */
@@ -652,7 +706,12 @@ int get_input_ppa_lines
     Input_t *this,   /* I: pointer to input data structure */
     int iline,       /* I: current line to read (0-based) */
     int nlines,      /* I: number of lines to read */
-    int16 *sza_arr /* O: output solar zenith array to populate */
+    bool use_orig_aero,  /* I: use the original aerosol handling if specified,
+                               o/w use the semi-empirical approach */
+    int16 *sza_arr,  /* O: output solar zenith array to populate */
+    int16 *saa_arr,  /* O: output solar azimuth array to populate */
+    int16 *vza_arr,  /* O: output view zenith array to populate */
+    int16 *vaa_arr   /* O: output view azimuth array to populate */
 )
 {
     char FUNC_NAME[] = "get_input_ppa_lines";   /* function name */
@@ -697,6 +756,62 @@ int get_input_ppa_lines
         return (ERROR);
     }
   
+    /* Only read these per-pixel angles if the original aerosol algorithm is
+       being used */
+    if (use_orig_aero)
+    {
+        /* Read the solar azimuth data, but first seek to the correct line */
+        if (fseek (this->fp_bin_saa, loc, SEEK_SET))
+        {
+            strcpy (errmsg, "Seeking to current line in the saa input file");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (read_raw_binary (this->fp_bin_saa, nlines, this->size_ppa.nsamps,
+            sizeof (int16), saa_arr) != SUCCESS)
+        {
+            sprintf (errmsg, "Reading %d lines from solar azimuth band "
+                "starting at line %d", nlines, iline);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Read the view zenith data, but first seek to the correct line */
+        if (fseek (this->fp_bin_vza, loc, SEEK_SET))
+        {
+            strcpy (errmsg, "Seeking to current line in the vza input file");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (read_raw_binary (this->fp_bin_vza, nlines, this->size_ppa.nsamps,
+            sizeof (int16), vza_arr) != SUCCESS)
+        {
+            sprintf (errmsg, "Reading %d lines from view zenith band starting "
+                "at line %d", nlines, iline);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Read the view azimuth data, but first seek to the correct line */
+        if (fseek (this->fp_bin_vaa, loc, SEEK_SET))
+        {
+            strcpy (errmsg, "Seeking to current line in the vaa input file");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (read_raw_binary (this->fp_bin_vaa, nlines, this->size_ppa.nsamps,
+            sizeof (int16), vaa_arr) != SUCCESS)
+        {
+            sprintf (errmsg, "Reading %d lines from view azimuth band starting "
+                "at line %d", nlines, iline);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+    }
+
     return (SUCCESS);
 }
 
@@ -722,6 +837,9 @@ int get_xml_input
 (
     Espa_internal_meta_t *metadata,  /* I: XML metadata */
     bool process_sr,                 /* I: will SR data be processed? */
+    bool use_orig_aero,              /* I: use the original aerosol handling if
+                                           specified, o/w use the
+                                           semi-empirical approach */
     Input_t *this                    /* O: data structure for the input file */
 )
 {
@@ -738,6 +856,9 @@ int get_xml_input
     int pan_indx = NA;   /* band index in XML file for the pan band */
     int qa_indx = NA;    /* band index in XML file for the QA band */
     int sza_indx = NA;   /* band index in XML file for the solar zenith band */
+    int saa_indx = NA;   /* band index in XML file for the solar azimuth band */
+    int vza_indx = NA;   /* band index in XML file for the view zenith band */
+    int vaa_indx = NA;   /* band index in XML file for the view azimuth band */
     Espa_global_meta_t *gmeta = &metadata->global; /* pointer to global meta */
 
     /* Initialize the input fields */
@@ -797,10 +918,22 @@ int get_xml_input
     }
 
     this->file_name_sza = NULL;
+    this->file_name_saa = NULL;
+    this->file_name_vza = NULL;
+    this->file_name_vaa = NULL;
     this->open_ppa = NULL;
     this->fp_bin_sza = NULL;
+    this->fp_bin_saa = NULL;
+    this->fp_bin_vza = NULL;
+    this->fp_bin_vaa = NULL;
     this->meta.gain_sza = GAIN_BIAS_FILL;
     this->meta.bias_sza = GAIN_BIAS_FILL;
+    this->meta.gain_saa = GAIN_BIAS_FILL;
+    this->meta.bias_saa = GAIN_BIAS_FILL;
+    this->meta.gain_vza = GAIN_BIAS_FILL;
+    this->meta.bias_vza = GAIN_BIAS_FILL;
+    this->meta.gain_vaa = GAIN_BIAS_FILL;
+    this->meta.bias_vaa = GAIN_BIAS_FILL;
 
     /* Pull the appropriate data from the XML file */
     acq_date[0] = acq_time[0] = '\0';
@@ -1084,6 +1217,45 @@ int get_xml_input
                 if (this->meta.bias_sza == NOT_VALID)
                     this->meta.bias_sza = 0;
             }
+
+            else if (!strcmp (metadata->band[i].name, "saa") && use_orig_aero)
+            {
+                /* this is the index we'll use for saa band info */
+                saa_indx = i;
+
+                /* get the solar azimuth band info */
+                this->file_name_saa = strdup (metadata->band[i].file_name);
+                this->meta.gain_saa = metadata->band[i].scale_factor;
+                this->meta.bias_saa = metadata->band[i].add_offset;
+                if (this->meta.bias_saa == NOT_VALID)
+                    this->meta.bias_saa = 0;
+            }
+
+            else if (!strcmp (metadata->band[i].name, "vza") && use_orig_aero)
+            {
+                /* this is the index we'll use for vza band info */
+                vza_indx = i;
+
+                /* get the view zenith band info */
+                this->file_name_vza = strdup (metadata->band[i].file_name);
+                this->meta.gain_vza = metadata->band[i].scale_factor;
+                this->meta.bias_vza = metadata->band[i].add_offset;
+                if (this->meta.bias_vza == NOT_VALID)
+                    this->meta.bias_vza = 0;
+            }
+
+            else if (!strcmp (metadata->band[i].name, "vaa") && use_orig_aero)
+            {
+                /* this is the index we'll use for vaa band info */
+                vaa_indx = i;
+
+                /* get the view azimuth band info */
+                this->file_name_vaa = strdup (metadata->band[i].file_name);
+                this->meta.gain_vaa = metadata->band[i].scale_factor;
+                this->meta.bias_vaa = metadata->band[i].add_offset;
+                if (this->meta.bias_vaa == NOT_VALID)
+                    this->meta.bias_vaa = 0;
+            }
         }  /* for i */
 
         /* Make sure the expected files were found */
@@ -1113,6 +1285,28 @@ int get_xml_input
             sprintf (errmsg, "Solar zenith band not found in the XML file");
             error_handler (true, FUNC_NAME, errmsg);
             return (ERROR);
+        }
+
+        if (use_orig_aero)
+        {
+            if (saa_indx == NA)
+            {
+                sprintf (errmsg, "Solar azimuth band not found in XML file");
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
+            if (vza_indx == NA)
+            {
+                sprintf (errmsg, "View zenith band was found in the XML file");
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
+            if (vaa_indx == NA)
+            {
+                sprintf (errmsg, "View azimuth band not found in the XML file");
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
         }
     }
     else if (this->meta.sat == SAT_SENTINEL_2)
