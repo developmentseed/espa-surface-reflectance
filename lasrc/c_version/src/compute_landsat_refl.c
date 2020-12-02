@@ -289,8 +289,8 @@ int compute_landsat_sr_refl
                               nlines x nsamps */
     int16 *vaa,         /* I: scaled per-pixel view azimuth angles (degrees),
                               nlines x nsamps */
-    float xts,          /* I: scene center solar zenith angle (deg) */
-    float xmus,         /* I: cosine of solar zenith angle */
+    float xts_center,   /* I: scene center solar zenith angle (deg) */
+    float xmus_center,  /* I: cosine of scene center solar zenith angle */
     bool use_orig_aero, /* I: use the original aerosol handling if specified,
                               o/w use the semi-empirical approach */
     char *anglehdf,     /* I: angle HDF filename */
@@ -330,7 +330,6 @@ int compute_landsat_sr_refl
     float tgo_x_ttatmg;  /* variable for tgo * ttatmg */
     float xrorayp;       /* reflectance of the atmosphere due to molecular
                             (Rayleigh) scattering */
-    float next;
     float erelc[NSR_BANDS];   /* band ratio variable for refl bands */
     float troatm[NSR_BANDS];  /* atmospheric reflectance table for refl bands */
     float btgo[NSR_BANDS];    /* other gaseous transmittance for refl bands */
@@ -349,8 +348,8 @@ int compute_landsat_sr_refl
     float corf;         /* aerosol impact (higher values represent high
                            aerosol) */
     float ros1, ros4, ros5; /* surface reflectance for bands 1, 4, and 5 */
-    int tmp_percent;      /* current percentage for printing status */
 #ifndef _OPENMP
+    int tmp_percent;      /* current percentage for printing status */
     int curr_tmp_percent; /* percentage for current line */
 #endif
 
@@ -401,8 +400,15 @@ int compute_landsat_sr_refl
     /* Lookup table variables */
     float eps;           /* angstrom coefficient */
     float eps1, eps2, eps3;  /* eps values for three runs */
+    float xts;           /* solar zenith angle (deg) */
+    float xmus;          /* cosine of solar zenith angle */
+    float xtv_center;    /* scene center observation zenith angle (deg) */
+    float xmuv_center;   /* cosine of scene center observation zenith angle */
     float xtv;           /* observation zenith angle (deg) */
     float xmuv;          /* cosine of observation zenith angle */
+    float xfi_center;    /* azimuthal difference between the sun and
+                            observation angle at scene center (deg) */
+    float cosxfi_center; /* cosine of azimuthal difference at scene center */
     float xfi;           /* azimuthal difference between the sun and
                             observation angle (deg) */
     float cosxfi;        /* cosine of azimuthal difference */
@@ -584,13 +590,13 @@ int compute_landsat_sr_refl
            scene (using the DEM) (pres)
        water vapor is initialized to the value at the center of the scene (uwv)
        ozone is initialized to the value at the center of the scene (uoz) */
-    retval = init_sr_refl (nlines, nsamps, input, space, anglehdf, intrefnm,
-        transmnm, spheranm, cmgdemnm, rationm, auxnm, &eps, &iaots, &xtv,
-        &xmuv, &xfi, &cosxfi, &raot550nm, &pres, &uoz, &uwv, &xtsstep, &xtsmin,
-        &xtvstep, &xtvmin, tsmax, tsmin, tts, ttv, indts, rolutt, transt,
-        sphalbt, normext, nbfic, nbfi, dem, andwi, sndwi, ratiob1, ratiob2,
-        ratiob7, intratiob1, intratiob2, intratiob7, slpratiob1, slpratiob2,
-        slpratiob7, wv, oz);
+    retval = init_sr_refl (nlines, nsamps, input, &space_def, space, anglehdf,
+        intrefnm, transmnm, spheranm, cmgdemnm, rationm, auxnm, &eps, &iaots,
+        &xtv_center, &xmuv_center, &xfi_center, &cosxfi_center, &raot550nm,
+        &pres, &uoz, &uwv, &xtsstep, &xtsmin, &xtvstep, &xtvmin, tsmax, tsmin,
+        tts, ttv, indts, rolutt, transt, sphalbt, normext, nbfic, nbfi, dem,
+        andwi, sndwi, ratiob1, ratiob2, ratiob7, intratiob1, intratiob2,
+        intratiob7, slpratiob1, slpratiob2, slpratiob7, wv, oz);
     if (retval != SUCCESS)
     {
         sprintf (errmsg, "Error initializing the lookup tables and "
@@ -604,21 +610,23 @@ int compute_landsat_sr_refl
     mytime = time(NULL);
     printf ("Performing atmospheric corrections for each Landsat reflectance "
         "band ... %s", ctime(&mytime));
+
+    /* rotoa is not defined for the atmcorlamb2 call, which is ok, but the
+       roslamb value is not valid upon output. Just set it to 0.0 to be
+       consistent. */
+    rotoa = 0.0;
+    raot550nm = aot550nm[1];
+    eps = 2.5;
     for (ib = 0; ib <= SRL_BAND7; ib++)
     {
         /* Get the parameters for the atmospheric correction */
-        /* rotoa is not defined for this call, which is ok, but the
-           roslamb value is not valid upon output. Just set it to 0.0 to
-           be consistent. */
-        rotoa = 0.0;
-        raot550nm = aot550nm[1];
-        eps = 2.5;
-        retval = atmcorlamb2 (input->meta.sat, xts, xtv, xmus, xmuv, xfi,
-            cosxfi, raot550nm, ib, pres, tpres, aot550nm, rolutt, transt,
-            xtsstep, xtsmin, xtvstep, xtvmin, sphalbt, normext, tsmax, tsmin,
-            nbfic, nbfi, tts, indts, ttv, uoz, uwv, tauray, ogtransa1,
-            ogtransb0, ogtransb1, wvtransa, wvtransb, oztransa, rotoa,
-            &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp, &next, eps);
+        retval = atmcorlamb2 (input->meta.sat, xts_center, xtv_center,
+            xmus_center, xmuv_center, xfi_center, cosxfi_center, raot550nm, ib,
+            pres, tpres, aot550nm, rolutt, transt, xtsstep, xtsmin, xtvstep,
+            xtvmin, sphalbt, normext, tsmax, tsmin, nbfic, nbfi, tts, indts,
+            ttv, uoz, uwv, tauray, ogtransa1, ogtransb0, ogtransb1, wvtransa,
+            wvtransb, oztransa, rotoa, &roslamb, &tgo, &roatm, &ttatmg, &satm,
+            &xrorayp, eps);
         if (retval != SUCCESS)
         {
             sprintf (errmsg, "Performing lambertian atmospheric correction "
@@ -637,7 +645,7 @@ int compute_landsat_sr_refl
 
         /* Perform atmospheric corrections for bands 1-7 */
 #ifdef _OPENMP
-        #pragma omp parallel for private (i, rotoa, roslamb)
+        #pragma omp parallel for private (i, roslamb)
 #endif
         for (i = 0; i < npixels; i++)
         {
@@ -694,9 +702,6 @@ int compute_landsat_sr_refl
             "... %s", ctime(&mytime));
         for (ib = 0; ib <= SRL_BAND7; ib++)
         {
-            /* rotoa is not defined for this call, which is ok, but the
-               roslamb value is not valid upon output. Just set it to 0.0 to
-               be consistent. */
             normext_p0a3_arr[ib] = normext[ib * NPRES_VALS * NAOT_VALS + 0 + 3];
                 /* normext[ib][0][3]; */
             rotoa = 0.0;
@@ -704,13 +709,14 @@ int compute_landsat_sr_refl
             for (ia = 0; ia < NAOT_VALS; ia++)
             {
                 raot550nm = aot550nm[ia];
-                retval = atmcorlamb2 (input->meta.sat, xts, xtv, xmus, xmuv,
-                    xfi, cosxfi, raot550nm, ib, pres, tpres, aot550nm, rolutt,
-                    transt, xtsstep, xtsmin, xtvstep, xtvmin, sphalbt, normext,
-                    tsmax, tsmin, nbfic, nbfi, tts, indts, ttv, uoz, uwv,
-                    tauray, ogtransa1, ogtransb0, ogtransb1, wvtransa,
-                    wvtransb, oztransa, rotoa, &roslamb, &tgo, &roatm, &ttatmg,
-                    &satm, &xrorayp, &next, eps);
+                retval = atmcorlamb2 (input->meta.sat, xts_center, xtv_center,
+                    xmus_center, xmuv_center, xfi_center, cosxfi_center,
+                    raot550nm, ib, pres, tpres, aot550nm, rolutt, transt,
+                    xtsstep, xtsmin, xtvstep, xtvmin, sphalbt, normext, tsmax,
+                    tsmin, nbfic, nbfi, tts, indts, ttv, uoz, uwv, tauray,
+                    ogtransa1, ogtransb0, ogtransb1, wvtransa, wvtransb,
+                    oztransa, rotoa, &roslamb, &tgo, &roatm, &ttatmg, &satm,
+                    &xrorayp, eps);
                 if (retval != SUCCESS)
                 {
                     sprintf (errmsg, "Performing lambertian atmospheric "
@@ -765,7 +771,7 @@ int compute_landsat_sr_refl
             get_3rd_order_poly_coeff (aot550nm, satm_arr[ib], NAOT_VALS,
                 satm_coef[ib]);
         }
-    }
+    }  /* if !use_orig_aero */
 
     /* If using the original aerosol approach we need some auxiliary data to
        be interpolated for every pixel so it's available for the final aerosol
@@ -774,14 +780,13 @@ int compute_landsat_sr_refl
     {
         mytime = time(NULL);
         printf ("Interpolating the auxiliary data ... %s", ctime(&mytime));
-        tmp_percent = 0;
+
 #ifdef _OPENMP
     #pragma omp parallel for private (i, j, curr_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, cmg_pix11, cmg_pix12, cmg_pix21, cmg_pix22, wv11, wv12, wv21, wv22, uoz11, uoz12, uoz21, uoz22, pres11, pres12, pres21, pres22)
 #endif
-
-        curr_pix = 0;
         for (i = 0; i < nlines; i++)
         {
+            curr_pix = i * nsamps;
             for (j = 0; j < nsamps; j++, curr_pix++)
             {
                 /* If this pixel is fill, do not process */
@@ -944,13 +949,19 @@ int compute_landsat_sr_refl
         }  /* end for i */
     }  /* if use_orig_aero */
 
+    /* Initialize some EPS values */
+    eps1 = LOW_EPS;
+    eps2 = MOD_EPS;
+    eps3 = HIGH_EPS;
+
     /* Start the aerosol inversion */
     mytime = time(NULL);
     printf ("Aerosol Inversion using %d x %d aerosol window ... %s",
         LAERO_WINDOW, LAERO_WINDOW, ctime(&mytime));
-    tmp_percent = 0;
 #ifdef _OPENMP
-    #pragma omp parallel for private (i, j, center_line, center_samp, nearest_line, nearest_samp, curr_pix, center_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, ratio_pix11, ratio_pix12, ratio_pix21, ratio_pix22, rb1, rb2, slpr11, slpr12, slpr21, slpr22, intr11, intr12, intr21, intr22, slprb1, slprb2, slprb7, intrb1, intrb2, intrb7, xndwi, ndwi_th1, ndwi_th2, iband, iband1, iaots, retval, eps, residual, residual1, residual2, residual3, raot, sraot1, sraot3, epsmin, corf, next, rotoa, raot550nm, roslamb, tgo, roatm, ttatmg, satm, xrorayp, ros1, ros5, ros4, erelc, troatm)
+    #pragma omp parallel for private (i, j, center_line, center_samp, nearest_line, nearest_samp, curr_pix, center_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, ratio_pix11, ratio_pix12, ratio_pix21, ratio_pix22, rb1, rb2, slpr11, slpr12, slpr21, slpr22, intr11, intr12, intr21, intr22, slprb1, slprb2, slprb7, intrb1, intrb2, intrb7, xndwi, ndwi_th1, ndwi_th2, ib, xtv, xmuv, xts, xmus, xfi, cosxfi, iband, iband1, iaots, pres, uoz, uwv, retval, eps, residual, residual1, residual2, residual3, raot, sraot1, sraot3, xa, xb, epsmin, corf, rotoa, raot550nm, roslamb, tgo, roatm, ttatmg, satm, xrorayp, ros1, ros5, ros4, erelc, troatm)
+#else
+    tmp_percent = 0;
 #endif
     for (i = LHALF_AERO_WINDOW; i < nlines; i += LAERO_WINDOW)
     {
@@ -1264,7 +1275,6 @@ int compute_landsat_sr_refl
 
             /* Retrieve the aerosol information for low eps 1.0 */
             iband1 = DNL_BAND4;   /* red band */
-            eps1 = LOW_EPS;
             iaots = 0;
             if (use_orig_aero)
             {
@@ -1295,7 +1305,6 @@ int compute_landsat_sr_refl
             sraot1 = raot;
 
             /* Retrieve the aerosol information for moderate eps 1.75 */
-            eps2 = MOD_EPS;
             if (use_orig_aero)
             {
                 retval = subaeroret (input->meta.sat, false, iband1, xts, xtv,
@@ -1320,7 +1329,6 @@ int compute_landsat_sr_refl
             residual2 = residual;
 
             /* Retrieve the aerosol information for high eps 2.5 */
-            eps3 = HIGH_EPS;
             if (use_orig_aero)
             {
                 retval = subaeroret (input->meta.sat, false, iband1, xts, xtv,
@@ -1401,7 +1409,10 @@ int compute_landsat_sr_refl
 
             teps[center_pix] = eps;
             taero[center_pix] = raot;
-            corf = raot / xmus;
+            if (use_orig_aero)
+                corf = raot / xmus;
+            else
+                corf = raot / xmus_center;
 
             /* Check the model residual.  Corf represents aerosol impact.
                Test the quality of the aerosol inversion. */
@@ -1419,8 +1430,7 @@ int compute_landsat_sr_refl
                         xtvmin, sphalbt, normext, tsmax, tsmin, nbfic, nbfi,
                         tts, indts, ttv, uoz, uwv, tauray, ogtransa1, ogtransb0,
                         ogtransb1, wvtransa, wvtransb, oztransa, rotoa,
-                        &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp,
-                        &next, eps);
+                        &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp, eps);
                     if (retval != SUCCESS)
                     {
                         sprintf (errmsg, "Performing lambertian "
@@ -1448,8 +1458,7 @@ int compute_landsat_sr_refl
                         xtvmin, sphalbt, normext, tsmax, tsmin, nbfic, nbfi,
                         tts, indts, ttv, uoz, uwv, tauray, ogtransa1, ogtransb0,
                         ogtransb1, wvtransa, wvtransb, oztransa, rotoa,
-                        &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp,
-                        &next, eps);
+                        &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp, eps);
                     if (retval != SUCCESS)
                     {
                         sprintf (errmsg, "Performing lambertian "
@@ -1528,7 +1537,10 @@ int compute_landsat_sr_refl
                         eps);
                 teps[center_pix] = eps;
                 taero[center_pix] = raot;
-                corf = raot / xmus;
+                if (use_orig_aero)
+                    corf = raot / xmus;
+                else
+                    corf = raot / xmus_center;
 
                 /* Test band 1 reflectance to eliminate negative */
                 iband = DNL_BAND1;
@@ -1542,8 +1554,7 @@ int compute_landsat_sr_refl
                         xtvmin, sphalbt, normext, tsmax, tsmin, nbfic, nbfi,
                         tts, indts, ttv, uoz, uwv, tauray, ogtransa1, ogtransb0,
                         ogtransb1, wvtransa, wvtransb, oztransa, rotoa,
-                        &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp,
-                        &next, eps);
+                        &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp, eps);
                     if (retval != SUCCESS)
                     {
                         sprintf (errmsg, "Performing lambertian "
@@ -1690,7 +1701,7 @@ int compute_landsat_sr_refl
     for (ib = 0; ib <= DNL_BAND7; ib++)
     {
 #ifdef _OPENMP
-        #pragma omp parallel for private (i, rsurf, rotoa, raot550nm, eps, retval, tmpf, roslamb, tgo, roatm, ttatmg, satm, xrorayp, next)
+        #pragma omp parallel for private (i, rsurf, rotoa, raot550nm, eps, xtv, xmuv, xts, xfi, cosxfi, pres, uwv, uoz, retval, tmpf, roslamb, tgo, roatm, ttatmg, satm, xrorayp)
 #endif
         for (i = 0; i < npixels; i++)
         {
@@ -1724,7 +1735,7 @@ int compute_landsat_sr_refl
                     normext, tsmax, tsmin, nbfic, nbfi, tts, indts, ttv, uoz,
                     uwv, tauray, ogtransa1, ogtransb0, ogtransb1, wvtransa,
                     wvtransb, oztransa, rotoa, &roslamb, &tgo, &roatm, &ttatmg,
-                    &satm, &xrorayp, &next, eps);
+                    &satm, &xrorayp, eps);
                 if (retval != SUCCESS)
                 {
                     sprintf (errmsg, "Performing lambertian "

@@ -438,7 +438,6 @@ c close HDF file
 	
 
 
-cccc GAIL OUT of place
 	pi=atan(1.)*4.
 	read(5,*) ihdf
 	if (ihdf.eq.2) then
@@ -520,7 +519,6 @@ c read the input files
 	raot550nm=0.06
         fac=pi/180.
 	xmus=cos(xts*fac) 
-cccc END - GAIL OUT of place
 
 
 C Read ozone and water vapor
@@ -1610,7 +1608,6 @@ c 	 write(6,*) "problem in subaeroretwat at i,j ",i,j
 	 enddo
 	 enddo
 
-CCCCCC GAIL HERE CCCC
 c before interpolation increase the interpolation to neighbourring pixels (3x3?)
 c not sure this is needed
 c       goto 1001

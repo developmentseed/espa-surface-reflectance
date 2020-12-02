@@ -657,7 +657,7 @@ c         tlon(i,j)=lon
          xcmg=(179.975+lon)/0.05+1
          icmg=int(ycmg+0.5)
          jcmg=int(xcmg+0.5)
-         write(6,*) " icmg jcmg ", icmg,jcmg 
+         write(6,*) " icmg jcmg ", icmg,jcmg
          if (wv(jcmg,icmg).ne.0) then
          uwv=wv(jcmg,icmg)/200.
          else
@@ -1011,6 +1011,7 @@ c       endif
        ifast=0
        iaots=1
        
+
        call subaeroretv3(iband1,iband3,xts,xtv,xfi,pres,uoz,uwv,erelc,troatm,
      c       tpres,aot550nm,rolutt,
      s       transt,xtsstep,xtsmin,xtvstep,xtvmin,
@@ -1131,6 +1132,7 @@ c       eps=-1.
          tnit(i,j)=int2(nit)
          taero3(i,j)=next*raot
          corf=raot/xmus
+
 
 c test if band5 makes sense
         corfb=1.

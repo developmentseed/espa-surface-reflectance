@@ -55,11 +55,9 @@ c local variable
         integer iaot1,iaot2
         real eps
            
-c        eps=1.
         iverbose=iv
 c correct band 3 and band 1 with increasing AOT (using pre till ratio is equal to erelc(3)
         iaot=iaots
-c        iaots=1
         pratio=erelc(iband3)/erelc(iband1)
 c pratio is the targeted ratio between the surface reflectance in band 4 (ros4) and 2 (ros2)
         residual1=2000.

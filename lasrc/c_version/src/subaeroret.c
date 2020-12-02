@@ -457,7 +457,6 @@ int subaeroret
     double raot1, raot2;    /* AOT ratios that bracket the predicted ratio */
     double point_error;     /* residual differences for each pixel */
     float raotsaved;        /* save the raot value */
-    float next;             /* ???? */
     float tgo;              /* other gaseous transmittance */
     float roatm;            /* intrinsic atmospheric reflectance */
     float ttatmg;           /* total atmospheric transmission */
@@ -550,7 +549,7 @@ int subaeroret
         sphalbt, normext, tsmax, tsmin, nbfic, nbfi, tts, indts, ttv, uoz,
         uwv, tauray, ogtransa1, ogtransb0, ogtransb1, wvtransa, wvtransb,
         oztransa, troatm[ib], &roslamb, &tgo, &roatm, &ttatmg, &satm, &xrorayp,
-        &next, eps);
+        eps);
     if (retval != SUCCESS)
     {
         sprintf (errmsg, "Performing lambertian atmospheric correction "
@@ -578,7 +577,7 @@ int subaeroret
                     tsmin, nbfic, nbfi, tts, indts, ttv, uoz, uwv, tauray,
                     ogtransa1, ogtransb0, ogtransb1, wvtransa, wvtransb,
                     oztransa, troatm[ib], &roslamb, &tgo, &roatm, &ttatmg,
-                    &satm, &xrorayp, &next, eps);
+                    &satm, &xrorayp, eps);
                 if (retval != SUCCESS)
                 {
                     sprintf (errmsg, "Performing lambertian atmospheric "
@@ -608,7 +607,7 @@ int subaeroret
                     tsmin, nbfic, nbfi, tts, indts, ttv, uoz, uwv, tauray,
                     ogtransa1, ogtransb0, ogtransb1, wvtransa, wvtransb,
                     oztransa, troatm[ib], &roslamb, &tgo, &roatm, &ttatmg,
-                    &satm, &xrorayp, &next, eps);
+                    &satm, &xrorayp, eps);
                 if (retval != SUCCESS)
                 {
                     sprintf (errmsg, "Performing lambertian atmospheric "
@@ -651,7 +650,7 @@ int subaeroret
             xtsmin, xtvstep, xtvmin, sphalbt, normext, tsmax, tsmin, nbfic,
             nbfi, tts, indts, ttv, uoz, uwv, tauray, ogtransa1, ogtransb0,
             ogtransb1, wvtransa, wvtransb, oztransa, troatm[ib], &roslamb,
-            &tgo, &roatm, &ttatmg, &satm, &xrorayp, &next, eps);
+            &tgo, &roatm, &ttatmg, &satm, &xrorayp, eps);
         if (retval != SUCCESS)
         {
             sprintf (errmsg, "Performing lambertian atmospheric correction "
@@ -679,7 +678,7 @@ int subaeroret
                         normext, tsmax, tsmin, nbfic, nbfi, tts, indts, ttv,
                         uoz, uwv, tauray, ogtransa1, ogtransb0, ogtransb1,
                         wvtransa, wvtransb, oztransa, troatm[ib], &roslamb,
-                        &tgo, &roatm, &ttatmg, &satm, &xrorayp, &next, eps);
+                        &tgo, &roatm, &ttatmg, &satm, &xrorayp, eps);
                     if (retval != SUCCESS)
                     {
                         sprintf (errmsg, "Performing lambertian atmospheric "
@@ -709,7 +708,7 @@ int subaeroret
                         normext, tsmax, tsmin, nbfic, nbfi, tts, indts, ttv,
                         uoz, uwv, tauray, ogtransa1, ogtransb0, ogtransb1,
                         wvtransa, wvtransb, oztransa, troatm[ib], &roslamb,
-                        &tgo, &roatm, &ttatmg, &satm, &xrorayp, &next, eps);
+                        &tgo, &roatm, &ttatmg, &satm, &xrorayp, eps);
                     if (retval != SUCCESS)
                     {
                         sprintf (errmsg, "Performing lambertian atmospheric "
@@ -773,7 +772,7 @@ int subaeroret
             xtvmin, sphalbt, normext, tsmax, tsmin, nbfic, nbfi, tts, indts,
             ttv, uoz, uwv, tauray, ogtransa1, ogtransb0, ogtransb1, wvtransa,
             wvtransb, oztransa, troatm[ib], &roslamb, &tgo, &roatm, &ttatmg,
-            &satm, &xrorayp, &next, eps);
+            &satm, &xrorayp, eps);
         if (retval != SUCCESS)
         {
             sprintf (errmsg, "Performing lambertian atmospheric correction "
@@ -803,7 +802,7 @@ int subaeroret
                     tsmin, nbfic, nbfi, tts, indts, ttv, uoz, uwv, tauray,
                     ogtransa1, ogtransb0, ogtransb1, wvtransa, wvtransb,
                     oztransa, troatm[ib], &roslamb, &tgo, &roatm, &ttatmg,
-                    &satm, &xrorayp, &next, eps);
+                    &satm, &xrorayp, eps);
                 if (retval != SUCCESS)
                 {
                     sprintf (errmsg, "Performing lambertian atmospheric "

@@ -434,7 +434,7 @@ C       fac=pi/180.
        endif
        
        endif
-       
+
        retval=0
        call comproatm(xts,xtv,xfi,mraot550nm,ib,pres,tpres,
      s      aot550nm,rolutt,
@@ -486,6 +486,7 @@ C compute rayleigh component (intrinsic reflectance, at p0)
         xmuv=cos(xtv*fac)
 C compute rayleigh component (intrinsic reflectance, at p=pres)
         xtaur=tauray(ib)*pres/1013.0
+
 c        write(6,*) "for local_chand ",xtaur,xphi,xmus,xmuv,fac
         call local_chand(xphi,xmus,xmuv,xtaur,xrorayp)
         
@@ -493,12 +494,8 @@ c        write(6,*) "for local_chand ",xtaur,xphi,xmus,xmuv,fac
 C Perform atmospheric correction 
         roslamb=rotoa/(tgog*tgoz)
         roslamb=(roslamb-(roatm-xrorayp)*tgwvhalf-xrorayp)
-c        write(6,*) "roatm ",(roatm-xrorayp)*tgwvhalf+xrorayp
-c        write(6,*) "ttatm ",ttatm      
-c        write(6,*) "satm ",satm
         roslamb=roslamb/(ttatm*tgwv)
         roslamb=roslamb/(1.+satm*roslamb)
-c        write(6,*) "roslamb: ", roslamb
 C
 C  New, 07-JUL-05:
         tgo=(tgog*tgoz)

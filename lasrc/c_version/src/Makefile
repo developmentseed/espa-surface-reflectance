@@ -29,6 +29,7 @@ SRC = aero_interp.c       \
       poly_coeff.c        \
       quick_select.c      \
       subaeroret.c        \
+      utmtodeg.c          \
       lasrc.c
 OBJ = $(SRC:.c=.o)
 

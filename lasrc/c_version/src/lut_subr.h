@@ -90,7 +90,6 @@ int atmcorlamb2
     float *satm,                 /* O: spherical albedo */
     float *xrorayp,              /* O: reflectance of the atmosphere due to
                                        molecular (Rayleigh) scattering */
-    float *next,                 /* O: */
     float eps                    /* I: angstroem coefficient; spectral
                                        dependency of the AOT */
 );
@@ -225,8 +224,7 @@ void compsalb
     float *normext,     /* I: aerosol extinction coefficient at the current
                               wavelength (normalized at 550nm)
                               [NSR_BANDS x NPRES_VALS x NAOT_VALS] */
-    float *satm,        /* O: spherical albedo */
-    float *next         /* O: */
+    float *satm         /* O: spherical albedo */
 );
 
 void comptrans
@@ -402,6 +400,10 @@ int sentinel_memory_allocation_sr
     int nsamps,          /* I: number of samples in the scene */
     uint8 **ipflag,      /* O: QA flag to assist with aerosol interpolation,
                                nlines x nsamps */
+    float **twvi,        /* O: interpolated water vapor value,
+                               nlines x nsamps */
+    float **tozi,        /* O: interpolated ozone value, nlines x nsamps */
+    float **tp,          /* O: interpolated pressure value, nlines x nsamps */
     float **taero,       /* O: aerosol values for each pixel, nlines x nsamps */
     float **teps,        /* O: eps (angstrom coefficient) for each pixel,
                                nlines x nsamps*/
@@ -459,15 +461,6 @@ int read_auxiliary_files
     int16 *slpratiob7,  /* O: slope band7 ratio [RATIO_NBLAT x RATIO_NBLON] */
     uint16 *wv,         /* O: water vapor values [CMG_NBLAT x CMG_NBLON] */
     uint8 *oz           /* O: ozone values [CMG_NBLAT x CMG_NBLON] */
-);
-
-int utmtodeg
-(
-    Space_def_t *space_def,  /* I: space definition structure */
-    int line,                /* I: line */
-    int sample,              /* I: sample */
-    float *lat,              /* O: latitude */
-    float *lon               /* O: longitude */
 );
 
 #endif

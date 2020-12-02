@@ -136,6 +136,7 @@ int init_sr_refl
     int nlines,         /* I: number of lines in reflectance, thermal bands */
     int nsamps,         /* I: number of samps in reflectance, thermal bands */
     Input_t *input,     /* I: input structure for the Landsat product */
+    Space_def_t *space_def,  /* I: space definition structure */
     Geoloc_t *space,    /* I: structure for geolocation information */
     char *anglehdf,     /* I: angle HDF filename */
     char *intrefnm,     /* I: intrinsic reflectance filename */

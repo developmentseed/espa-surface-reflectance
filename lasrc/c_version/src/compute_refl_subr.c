@@ -11,12 +11,16 @@ LICENSE TYPE:  NASA Open Source Agreement Version 1.3
 
 NOTES:
 ******************************************************************************/
+//#define USE_GCTP 1
+/* GAIL uncomment to use the GCTP library */
 
 #include "time.h"
 #include "aero_interp.h"
 #include "poly_coeff.h"
 #include "read_level1_qa.h"
-
+#ifndef USE_GCTP
+#include "utmtodeg.h"
+#endif
 
 /******************************************************************************
 MODULE:  init_sr_refl
@@ -44,6 +48,7 @@ int init_sr_refl
     int nlines,         /* I: number of lines in reflectance, thermal bands */
     int nsamps,         /* I: number of samps in reflectance, thermal bands */
     Input_t *input,     /* I: input structure for the Landsat product */
+    Space_def_t *space_def,  /* I: space definition structure */
     Geoloc_t *space,    /* I: structure for geolocation information */
     char *anglehdf,     /* I: angle HDF filename */
     char *intrefnm,     /* I: intrinsic reflectance filename */
@@ -115,8 +120,10 @@ int init_sr_refl
     Sat_t sat = input->meta.sat; /* satellite */
 
     /* Vars for forward/inverse mapping space */
+#ifdef USE_GCTP
     Img_coord_float_t img;        /* coordinate in line/sample space */
     Geo_coord_t geo;              /* coordinate in lat/long space */
+#endif
     float center_lat, center_lon; /* lat/long for scene center */
 
     /* Initialize the view azimuth and zenith values */
@@ -185,9 +192,11 @@ int init_sr_refl
 
     /* Use scene center (and center of the pixel) to compute atmospheric
        parameters */
-    img.l = (int) (nlines * 0.5) - 0.5;
-    img.s = (int) (nsamps * 0.5) + 0.5;
+#ifdef USE_GCTP
+    img.l = (int) (nlines * 0.5);
+    img.s = (int) (nsamps * 0.5);
     img.is_fill = false;
+
     if (!from_space (space, &img, &geo))
     {
         sprintf (errmsg, "Mapping scene center to geolocation coords");
@@ -196,7 +205,11 @@ int init_sr_refl
     }
     center_lat = geo.lat * RAD2DEG;
     center_lon = geo.lon * RAD2DEG;
-    printf ("Scene center line/sample: %f, %f\n", img.l, img.s);
+#else
+    utmtodeg (space_def, (int) (nlines * 0.5), (int) (nsamps * 0.5),
+        &center_lat, &center_lon);
+#endif
+    printf ("Scene center line/sample: %f, %f\n", nlines * 0.5, nsamps * 0.5);
     printf ("Scene center lat/long: %f, %f\n", center_lat, center_lon);
 
     /* Use the scene center lat/long to determine the line/sample in the

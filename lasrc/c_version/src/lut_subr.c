@@ -26,12 +26,12 @@ float landsat_lambda[NREFLL_BANDS] =
 #ifdef PROC_ALL_BANDS
 /* Process all bands if turned on */
 float sentinel_lambda[NREFLS_BANDS] =
-    {0.443, 0.490, 0.560, 0.655, 0.705, 0.740, 0.783, 0.842, 0.865, 0.945,
+    {0.443, 0.490, 0.560, 0.665, 0.705, 0.740, 0.783, 0.842, 0.865, 0.945,
      1.375, 1.61, 2.19};
 #else
 /* Skip bands 9 and 10 as default for ESPA */
 float sentinel_lambda[NREFLS_BANDS] =
-    {0.443, 0.490, 0.560, 0.655, 0.705, 0.740, 0.783, 0.842, 0.865, 1.61, 2.19};
+    {0.443, 0.490, 0.560, 0.665, 0.705, 0.740, 0.783, 0.842, 0.865, 1.61, 2.19};
 #endif
 
 #define FOUR_PTS 4
@@ -202,7 +202,6 @@ int atmcorlamb2
     float *satm,                 /* O: spherical albedo */
     float *xrorayp,              /* O: reflectance of the atmosphere due to
                                        molecular (Rayleigh) scattering */
-    float *next,                 /* O: GAIL TODO -- this can be removed */
     float eps                    /* I: angstrom coefficient; spectral
                                        dependency of the AOT */
 )
@@ -229,7 +228,7 @@ int atmcorlamb2
     int indx;           /* index for normext array */
     int max_band_indx = 0; /* maximum band index for Landsat or Sentinel */
     float *lambda = NULL;  /* band wavelength pointer for Landsat or Sentinel */
-    static const float lambda_sf = 1/0.55; /* lambda scale factor */
+    static const double lambda_sf = 1/0.55; /* lambda scale factor */
 
     /* Setup Landsat or Sentinel variables */
     if (sat == SAT_LANDSAT_8 || sat == SAT_LANDSAT_9)
@@ -314,8 +313,9 @@ int atmcorlamb2
 
     /* Compute spherical albedo */
     compsalb (ip1, ip2, iaot1, iaot2, mraot550nm, iband, pres, tpres, aot550nm,
-        sphalbt, normext, satm, next);
+        sphalbt, normext, satm);
 
+    /* Compute transmission of water vapor, ozone, and other gasses */
     atm_pres = pres * ONE_DIV_ATMOS_PRES_0;
     comptg (iband, xmus, xmuv, uoz, uwv, atm_pres, ogtransa1, ogtransb0,
         ogtransb1, wvtransa, wvtransb, oztransa, &tgoz, &tgwv, &tgwvhalf,
@@ -327,6 +327,7 @@ int atmcorlamb2
     local_chand (xfi, xmuv, xmus, xtaur, xrorayp);
 
     /* Perform atmospheric correction */
+
     *tgo = tgog * tgoz;
     *roatm = (*roatm - *xrorayp)*tgwvhalf + *xrorayp;
     *ttatmg = ttatm * tgwv;
@@ -531,13 +532,11 @@ void compsalb
     float *normext,     /* I: aerosol extinction coefficient at the current
                               wavelength (normalized at 550nm) 
                               [NSR_BANDS x NPRES_VALS x NAOT_VALS] */
-    float *satm,        /* O: spherical albedo */
-    float *next         /* O: GAIL TODO -- this can be removed */
+    float *satm         /* O: spherical albedo */
 )
 {
     float xtiaot1, xtiaot2;         /* spherical albedo trans value */
     float satm1, satm2;             /* spherical albedo value */
-    float next1, next2;
     float dpres;                    /* pressure ratio */
     float deltaaot;                 /* AOT ratio */
     int iband_indx;  /* index of the current iband */
@@ -572,18 +571,6 @@ void compsalb
 
     dpres = (pres - tpres[ip1]) / (tpres[ip2] - tpres[ip1]);
     *satm = satm1 + (satm2 - satm1) * dpres;
-
-    /* Compute the normalized spherical albedo */
-    xtiaot1 = normext[iband_ip1_iaot1_indx];
-    xtiaot2 = normext[iband_ip1_iaot2_indx];
-    next1 = xtiaot1 + (xtiaot2 - xtiaot1) * deltaaot;
-
-    xtiaot1 = normext[iband_ip2_iaot1_indx];
-    xtiaot2 = normext[iband_ip2_iaot2_indx];
-    next2 = xtiaot1 + (xtiaot2 - xtiaot1) * deltaaot;
-
-    /* GAIL TODO this can be removed */
-    *next = next1 + (next2 - next1) * dpres;
 }
 
 
@@ -1928,7 +1915,7 @@ int landsat_memory_allocation_sr
 {
     char FUNC_NAME[] = "landsat_memory_allocation_sr"; /* function name */
     char errmsg[STR_SIZE];   /* error message */
-    int nsr_bands = 0;       /* number of SR bands - Landsat or Sentinel */
+    int nsr_bands = 0;       /* number of SR bands */
 
     /* Setup Landsat number of SR bands */
     nsr_bands = NSRL_BANDS;
@@ -2240,6 +2227,10 @@ int sentinel_memory_allocation_sr
     int nsamps,          /* I: number of samples in the scene */
     uint8 **ipflag,      /* O: QA flag to assist with aerosol interpolation,
                                nlines x nsamps */
+    float **twvi,        /* O: interpolated water vapor value,
+                               nlines x nsamps */
+    float **tozi,        /* O: interpolated ozone value, nlines x nsamps */
+    float **tp,          /* O: interpolated pressure value, nlines x nsamps */
     float **taero,       /* O: aerosol values for each pixel, nlines x nsamps */
     float **teps,        /* O: eps (angstrom coefficient) for each pixel,
                                nlines x nsamps*/
@@ -2285,7 +2276,31 @@ int sentinel_memory_allocation_sr
     /* Setup Sentinel number of SR bands */
     nsr_bands = NSRS_BANDS;
 
-    /* Allocate memory for aero, eps, and ipflag */
+    /* Allocate memory for wv, oz, pres, aero, eps, and ipflag */
+    *twvi = calloc (nlines*nsamps, sizeof (float));
+    if (*twvi == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for twvi");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    *tozi = calloc (nlines*nsamps, sizeof (float));
+    if (*tozi == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for tozi");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    *tp = calloc (nlines*nsamps, sizeof (float));
+    if (*tp == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for tp");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
     *taero = calloc (nlines*nsamps, sizeof (float));
     if (*taero == NULL)
     {
