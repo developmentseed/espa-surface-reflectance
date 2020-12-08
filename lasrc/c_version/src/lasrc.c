@@ -574,7 +574,7 @@ int main (int argc, char *argv[])
                 transmnm, spheranm, cmgdemnm, rationm, auxnm);
             if (retval != SUCCESS)
             {
-                sprintf (errmsg, "Error computing Landat surface reflectance");
+                sprintf (errmsg, "Error computing Landsat surface reflectance");
                 error_handler (true, FUNC_NAME, errmsg);
                 exit (ERROR);
             }

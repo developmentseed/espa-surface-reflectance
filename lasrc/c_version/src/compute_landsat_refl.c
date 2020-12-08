@@ -497,7 +497,8 @@ int compute_landsat_sr_refl
     int cmg_pix22;    /* pixel location for CMG/DEM products [lcmg+1][scmg+1] */
 
     /* Variables for finding the eps that minimizes the residual */
-    double xa, xb;                  /* coefficients */
+    double xa, xb, xc, xd, xe, xf;  /* coefficients */
+    double coefa, coefb;            /* coefficients */
     float epsmin;                   /* eps which minimizes the residual */
 
     /* Output file info */
@@ -831,7 +832,7 @@ int compute_landsat_sr_refl
                 xcmg = (179.975 + lon) * 20.0;  /* vs / 0.05 */
                 lcmg = (int) ycmg;
                 scmg = (int) xcmg;
-    
+
                 /* Handle the edges of the lat/long values in the CMG grid */
                 if (lcmg < 0)
                     lcmg = 0;
@@ -931,7 +932,7 @@ int compute_landsat_sr_refl
                                  wv21 * u_x_one_minus_v +
                                  wv22 * u_x_v;
                 twvi[curr_pix] = twvi[curr_pix] * 0.01;   /* vs / 100 */
-    
+
                 /* Interpolate ozone, and unscale */
                 tozi[curr_pix] = uoz11 * one_minus_u_x_one_minus_v +
                                  uoz12 * one_minus_u_x_v +
@@ -949,17 +950,21 @@ int compute_landsat_sr_refl
         }  /* end for i */
     }  /* if use_orig_aero */
 
-    /* Initialize some EPS values */
+    /* Initialize and compute some EPS values */
     eps1 = LOW_EPS;
     eps2 = MOD_EPS;
     eps3 = HIGH_EPS;
+    xa = (eps1 * eps1) - (eps3 * eps3);
+    xd = (int) ((eps2 * eps2) - (eps3 * eps3));
+    xb = eps1 - eps3;
+    xe = eps2 - eps3;
 
     /* Start the aerosol inversion */
     mytime = time(NULL);
     printf ("Aerosol Inversion using %d x %d aerosol window ... %s",
         LAERO_WINDOW, LAERO_WINDOW, ctime(&mytime));
 #ifdef _OPENMP
-    #pragma omp parallel for private (i, j, center_line, center_samp, nearest_line, nearest_samp, curr_pix, center_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, ratio_pix11, ratio_pix12, ratio_pix21, ratio_pix22, rb1, rb2, slpr11, slpr12, slpr21, slpr22, intr11, intr12, intr21, intr22, slprb1, slprb2, slprb7, intrb1, intrb2, intrb7, xndwi, ndwi_th1, ndwi_th2, ib, xtv, xmuv, xts, xmus, xfi, cosxfi, iband, iband1, iaots, pres, uoz, uwv, retval, eps, residual, residual1, residual2, residual3, raot, sraot1, sraot3, xa, xb, epsmin, corf, rotoa, raot550nm, roslamb, tgo, roatm, ttatmg, satm, xrorayp, ros1, ros5, ros4, erelc, troatm)
+    #pragma omp parallel for private (i, j, center_line, center_samp, nearest_line, nearest_samp, curr_pix, center_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, ratio_pix11, ratio_pix12, ratio_pix21, ratio_pix22, rb1, rb2, slpr11, slpr12, slpr21, slpr22, intr11, intr12, intr21, intr22, slprb1, slprb2, slprb7, intrb1, intrb2, intrb7, xndwi, ndwi_th1, ndwi_th2, ib, xtv, xmuv, xts, xmus, xfi, cosxfi, iband, iband1, iaots, pres, uoz, uwv, retval, eps, residual, residual1, residual2, residual3, raot, sraot1, sraot3, xa, xb, xc, xf, epsmin, corf, rotoa, raot550nm, roslamb, tgo, roatm, ttatmg, satm, xrorayp, ros1, ros5, ros4, erelc, troatm)
 #else
     tmp_percent = 0;
 #endif
@@ -1281,7 +1286,6 @@ int compute_landsat_sr_refl
                 pres = tp[curr_pix];
                 uoz = tozi[curr_pix];
                 uwv = twvi[curr_pix];
-    
                 retval = subaeroret (input->meta.sat, false, iband1, xts, xtv,
                     xmus, xmuv, xfi, cosxfi, pres, uoz, uwv, erelc, troatm,
                     tpres, rolutt, transt, xtsstep, xtsmin, xtvstep, xtvmin,
@@ -1353,23 +1357,15 @@ int compute_landsat_sr_refl
             residual3 = residual;
             sraot3 = raot;
 
-            /* Find the eps that minimizes the residual.  This is performed
-               by applying a parabolic (quadratic) fit to the three
-               (epsilon, residual) pairs found above:
-                   r = a\eps^2 + b\eps + c
-               The minimum occurs where the first derivative is zero:
-                   r' = 2a\eps + b = 0
-                   \eps_min = -b/2a
+            /* Find the eps (angstrom coefficient for AOT) that minimizes the
+               residual */
+            xc = residual1 - residual3;
+            xf = residual2 - residual3;
+            coefa = (xc*xe - xb*xf) / (xa*xe - xb*xd);
+            coefb = (xa*xf - xc*xd) / (xa*xe - xb*xd);
+            epsmin = -coefb / (2.0 * coefa);
 
-               The a and b coefficients are solved for in the three
-               r (residual) equations by eliminating c:
-                   r_1 - r_3 = a(\eps_1^2 - \eps_3^2) + b(\eps_1 - \eps_3)
-                   r_2 - r_3 = a(\eps_2^2 - \eps_3^2) + b(\eps_2 - \eps_3) */
-            xa = (residual1 - residual3)*(eps2 - eps3);
-            xb = (residual2 - residual3)*(eps1 - eps3);
-            epsmin = 0.5*(xa*(eps2 + eps3) - xb*(eps1 + eps3))/(xa - xb);
             eps = epsmin;
-
             if (epsmin >= LOW_EPS && epsmin <= HIGH_EPS)
             {
                 if (use_orig_aero)
@@ -1380,7 +1376,7 @@ int compute_landsat_sr_refl
                         xtvstep, xtvmin, sphalbt, normext, tsmax, tsmin, nbfic,
                         nbfi, tts, indts, ttv, tauray, ogtransa1, ogtransb0,
                         ogtransb1, wvtransa, wvtransb, oztransa, &raot,
-                        &residual, &iaots, eps);
+                        &residual, &iaots, epsmin);
                     if (retval != SUCCESS)
                     {
                         sprintf (errmsg, "Performing aerosol retrieval.");

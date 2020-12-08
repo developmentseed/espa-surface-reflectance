@@ -437,6 +437,7 @@ c close HDF file
        write(6,*) "RATIO READ ", andwi(2001,1001)
 	
 
+C Read ozone and water vapor
 
 	pi=atan(1.)*4.
 	read(5,*) ihdf
@@ -485,12 +486,15 @@ c read the input files
 	enddo
 	read(5,'(A100)') filenameanc
 	read(5,*) nr,nc,nrp,ncp
+        write(6,*) "nr, nc, nrp, ncp ", nr, nc, nrp, ncp
+        write(6,*) "ihdf ", ihdf
 	read(5,*) xts,xfs
 	read(5,*) utmzone,row0,col0,y0,x0
 	read(5,*) doy,hour,xmin,sec
 	tu=hour+(xmin/60.)+(sec/60./60.)
 	read(5,'(A200)') pfileout
 	if (ihdf.eq.3) then
+        write(6,*) "ihdf is now 3", ihdf
 	read(5,*) frln,lrln,frcl,lrcl
 	read(5,*) c1i,c1j,c2i,c2j,c3i,c3j,c4i,c4j
 	read(5,*) offsettiff
@@ -499,6 +503,7 @@ c read the input files
 	read(5,*,end=19) frln,lrln,frcl,lrcl
 	endif
  19     continue
+        write(6,*) "***As read frln, lrln, frcl, lrcl", frln,lrln,frcl,lrcl
  
         if (frln.eq.0) then
 	write(fileout,'(A200)') pfileout
@@ -507,6 +512,7 @@ c read the input files
 	frcl=1
 	lrcl=nc
 	iout=0
+        write(6,*) "New frln, lrln, frcl, lrcl", frln,lrln,frcl,lrcl
 	else
 	ii=index(pfileout," ")-5
 	write(sstr,'(A2,4(A1,I4.4))') "ss","-",frln,"-",lrln,"-",frcl,"-",lrcl
@@ -519,6 +525,7 @@ c read the input files
 	raot550nm=0.06
         fac=pi/180.
 	xmus=cos(xts*fac) 
+        write(6,*) "Scene center xmus is ", xmus
 
 
 C Read ozone and water vapor
@@ -528,6 +535,7 @@ C Read ozone and water vapor
        allocate (wv(nccmg,nrcmg),stat=ierr)
        ii=index(filenameanc," ")-1
         fname=filenameanc(1:ii)
+       write(6,*) "oz & wv reading ",fname
        sd_id= sfstart(fname,DFACC_READ)
       start(1)=0
        start(2) = 0
@@ -548,6 +556,8 @@ C Read ozone and water vapor
        status = sfendacc(sds_id)
        write(6,*) "status sfendacc ",status
 
+c ESPA SDS index is 1 for water vapor in USGS EROS ozone products
+cORIG  sds_index = 2
        sds_index = 1
        sds_id    = sfselect(sd_id, sds_index)
        write(6,*) "sds_id", sds_id
@@ -586,8 +596,8 @@ C update to get the parameter of the scene center
 	uwv=0.5
 	xtv=0.
 	xfi=0.
- 	write(6,*) raot550nm,pres,uoz,uwv
-	write(6,*) xts,xtv,xfi
+ 	write(6,*) "raot550nm, pres, uoz, uwv", raot550nm,pres,uoz,uwv
+	write(6,*) "xts, xtv, xfi", xts,xtv,xfi
        
 c open HDF subset
         if  (ihdf.eq.2) then
@@ -842,6 +852,10 @@ c
 	 xcmg=(179.975+lon)/0.05+1
 	 icmg=int(ycmg+0.5)
 	 jcmg=int(xcmg+0.5)
+       write(6,*) "scene center row,col",row,col
+       write(6,*) "             lat,lon",lat,lon
+       write(6,*) "             cmg x,y",jcmg,icmg
+
          if (wv(jcmg,icmg).ne.0) then
 	 uwv=wv(jcmg,icmg)/200.
 	 else
@@ -860,6 +874,9 @@ c
 	 pres=1013.
 	 endif
 	 raot550nm=0.05
+       write(6,*) "scene center uwv, uoz, pres: ",uwv, uoz, pres
+       write(6,*) "scene center wv(jcmg, icmg): ",wv(jcmg,icmg)
+
         	
 	do ib=1,11
 	if (ib.lt.9) then
@@ -1103,6 +1120,7 @@ c         twv(i,j)=wv(jcmg,icmg)
 	 twvi(i,j)=wv(jcmg,icmg)*(1.-u)*(1.-v)+wv(jcmg+1,icmg)*(1.-u)*v
      s	      +wv(jcmg,icmg+1)*(1.-v)*u+wv(jcmg+1,icmg+1)*u*v
          twvi(i,j)=twvi(i,j)/100.
+
 	 
 	 
 	 
@@ -1167,6 +1185,7 @@ c	 tresi(i,j)=-1.
 	 endif
 	 tp(i,j)=pres11*(1.-u)*(1.-v)+pres12*(1.-u)*v
      s	      +pres21*(1.-v)*u+pres22*u*v
+
 
 c inverting aerosol	       
 	do ib=1,8
@@ -1317,14 +1336,6 @@ c inverting aerosol
 	pres=tp(i,j)
 	uoz=tozi(i,j)
 	uwv=twvi(i,j)
-	if (((i.eq.2).and.(j.eq.1)).or.((i.eq.10000).and.(j.eq.10000))) then
-	write(6,*) "aeroband1 ",aerob1(i,j)
-       write(6,*) i,j,xts,xtv,xfi,pres,uoz,uwv,erelc(1),erelc(2),erelc(7),
-     s	troatm(1),troatm(2),troatm(4),troatm(7),iband1,iband3,tratiob1(i,j)
-        iverbose=1
-	else
-	iverbose=0
-        endif
 
        ifast=0
        eps=1.0
@@ -1344,11 +1355,14 @@ c inverting aerosol
        xtv=viewzenith/100.
        xts=sza
        xfi=saa-(viewazimuth/100.)
+C EROS added this line to compute the cosine of sza for use in this loop
+       xmus=cos(sza*pi/180.)
        if ((ihdf.eq.3).or.(frln.ne.0)) then
        ttts(i,j)=int(xts*100.)
        tttv(i,j)=int(xtv*100.)
        ttfi(i,j)=int(xfi*100.)
        endif
+
        call subaeroretv3(iband1,iband3,xts,xtv,xfi,pres,uoz,uwv,erelc,troatm,
      c       tpres,aot550nm,rolutt,
      s       transt,xtsstep,xtsmin,xtvstep,xtvmin,
@@ -1404,7 +1418,7 @@ c inverting aerosol
 	 
 c find eps that minimize the residual	 
 	xa=(eps1*eps1)-(eps3*eps3)
-	xd=(eps2*eps2)-(eps3*eps3)
+	xd=int((eps2*eps2)-(eps3*eps3))
     	xb=(eps1-eps3)
 	xe=(eps2-eps3)
 	xc=residual1-residual3
@@ -1480,6 +1494,7 @@ c test if band5 makes sense
      s       rotoa,roslamb,tgo,roatm,ttatmg,satm,xrorayp,next,
      s       err_msg,retval,eps)
         ros5=roslamb
+
 	iband=4
 	rotoa=aerob4(i,j)/10000.
 	raot550nm=raot
@@ -1495,6 +1510,7 @@ c test if band5 makes sense
      s       rotoa,roslamb,tgo,roatm,ttatmg,satm,xrorayp,next,
      s       err_msg,retval,eps)
          ros4=roslamb
+
          if ((ros5.gt.0.1).and.((ros5-ros4)/(ros4+ros5).gt.0)) then
 	 taero(i,j)=raot
 	 tresi(i,j)=residual
@@ -1531,14 +1547,6 @@ c redo the retrieval if water
 	pres=tp(i,j)
 	uoz=tozi(i,j)
 	uwv=twvi(i,j)
-	if (((i.eq.408).and.(j.eq.254))) then
-	write(6,*) "aeroband1 ",aerob1(i,j)
-       write(6,*) i,j,xts,xtv,xfi,pres,uoz,uwv,erelc(1),erelc(2),erelc(7),
-     s	troatm(1),troatm(2),troatm(4),troatm(7),iband1,iband3,tratiob1(i,j)
-        iverbose=1
-	else
-	iverbose=0
-        endif
 
        ifast=0
 	 
@@ -1607,6 +1615,18 @@ c 	 write(6,*) "problem in subaeroretwat at i,j ",i,j
  11      continue	 
 	 enddo
 	 enddo
+
+#define WRITE_TAERO
+#ifdef WRITE_TAERO
+       OPEN(1, FILE="aerosols.img", ACCESS="stream",
+     +      FORM="unformatted")
+       WRITE(1) taero
+       CLOSE(1)
+       OPEN(1, FILE="ipflag.img", ACCESS="stream", FORM="unformatted")
+       WRITE(1) ipflag
+       CLOSE(1)
+#endif
+
 
 c before interpolation increase the interpolation to neighbourring pixels (3x3?)
 c not sure this is needed

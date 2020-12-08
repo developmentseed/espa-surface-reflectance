@@ -1,4 +1,4 @@
-## LaSRC Version 3.0.5 Release Notes
+## LaSRC Version 3.1.0 Release Notes
 Release Date: TBD 2020
 
 ### Downloads
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.0.5]
+See git tag [version_3.1.0]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -87,9 +87,22 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Fixed fill/noData areas so that aerosols are not computed for those pixels
-   in the averaging or final cleanup loop.
-2. Modified the ipflag to OR the fixed values and failed values so that the
-   original valid land and water pixels can be identified versus just being
-   covered up by failed and then fixed.
-3. Cleaned up the metadata description for the ipflag QA band.
+1. Added a command-line switch to allow the user to run the historical/original
+   aerosol inversion algorithm vs. the semi-empirical approach for both the
+   S2 and L8 versions.
+2. Fixed a bug in the S2 code to fix the band 4 lambda value in atmcorlamb2.
+   This will affect the historical algorithm as well as the semi-empirical
+   approach.
+3. Modified the S2 fill values to only be marked as fill if all the bands are
+   fill. This used to be masked as fill if any band is fill, but there are
+   some pixels which have non-VISIBLE bands as a value of zero. These aren't
+   technically fill pixels.
+4. ** TEMPORARY MAYBE: Modified the code to no longer expand the water pixels
+   when expanding invalid aerosols. Still think these should be expanded, but
+   for matching the fortran code this change was made.
+5. ** TEMPORARY MAYBE: Added the UTMtoDEG routine and plugged it into the
+   application for processing.  The lat/long values are slightly different for
+   GCTP and UTMtoDEG, but for matching the fortran code this change was made.
+   S2 products. The GCTP and UTMtoDEG
+6. Fixed a bug in the L8 handling of the epsmin. xd should be stored as an
+   integer and not a floating point value.
