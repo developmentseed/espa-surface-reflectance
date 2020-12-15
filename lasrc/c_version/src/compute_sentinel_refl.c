@@ -11,7 +11,7 @@ LICENSE TYPE:  NASA Open Source Agreement Version 1.3
 
 NOTES:
 ******************************************************************************/
-//#define USE_GCTP 1
+#define USE_GCTP 1
 /* GAIL uncomment to use the GCTP library */
 
 #include "lasrc.h"
@@ -653,8 +653,8 @@ int compute_sentinel_sr_refl
         if (is_fill)
         {
             qaband[i] |= (1 << ESPA_L1_DESIGNATED_FILL_BIT);
-            sband[ib][i] = FILL_VALUE;
-            ipflag[i] = (1 << IPFLAG_FILL);
+            for (ib = 0; ib <= SRS_BAND12; ib++)
+                sband[ib][i] = FILL_VALUE;
         }
     }  /* for i */
 
@@ -723,7 +723,7 @@ int compute_sentinel_sr_refl
         {
             /* If this pixel is not fill then handle the atmospheric
                correction */
-            if (qaband[i] != 1)
+            if (!level1_qa_is_fill (qaband[i]))
             {
                 /* Apply the atmospheric corrections (ignoring the Rayleigh
                    scattering component and water vapor), and store the
@@ -843,7 +843,7 @@ int compute_sentinel_sr_refl
             for (j = 0; j < nsamps; j++, curr_pix++)
             {
                 /* If this pixel is fill, do not process */
-                if (qaband[curr_pix] == 1)
+                if (level1_qa_is_fill (qaband[i]))
                     continue;
 
                 /* Get the lat/long for the current pixel */
@@ -1046,7 +1046,10 @@ int compute_sentinel_sr_refl
         {
             /* If this pixel is fill */
             if (level1_qa_is_fill (qaband[curr_pix]))
+            {
+                ipflag[curr_pix] = (1 << IPFLAG_FILL);
                 continue;
+            }
 
             /* Get the lat/long for the current pixel (which may not be the
                center of the aerosol window), for the center of that pixel */
