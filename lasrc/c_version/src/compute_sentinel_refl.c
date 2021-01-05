@@ -11,7 +11,7 @@ LICENSE TYPE:  NASA Open Source Agreement Version 1.3
 
 NOTES:
 ******************************************************************************/
-#define USE_GCTP 1
+//#define USE_GCTP 1
 /* GAIL uncomment to use the GCTP library */
 
 #include "lasrc.h"
@@ -1456,11 +1456,9 @@ int compute_sentinel_sr_refl
             taero[curr_pix] = raot;
             corf = raot / xmus;
 
-/*** Is troatm[band7] carryover from L8?? This is a SWIR band for L8, but a
-     red edge band in S2.  Should we instead use Band 12? ***/
             /* Check the model residual.  Corf represents aerosol impact.
                Test the quality of the aerosol inversion. */
-            if (residual < (0.015 + 0.005 * corf + 0.10 * troatm[DNS_BAND7]))
+            if (residual < (0.015 + 0.005 * corf + 0.10 * troatm[DNS_BAND12]))
             {
                 /* Test if NIR band 8a makes sense. Use a NxN window average. */
                 iband = DNS_BAND8A;

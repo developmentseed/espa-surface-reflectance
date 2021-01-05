@@ -11,7 +11,7 @@ LICENSE TYPE:  NASA Open Source Agreement Version 1.3
 
 NOTES:
 ******************************************************************************/
-#define USE_GCTP 1
+//#define USE_GCTP 1
 /* GAIL uncomment to use the GCTP library */
 
 #include "time.h"
@@ -221,10 +221,6 @@ int init_sr_refl
     xcmg = (179.975 + center_lon) * 20.0;   /* vs / 0.05 */
     lcmg = (int) roundf (ycmg);
     scmg = (int) roundf (xcmg);
-printf ("DEBUG: Scene center info\n");
-printf ("   center_lat, center_lon: %f, %f\n", center_lat, center_lon);
-printf ("   ycmg, xcmg: %f, %f\n", ycmg, xcmg);
-printf ("   lcmg, scmg: %d, %d\n", lcmg, scmg);
 
     /* Handle the edges of the lat/long values in the CMG grid */
     if (lcmg < 0)

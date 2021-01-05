@@ -97,12 +97,19 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
    fill. This used to be masked as fill if any band is fill, but there are
    some pixels which have non-VISIBLE bands as a value of zero. These aren't
    technically fill pixels.
-4. ** TEMPORARY MAYBE: Modified the code to no longer expand the water pixels
+4. ** TEMPORARY: Modified the code to no longer expand the water pixels
    when expanding invalid aerosols. Still think these should be expanded, but
    for matching the fortran code this change was made.
-5. ** TEMPORARY MAYBE: Added the UTMtoDEG routine and plugged it into the
+5. ** TEMPORARY: Added the UTMtoDEG routine and plugged it into the
    application for processing.  The lat/long values are slightly different for
    GCTP and UTMtoDEG, but for matching the fortran code this change was made.
    S2 products. The GCTP and UTMtoDEG
 6. Fixed a bug in the L8 handling of the epsmin. xd should be stored as an
    integer and not a floating point value.
+7. Fixed a bug in the S2 FORTRAN code as well as the C code in the S2 residual
+   check. Previously Band 7 was used, which was a carry over from the L8
+   source code. The correction is to use Band 12 troatm. The band 7 troatm was
+   always a value of zero, since it was initialized to zero and never updated
+   or used. The valid troatm for band 12 is multiplied by 0.1 and therefore
+   should allow for larger residuals to be initially accepted as valid land
+   pixels.

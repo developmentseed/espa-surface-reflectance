@@ -1136,7 +1136,9 @@ c       eps=-1.
 
 c test if band5 makes sense
         corfb=1.
-        if (residual.lt.((0.015+0.005*corf+0.10*troatm(7))*corfb)) then
+c ESPA the troatm(7) is wrong.  We've changed it.
+c        if (residual.lt.((0.015+0.005*corf+0.10*troatm(7))*corfb)) then
+        if (residual.lt.((0.015+0.005*corf+0.10*troatm(13))*corfb)) then
         rotoa=0.
         iband=9
          do k=int((i-1)/6)*6+1,int((i-1)/6)*6+6
