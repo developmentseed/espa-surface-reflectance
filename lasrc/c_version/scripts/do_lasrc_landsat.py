@@ -54,7 +54,14 @@ class SurfaceReflectance():
     #      going to be grabbed from the command line, then it's assumed all
     #      the parameters will be pulled from the command line.
     #######################################################################
-    def runSr (self, xml_infile=None, process_sr=None, write_toa=False):
+
+    def runSr(
+        self,
+        xml_infile=None,
+        process_sr=None,
+        write_toa=False,
+        use_orig_aero_alg=False
+    ):
         # if no parameters were passed then get the info from the
         # command line
         if xml_infile == None:
@@ -76,6 +83,9 @@ class SurfaceReflectance():
             parser.add_option ("--write_toa", dest="write_toa", default=False,
                 action="store_true",
                 help="write the intermediate TOA reflectance products")
+            parser.add_option ("--use_orig_aero_alg", dest="use_orig_aero_alg", default=False,
+                action="store_true",
+                help="use historical aerosol retrieval")
             (options, args) = parser.parse_args()
     
             # XML input file
@@ -151,15 +161,18 @@ class SurfaceReflectance():
         # if any errors occur.
         process_sr_opt_str = '--process_sr=true '
         write_toa_opt_str = ''
+        use_orig_aero_alg_str = ''
 
         if process_sr == 'False':
             process_sr_opt_str = '--process_sr=false '
         if write_toa:
             write_toa_opt_str = '--write_toa '
+        if use_orig_aero_alg:
+            use_orig_aero_alg_str = '--use_orig_aero_alg '
 
         cmdstr = ('lasrc --xml={} --aux={} {}{}--verbose'
                   .format(xml_infile, aux_file, process_sr_opt_str,
-                          write_toa_opt_str))
+                          write_toa_opt_str, use_orig_aero_alg_str))
         msg = 'Executing lasrc command: {}'.format(cmdstr)
         logger.debug (msg)
         (exit_code, output) = subprocess.getstatusoutput (cmdstr)
