@@ -23,7 +23,7 @@ NOTES:
 #ifndef USE_GCTP
 #include "utmtodeg.h"
 #endif
-#define WRITE_TAERO 1
+//#define WRITE_TAERO 1
 
 /******************************************************************************
 MODULE:  read_sentinel_toa_refl
