@@ -117,7 +117,7 @@ def geturl(url, token=None, out=None):
 
     except subprocess.CalledProcessError as e:
         msg = ('curl GET error for URL (). {}:{}'
-               .format(url, e.message, e.output))
+               .format(url, e.output))
         logger.error(msg)
 
     return None
