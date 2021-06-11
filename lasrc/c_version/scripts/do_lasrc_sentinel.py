@@ -154,23 +154,21 @@ class SurfaceReflectance():
             write_toa_opt_str = '--write_toa '
         if use_orig_aero_alg:
             use_orig_aero_alg_str = '--use_orig_aero_alg '
-        cmdstr = ('lasrc --xml={} --aux={} {}{}--verbose'
-                  .format(xml_infile, aux_file,
-                          write_toa_opt_str, use_orig_aero_alg_str))
-        msg = 'Executing lasrc command: {}'.format(cmdstr)
-        logger.debug (msg)
-        (exit_code, output) = subprocess.getstatusoutput (cmdstr)
-        logger.info (output)
-        if exit_code != 0:
+        cmd = ['lasrc', f'--xml={xml_infile}', f'--aux={aux_file}',
+               f'{write_toa_opt_str}{use_orig_aero_alg_str}--verbose']
+        msg = 'Executing lasrc command: {}'.format(" ".join(cmd))
+        logger.debug(msg)
+        result = subprocess.run(cmd)
+        logger.info(result.stdout)
+        if result.returncode != 0:
             msg = 'Error running lasrc.  Processing will terminate.'
-            logger.error (msg)
-            os.chdir (mydir)
+            logger.error(msg)
+            os.chdir(mydir)
             return ERROR
-        
         # successful completion.  return to the original directory.
-        os.chdir (mydir)
+        os.chdir(mydir)
         msg = 'Completion of surface reflectance.'
-        logger.info (msg)
+        logger.info(msg)
         return SUCCESS
 
 ######end of SurfaceReflectance class######
