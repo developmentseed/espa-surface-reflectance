@@ -158,7 +158,7 @@ class MaskAngles():
         try:
             # Determine the name of the band 4 solar azimuth file and check if
             # it exists
-            solar_az_file = base_xml_file.replace('.xml', '_saa.img')
+            solar_az_file = base_xml_file.replace('.xml', '_SAA.img')
             if not os.path.isfile(solar_az_file):
                 logger.error('Band 4 solar azimuth file does not exist in the '
                              'XML directory. {}'.format(xml_dir))
@@ -166,7 +166,7 @@ class MaskAngles():
     
             # Determine the name of the band 4 solar zenith file and check if
             # it exists
-            solar_zen_file = base_xml_file.replace('.xml', '_sza.img')
+            solar_zen_file = base_xml_file.replace('.xml', '_SZA.img')
             if not os.path.isfile(solar_zen_file):
                 logger.error('Band 4 solar zenith file does not exist in the '
                              'XML directory. {}'.format(xml_dir))
@@ -174,7 +174,7 @@ class MaskAngles():
     
             # Determine the name of the band 4 sensor azimuth file and check if
             # it exists
-            sensor_az_file = base_xml_file.replace('.xml', '_vaa.img')
+            sensor_az_file = base_xml_file.replace('.xml', '_VAA.img')
             if not os.path.isfile(sensor_az_file):
                 logger.error('Band 4 sensor azimuth file does not exist in the '
                              'XML directory. {}'.format(xml_dir))
@@ -182,7 +182,7 @@ class MaskAngles():
     
             # Determine the name of the band 4 sensor zenith file and check if
             # it exists
-            sensor_zen_file = base_xml_file.replace('.xml', '_vza.img')
+            sensor_zen_file = base_xml_file.replace('.xml', '_VZA.img')
             if not os.path.isfile(sensor_zen_file):
                 logger.error('Band 4 sensor zenith file does not exist in the '
                              'XML directory. {}'.format(xml_dir))
@@ -190,7 +190,7 @@ class MaskAngles():
     
             # Determine the name of the Level-1 band quality file and check if
             # it exists
-            bqa_file = base_xml_file.replace('.xml', '_qa_pixel.img')
+            bqa_file = base_xml_file.replace('.xml', '_QA_PIXEL.img')
             if not os.path.isfile(bqa_file):
                 logger.error('Level-1 band quality file does not exist in the '
                              'XML directory. {}'.format(xml_dir))
