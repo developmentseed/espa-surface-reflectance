@@ -28,7 +28,7 @@ def test_getLadsData(makedirs, exists, listdir, downloadLads, fnmatch, run):
     listdir.return_value = ['afile']
     downloadLads.side_effect = [0, 0]
     fnmatch.side_effect = fnmatch_side_effect
-    run.return_value = subprocess.CompletedProcess(args=["none"], returncode=1)
+    run.side_effect = subprocess.CalledProcessError(returncode=1, cmd=["none"])
     updatelads.getLadsData("", 2021, True, "")
     assert run.call_count == 2
     run.reset_mock()

@@ -462,10 +462,10 @@ def getLadsData(auxdir, year, today, token):
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
         try:
-            output = subprocess.run(cmdstr)
+            output = subprocess.run(cmdstr, check=True)
             logger.info(output)
         except subprocess.CalledProcessError as e:
-            #  logger.error(e.output)
+            logger.error(e.output)
             msg = ('Error running combine_l8_aux_data for year {}, DOY {}'
                    .format(year, doy))
             logger.error(msg)
