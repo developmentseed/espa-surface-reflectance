@@ -1,34 +1,35 @@
 #!/usr/bin/env python
 
-from __future__ import (division, print_function, absolute_import, unicode_literals)
+from __future__ import (
+    division, print_function, absolute_import, unicode_literals
+)
 import sys
 import os
-import shutil
 import fnmatch
 import datetime
 import subprocess
-import re
-import time
-import subprocess
+import ssl
+from urllib.request import urlopen, Request, URLError, HTTPError
+from shutil import copyfileobj
 from optparse import OptionParser
-import requests
 import logging
-from config_utils import retrieve_cfg
-from api_interface import api_connect
 from io import StringIO
+
 
 # Global static variables
 ERROR = 1
 SUCCESS = 0
-START_YEAR = 2013      # quarterly processing will reprocess back to the
-                       # start year to make sure all data is up to date
-                       # Landsat 8 was launched on Feb. 11, 2013
+START_YEAR = 2013
+# quarterly processing will reprocess back to the
+# start year to make sure all data is up to date
+# Landsat 8 was launched on Feb. 11, 2013
 
-##NOTE: For non-ESPA environments, the TOKEN needs to be defined.  This is
-##the application token that is required for accessing the LAADS data
-##https://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/
+# NOTE: For non-ESPA environments, the TOKEN needs to be defined.  This is
+# the application token that is required for accessing the LAADS data
+# https://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/
 TOKEN = os.environ.get('LAADS_TOKEN', None)
-USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + sys.version.replace('\n','').replace('\r','')
+USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + \
+    sys.version.replace('\n', '').replace('\r', '')
 
 # Specify the base location for the LAADS data as well as the
 # correct subdirectories for each of the instrument-specific ozone
@@ -40,7 +41,8 @@ TERRA_CMG = '/archive/allData/6/MOD09CMG/'
 AQUA_CMA = '/archive/allData/6/MYD09CMA/'
 AQUA_CMG = '/archive/allData/6/MYD09CMG/'
 
-def isLeapYear (year):
+
+def isLeapYear(year):
     """
     Determines if the specified year is a leap year.
 
@@ -64,63 +66,25 @@ def isLeapYear (year):
 
 
 def geturl(url, token=None, out=None):
-    """
-    Pulls the file specified by URL.  If there is a problem with the
-    connection, then retry up to 5 times.
-
-    Args:
-      url: URL for the file to be downloaded
-      token: application token for the desired website
-      out: directory where the downloaded file will be written
-
-    Returns: None
-    """
-    # get the logger
     logger = logging.getLogger(__name__)
-
-    # get the headers for the application data download
-    headers = {'user-agent' : USERAGENT}
-    if not token is None:
+    headers = {'user-agent': USERAGENT}
+    if token:
         headers['Authorization'] = 'Bearer ' + token
-
-    # Use CURL to download the file
-    import subprocess
-    try:
-        # Setup CURL command using silent mode and change location if reported
-        args = ['curl', '--fail', '-sS', '-L', '--retry', '5',
-                '--retry-delay', '60', '--get', url]
-        for (k,v) in list(headers.items()):
-            args.extend(['-H', ': '.join([k, v])])
-        if out is None:
-            # python3's subprocess.check_output returns stdout as a
-            # byte string
-            result = subprocess.check_output(args)
-            return result.decode('utf-8') if isinstance(result, bytes) else result
-        else:
-            # download of the actual LAADS data product
-            retval = subprocess.call(args, stdout=out)
-
-            # make sure the download was successful or retry up to 5 more times
-            # and sleep in between
-            if retval:
-                retry_count = 1
-                while ((retry_count <= 5) and (retval)):
-                    time.sleep(60)
-                    logger.info('Retry {} of download for {}'
-                                .format(retry_count, url))
-                    retval = subprocess.call(args, stdout=out)
-                    retry_count += 1
-    
-                if retval:
-                    logger.warn('Unsuccessful download of {} (retried 5 times)'
-                                .format(url))
-
-    except subprocess.CalledProcessError as e:
-        msg = ('curl GET error for URL (). {}:{}'
-               .format(url, e.output))
-        logger.error(msg)
-
-    return None
+        CTX = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        fh = urlopen(Request(url, headers=headers), context=CTX)
+        try:
+            if out is None:
+                return fh.read().decode('utf-8')
+            else:
+                copyfileobj(fh, out)
+        except HTTPError as e:
+            msg = f'Downloading {url} failed with {e.code} due to {e.reason}'
+            logger.error(msg)
+            if e.code >= 500:
+                raise e
+        except URLError as e:
+            msg = f'Downloading {url} failed due to {e.reason}'
+            logger.error(msg)
 
 
 def buildURLs(year, doy):
@@ -159,7 +123,7 @@ def buildURLs(year, doy):
     return urlList
 
 
-def downloadLads (year, doy, destination, token=None):
+def downloadLads(year, doy, destination, token=None):
     """
     Retrieves the files for the specified year and DOY from the LAADS https
     interface and download to the desired destination.  If the destination
@@ -216,7 +180,12 @@ def downloadLads (year, doy, destination, token=None):
         # get a listing of files in this URL
         try:
             import csv
-            files = [f for f in csv.DictReader(StringIO(geturl('%s.csv' % url, token)), skipinitialspace=True)]
+            files = [
+                f for f in csv.DictReader(
+                    StringIO(geturl('%s.csv' % url, token)),
+                    skipinitialspace=True
+                )
+            ]
         except ImportError:
             import json
             files = json.loads(geturl(url + '.json', token))
@@ -252,12 +221,11 @@ def downloadLads (year, doy, destination, token=None):
     return SUCCESS
 
 
-def getLadsData (auxdir, year, today, token):
+def getLadsData(auxdir, year, today, token):
     """
     Description: getLadsData downloads the daily MODIS Aqua/Terra CMG and CMA
     data files for the desired year, then combines those files into one daily
     product containing the various ozone, water vapor, temperature, etc. SDSs.
-    
     Args:
       auxdir: name of the base L8_SR auxiliary directory which contains the
               LAADS directory
@@ -292,8 +260,8 @@ def getLadsData (auxdir, year, today, token):
         if day_of_year <= 0:
             return SUCCESS
     else:
-        if isLeapYear (year) == True:
-            day_of_year = 366   
+        if isLeapYear(year) is True:
+            day_of_year = 366
         else:
             day_of_year = 365
 
@@ -312,31 +280,29 @@ def getLadsData (auxdir, year, today, token):
         # --quarterly, we will completely reprocess.
         skip_date = False
         for myfile in os.listdir(outputDir):
-            if fnmatch.fnmatch (myfile, 'L8ANC' + datestr + '.hdf_fused') \
-                and today:
+            if fnmatch.fnmatch(myfile, 'L8ANC' + datestr + '.hdf_fused') \
+                    and today:
                 msg = 'L8ANC{}.hdf_fused already exists. Skip.'.format(datestr)
                 logger.info(msg)
                 skip_date = True
                 break
-
         if skip_date:
             continue
-
         # download the daily LAADS files for the specified year and DOY
         found_mod09cma = True
         found_mod09cmg = True
         found_myd09cma = True
         found_myd09cmg = True
-        status = downloadLads (year, doy, dloaddir, token)
+        status = downloadLads(year, doy, dloaddir, token)
         if status == ERROR:
-            # warning message already printed
-            return ERROR
+            # If download fails continue processing previous days
+            continue
 
         # get the Terra CMA file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MOD09CMA.A' + datestr + '*.hdf'):
-                fileList.append (myfile)
+            if fnmatch.fnmatch(myfile, 'MOD09CMA.A' + datestr + '*.hdf'):
+                fileList.append(myfile)
 
         # make sure files were found or print a warning
         nfiles = len(fileList)
@@ -357,7 +323,7 @@ def getLadsData (auxdir, year, today, token):
         # get the Terra CMG file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MOD09CMG.A' + datestr + '*.hdf'):
+            if fnmatch.fnmatch(myfile, 'MOD09CMG.A' + datestr + '*.hdf'):
                 fileList.append(myfile)
 
         # make sure files were found or print a warning
@@ -379,7 +345,7 @@ def getLadsData (auxdir, year, today, token):
         # get the Aqua CMA file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MYD09CMA.A' + datestr + '*.hdf'):
+            if fnmatch.fnmatch(myfile, 'MYD09CMA.A' + datestr + '*.hdf'):
                 fileList.append(myfile)
 
         # make sure files were found or print a warning
@@ -401,7 +367,7 @@ def getLadsData (auxdir, year, today, token):
         # get the Aqua CMG file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MYD09CMG.A' + datestr + '*.hdf'):
+            if fnmatch.fnmatch(myfile, 'MYD09CMG.A' + datestr + '*.hdf'):
                 fileList.append(myfile)
 
         # make sure files were found or print a warning
@@ -459,17 +425,16 @@ def getLadsData (auxdir, year, today, token):
                           aqua_cmg_cmdline, aqua_cma_cmdline, outputDir))
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
-
-        (status, output) = subprocess.getstatusoutput (cmdstr)
-        logger.info(output)
-        exit_code = status >> 8
-        if exit_code != 0:
+        try:
+            output = subprocess.run(cmdstr, check=True)
+            logger.info(output)
+        except subprocess.CalledProcessError as e:
+            logger.error(e.output)
             msg = ('Error running combine_l8_aux_data for year {}, DOY {}'
                    .format(year, doy))
             logger.error(msg)
-            return ERROR
+            continue
     # end for doy
-
     # remove the files downloaded to the temporary directory
     msg = 'Removing downloaded files from {}'.format(dloaddir)
     logger.info(msg)
@@ -508,22 +473,24 @@ def getLadsData (auxdir, year, today, token):
 #    year and DOY, but only if the downloaded auxiliary data exists for that
 #    date.
 ############################################################################
-def main ():
+def main():
     logger = logging.getLogger(__name__)  # Get logger for the module.
 
     # get the command line arguments
     parser = OptionParser()
-    parser.add_option ('-s', '--start_year', type='int', dest='syear',
-        default=0, help='year for which to start pulling LAADS data')
-    parser.add_option ('-e', '--end_year', type='int', dest='eyear',
-        default=0, help='last year for which to pull LAADS data')
-    parser.add_option ('--today', dest='today', default=False,
-        action='store_true',
-        help='process LAADS data up through the most recent year and DOY')
+    parser.add_option('-s', '--start_year', type='int', dest='syear',
+                      default=0,
+                      help='year for which to start pulling LAADS data')
+    parser.add_option('-e', '--end_year', type='int', dest='eyear',
+                      default=0,
+                      help='last year for which to pull LAADS data')
+    parser.add_option('--today', dest='today', default=False,
+                      action='store_true',
+                      help='process LAADS through most recent year and DOY')
     msg = ('process or reprocess all LAADS data from today back to {}'
            .format(START_YEAR))
-    parser.add_option ('--quarterly', dest='quarterly', default=False,
-        action='store_true', help=msg)
+    parser.add_option('--quarterly', dest='quarterly', default=False,
+                      action='store_true', help=msg)
 
     (options, args) = parser.parse_args()
     syear = options.syear           # starting year
@@ -532,10 +499,10 @@ def main ():
     quarterly = options.quarterly   # process today back to START_YEAR
 
     # check the arguments
-    if (today == False) and (quarterly == False) and \
+    if (today is False) and (quarterly is False) and \
        (syear == 0 or eyear == 0):
         msg = ('Invalid command line argument combination.  Type --help '
-              'for more information.')
+               'for more information.')
         logger.error(msg)
         return ERROR
 
@@ -553,6 +520,8 @@ def main ():
         # Read ~/.usgs/espa/processing.conf to get the URL for the ESPA API.
         # Connect to the ESPA API and get the application token for downloading
         # the LAADS data from the internal database.
+        from config_utils import retrieve_cfg
+        from api_interface import api_connect
         PROC_CFG_FILENAME = 'processing.conf'
         proc_cfg = retrieve_cfg(PROC_CFG_FILENAME)
         rpcurl = proc_cfg.get('processing', 'espa_api')
@@ -566,8 +535,7 @@ def main ():
 
     if token is None:
         logger.error('Application token is None. This needs to be a valid '
-            'token provided for accessing the LAADS data. '
-            'https://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/')
+                     'token provided for accessing the LAADS data. ')
         return ERROR
 
     # if processing today then process the current year.  if the current
@@ -606,6 +574,7 @@ def main ():
     logger.info(msg)
     return SUCCESS
 
+
 if __name__ == "__main__":
     # setup the default logger format and level. log to STDOUT.
     logging.basicConfig(format=('%(asctime)s.%(msecs)03d %(process)d'
@@ -614,4 +583,4 @@ if __name__ == "__main__":
                                 '%(funcName)s -- %(message)s'),
                         datefmt='%Y-%m-%d %H:%M:%S',
                         level=logging.INFO)
-    sys.exit (main())
+    sys.exit(main())
