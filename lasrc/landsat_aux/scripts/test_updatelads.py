@@ -1,8 +1,10 @@
 import pytest
 import subprocess
+import io
 from freezegun import freeze_time
 from . import updatelads
 from unittest.mock import patch
+from urllib.request import HTTPError
 
 
 def fnmatch_side_effect(filename, pattern):
@@ -42,3 +44,14 @@ def test_getLadsData(makedirs, exists, listdir, downloadLads, fnmatch, run):
     updatelads.getLadsData("", 2021, True, "")
     assert run.call_count == 1
     run.reset_mock()
+
+
+@patch.object(updatelads, "copyfileobj")
+@patch.object(updatelads, "urlopen")
+@patch.object(updatelads, "Request")
+def test_geturls(request, urlopen, copyfileobj):
+    # Bubble exception for 500 errors if there is a system issue with the
+    # LAADS server or our tokens.
+    copyfileobj.side_effect = HTTPError("", 500, "failure", {}, None)
+    with pytest.raises(HTTPError):
+        updatelads.geturl("test", token="wat", out="fh")

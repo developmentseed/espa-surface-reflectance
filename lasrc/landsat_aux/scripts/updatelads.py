@@ -8,10 +8,13 @@ import os
 import fnmatch
 import datetime
 import subprocess
-import time
+import ssl
+from urllib.request import urlopen, Request, URLError, HTTPError
+from shutil import copyfileobj
 from optparse import OptionParser
 import logging
 from io import StringIO
+
 
 # Global static variables
 ERROR = 1
@@ -63,64 +66,25 @@ def isLeapYear(year):
 
 
 def geturl(url, token=None, out=None):
-    """
-    Pulls the file specified by URL.  If there is a problem with the
-    connection, then retry up to 5 times.
-
-    Args:
-      url: URL for the file to be downloaded
-      token: application token for the desired website
-      out: directory where the downloaded file will be written
-
-    Returns: None
-    """
-    # get the logger
     logger = logging.getLogger(__name__)
-
-    # get the headers for the application data download
     headers = {'user-agent': USERAGENT}
     if token:
         headers['Authorization'] = 'Bearer ' + token
-
-    # Use CURL to download the file
-    import subprocess
-    try:
-        # Setup CURL command using silent mode and change location if reported
-        args = ['curl', '--fail', '-sS', '-L', '--retry', '5',
-                '--retry-delay', '60', '--get', url]
-        for (k, v) in list(headers.items()):
-            args.extend(['-H', ': '.join([k, v])])
-        if out is None:
-            # python3's subprocess.check_output returns stdout as a
-            # byte string
-            result = subprocess.check_output(args)
-            return (
-                result.decode('utf-8') if isinstance(result, bytes) else result
-            )
-        else:
-            # download of the actual LAADS data product
-            retval = subprocess.call(args, stdout=out)
-
-            # make sure the download was successful or retry up to 5 more times
-            # and sleep in between
-            if retval:
-                retry_count = 1
-                while ((retry_count <= 5) and (retval)):
-                    time.sleep(60)
-                    logger.info('Retry {} of download for {}'
-                                .format(retry_count, url))
-                    retval = subprocess.call(args, stdout=out)
-                    retry_count += 1
-                if retval:
-                    logger.warn('Unsuccessful download of {} (retried 5 times)'
-                                .format(url))
-
-    except subprocess.CalledProcessError as e:
-        msg = ('curl GET error for URL (). {}:{}'
-               .format(url, e.output))
-        logger.error(msg)
-
-    return None
+        CTX = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        fh = urlopen(Request(url, headers=headers), context=CTX)
+        try:
+            if out is None:
+                return fh.read().decode('utf-8')
+            else:
+                copyfileobj(fh, out)
+        except HTTPError as e:
+            msg = f'Downloading {url} failed with {e.code} due to {e.reason}'
+            logger.error(msg)
+            if e.code >= 500:
+                raise e
+        except URLError as e:
+            msg = f'Downloading {url} failed due to {e.reason}'
+            logger.error(msg)
 
 
 def buildURLs(year, doy):
@@ -470,15 +434,7 @@ def getLadsData(auxdir, year, today, token):
                    .format(year, doy))
             logger.error(msg)
             continue
-
-        #  exit_code = status >> 8
-        #  if exit_code != 0:
-            #  msg = ('Error running combine_l8_aux_data for year {}, DOY {}'
-                   #  .format(year, doy))
-            #  logger.error(msg)
-            #  return ERROR
     # end for doy
-
     # remove the files downloaded to the temporary directory
     msg = 'Removing downloaded files from {}'.format(dloaddir)
     logger.info(msg)
