@@ -11,8 +11,6 @@ import subprocess
 import time
 from optparse import OptionParser
 import logging
-from config_utils import retrieve_cfg
-from api_interface import api_connect
 from io import StringIO
 
 # Global static variables
@@ -324,10 +322,8 @@ def getLadsData(auxdir, year, today, token):
                 logger.info(msg)
                 skip_date = True
                 break
-
         if skip_date:
             continue
-
         # download the daily LAADS files for the specified year and DOY
         found_mod09cma = True
         found_mod09cmg = True
@@ -335,8 +331,8 @@ def getLadsData(auxdir, year, today, token):
         found_myd09cmg = True
         status = downloadLads(year, doy, dloaddir, token)
         if status == ERROR:
-            # warning message already printed
-            return ERROR
+            # If download fails continue processing previous days
+            continue
 
         # get the Terra CMA file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
@@ -465,15 +461,22 @@ def getLadsData(auxdir, year, today, token):
                           aqua_cmg_cmdline, aqua_cma_cmdline, outputDir))
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
-
-        (status, output) = subprocess.getstatusoutput(cmdstr)
-        logger.info(output)
-        exit_code = status >> 8
-        if exit_code != 0:
+        try:
+            output = subprocess.run(cmdstr)
+            logger.info(output)
+        except subprocess.CalledProcessError as e:
+            #  logger.error(e.output)
             msg = ('Error running combine_l8_aux_data for year {}, DOY {}'
                    .format(year, doy))
             logger.error(msg)
-            return ERROR
+            continue
+
+        #  exit_code = status >> 8
+        #  if exit_code != 0:
+            #  msg = ('Error running combine_l8_aux_data for year {}, DOY {}'
+                   #  .format(year, doy))
+            #  logger.error(msg)
+            #  return ERROR
     # end for doy
 
     # remove the files downloaded to the temporary directory
@@ -561,6 +564,8 @@ def main():
         # Read ~/.usgs/espa/processing.conf to get the URL for the ESPA API.
         # Connect to the ESPA API and get the application token for downloading
         # the LAADS data from the internal database.
+        from config_utils import retrieve_cfg
+        from api_interface import api_connect
         PROC_CFG_FILENAME = 'processing.conf'
         proc_cfg = retrieve_cfg(PROC_CFG_FILENAME)
         rpcurl = proc_cfg.get('processing', 'espa_api')
