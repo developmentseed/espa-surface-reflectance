@@ -105,19 +105,19 @@ def buildURLs(year, doy):
     urlList = []     # create empty URL list
 
     # append TERRA CMA data (MOD09CMA)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, TERRA_CMA, year, doy))
+    url = ('{}{}{}/{:03d}'.format(SERVER_URL, TERRA_CMA, year, doy))
     urlList.append(url)
 
     # append TERRA CMG data (MOD09CMG)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, TERRA_CMG, year, doy))
+    url = ('{}{}{}/{:03d}'.format(SERVER_URL, TERRA_CMG, year, doy))
     urlList.append(url)
 
     # append AQUA CMA data (MYD09CMA)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, AQUA_CMA, year, doy))
+    url = ('{}{}{}/{:03d}'.format(SERVER_URL, AQUA_CMA, year, doy))
     urlList.append(url)
 
     # append AQUA CMG data (MYD09CMG)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, AQUA_CMG, year, doy))
+    url = ('{}{}{}/{:03d}'.format(SERVER_URL, AQUA_CMG, year, doy))
     urlList.append(url)
 
     return urlList
@@ -426,7 +426,7 @@ def getLadsData(auxdir, year, today, token):
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
         try:
-            output = subprocess.run(cmdstr, check=True)
+            output = subprocess.run(cmdstr, check=True, shell=True)
             logger.info(output)
         except subprocess.CalledProcessError as e:
             logger.error(e.output)
