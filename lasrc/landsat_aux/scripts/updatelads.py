@@ -110,7 +110,7 @@ def geturl(url, token=None, out=None):
                                 .format(retry_count, url))
                     retval = subprocess.call(args, stdout=out)
                     retry_count += 1
-    
+
                 if retval:
                     logger.warn('Unsuccessful download of {} (retried 5 times)'
                                 .format(url))
@@ -206,49 +206,35 @@ def downloadLads (year, doy, destination, token=None):
         logger.error(msg)
         return ERROR
 
-    # download the data for the current year from the list of URLs.
+    # download all the files from the list of URLs.
     msg = 'Downloading data for {}/{} to {}'.format(year, doy, destination)
     logger.info(msg)
     for url in urlList:
         msg = 'Retrieving {} to {}'.format(url, destination)
-        logger.info(msg)
+        cmd = ('wget -e robots=off -m -np -R .html,.tmp --no-directories '
+               '--header \"Authorization: Bearer {}\" -P {} \"{}\"'
+               .format(token, destination, url))
+        retval = subprocess.call(cmd, shell=True, cwd=destination)
+    
+        # make sure the wget was successful or retry up to 5 more times and
+        # sleep in between
+        if retval:
+            retry_count = 1
+            while ((retry_count <= 5) and (retval)):
+                time.sleep(60)
+                logger.info('Retry {0} of wget for {1}'
+                            .format(retry_count, url))
+                retval = subprocess.call(cmd, shell=True, cwd=destination)
+                retry_count += 1
+    
+            if retval:
+                logger.info('unsuccessful download of {0} (retried 5 times)'
+                            .format(url))
 
-        # get a listing of files in this URL
-        try:
-            import csv
-            files = [f for f in csv.DictReader(StringIO(geturl('%s.csv' % url, token)), skipinitialspace=True)]
-        except ImportError:
-            import json
-            files = json.loads(geturl(url + '.json', token))
-
-        # log a warning if no files were found
-        if len(files) == 0:
-            msg = 'No files were found in {}. Continue processing.'.format(url)
-            logger.warn(msg)
-            continue
-
-        # loop through the file listing and download the files. skip any
-        # directories, which technically shouldn't even exist.
-        for f in files:
-            # currently we use filesize of 0 to indicate directory, and there
-            # should only be files in this path
-            filesize = int(f['size'])
-            path = os.path.join(destination, f['name'])
-            url = url + '/' + f['name']
-            if filesize != 0:
-                try:
-                    if not os.path.exists(path):
-                        logger.debug('downloading: {}'.format(path))
-                        with open(path, 'w+b') as fh:
-                            geturl(url, token, fh)
-                    else:
-                        logger.warn('Skipping: {}'.format(path))
-
-                except IOError as e:
-                    msg = 'Open {}: {}'.format(e.filename, e.strerror)
-                    logger.warn(msg)
-                    return ERROR
-
+        # make sure the index.html file was removed if it was downloaded
+        index_file = '{}/index.html'.format(destination)
+        del index_file
+    
     return SUCCESS
 
 
