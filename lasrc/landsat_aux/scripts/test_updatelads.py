@@ -46,12 +46,14 @@ def test_getLadsData(makedirs, exists, listdir, downloadLads, fnmatch, run):
     run.reset_mock()
 
 
-@patch.object(updatelads, "copyfileobj")
 @patch.object(updatelads, "urlopen")
 @patch.object(updatelads, "Request")
-def test_geturls(request, urlopen, copyfileobj):
+def test_geturls(request, urlopen):
     # Bubble exception for 500 errors if there is a system issue with the
     # LAADS server or our tokens.
-    copyfileobj.side_effect = HTTPError("", 500, "failure", {}, None)
+    urlopen.side_effect = HTTPError("", 500, "failure", {}, None)
     with pytest.raises(HTTPError):
         updatelads.geturl("test", token="wat", out="fh")
+
+    urlopen.side_effect = HTTPError("", 404, "Bad Request", {}, None)
+    updatelads.geturl("test", token="wat", out="fh")

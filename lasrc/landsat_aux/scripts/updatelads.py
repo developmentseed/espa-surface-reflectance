@@ -71,8 +71,8 @@ def geturl(url, token=None, out=None):
     if token:
         headers['Authorization'] = 'Bearer ' + token
         CTX = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        fh = urlopen(Request(url, headers=headers), context=CTX)
         try:
+            fh = urlopen(Request(url, headers=headers), context=CTX)
             if out is None:
                 return fh.read().decode('utf-8')
             else:
