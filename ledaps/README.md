@@ -1,5 +1,5 @@
-## Ledaps Version 4.0.0 Release Notes
-Release Date: October 2020
+## Ledaps Version 5.0.0 Release Notes
+Release Date: July 2021
 
 ### Downloads
 Ledaps source code
@@ -10,7 +10,7 @@ Ledaps auxiliary files
 
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/ledaps_auxiliary/ledaps_aux.1978-2017.tar.gz
 
-See git tag [ledaps-v4.0.0]
+See git tag [ledaps-version_5.0.0]
 
 ### Installation
   * Install dependent projects and libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git) and ESPA python library (https://eroslab.cr.usgs.gov/lsrd/espa-python-library.git)
@@ -94,3 +94,10 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 
 ## Release Notes
   1. Converted the scripts to utilize Python 3, since Python 2.x is obsolete.
+  2. Modified the source code to support Collection 2.
+  3. Added some processing efficiencies.
+  4. Implemented the AOT fix.
+  5. Modified the brightness temperature processing to use a combination of
+     bands 6L and 6H for ETM+, based on high and low saturation.
+  6. Modified to utilize the Level-1 RADSAT band from Collection 2 as input
+     for saturated pixels in lndsr.

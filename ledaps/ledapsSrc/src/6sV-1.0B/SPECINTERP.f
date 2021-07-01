@@ -54,33 +54,32 @@ c - to vary the number of quadratures
         alphaa=alog(phasel(lsup,k)/phasel(linf,k))/coef
         betaa=phasel(linf,k)/(wlinf**(alphaa))
         pha(k)=betaa*(wl**alphaa)
-	if (ipol.ne.0)then
-	
-	  test1=qhasel(linf,k)
-	  test2=qhasel(lsup,k)
-	  test3=qhasel(lsup,k)*qhasel(linf,k)
-        if((test1.lt.0.001).or.(test2.lt.0.001)
-     s            .or.(test3.lt.0.0)) then
-	  qha(k)=qhasel(linf,k)+(qhasel(lsup,k)-qhasel(linf,k))*coefl
-	  else
-          alphaa=alog(qhasel(lsup,k)/qhasel(linf,k))/coef
-          betaa=qhasel(linf,k)/(wlinf**(alphaa))
-          qha(k)=betaa*(wl**alphaa)
-	  endif
-	  
-	  test1=uhasel(linf,k)
-	  test2=uhasel(lsup,k)
-	  test3=uhasel(lsup,k)*qhasel(linf,k)
-        if((test1.lt.0.001).or.(test2.lt.0.001)
-     s            .or.(test3.lt.0.0)) then
-	  uha(k)=uhasel(linf,k)+(uhasel(lsup,k)-uhasel(linf,k))*coefl
-	  else
-          alphaa=alog(uhasel(lsup,k)/uhasel(linf,k))/coef
-          betaa=uhasel(linf,k)/(wlinf**(alphaa))
-          uha(k)=betaa*(wl**alphaa)
-	  endif
-	endif  
-	
+        if (ipol.ne.0)then
+          test1=qhasel(linf,k)
+          test2=qhasel(lsup,k)
+          test3=qhasel(lsup,k)*qhasel(linf,k)
+          if((test1.lt.0.001).or.(test2.lt.0.001)
+     s       .or.(test3.lt.0.0)) then
+            qha(k)=qhasel(linf,k)+(qhasel(lsup,k)-qhasel(linf,k))*coefl
+          else
+            alphaa=alog(qhasel(lsup,k)/qhasel(linf,k))/coef
+            betaa=qhasel(linf,k)/(wlinf**(alphaa))
+            qha(k)=betaa*(wl**alphaa)
+          endif
+
+          test1=uhasel(linf,k)
+          test2=uhasel(lsup,k)
+          test3=uhasel(lsup,k)*qhasel(linf,k)
+          if((test1.lt.0.001).or.(test2.lt.0.001)
+     s       .or.(test3.lt.0.0)) then
+            uha(k)=uhasel(linf,k)+(uhasel(lsup,k)-uhasel(linf,k))*coefl
+          else
+            alphaa=alog(uhasel(lsup,k)/uhasel(linf,k))/coef
+            betaa=uhasel(linf,k)/(wlinf**(alphaa))
+            uha(k)=betaa*(wl**alphaa)
+          endif
+        endif  
+
  81     continue
 c here we don't need coefficients for computation of the polarization
       ipol0=0

@@ -109,14 +109,14 @@ typedef struct {
 InputPrwv_t *OpenInputPrwv(char *file_name);
 bool GetInputPrwv(InputPrwv_t *this, int iband, float *read_buffer);
 bool CloseInputPrwv(InputPrwv_t *this);
-bool FreeInputPrwv(InputPrwv_t *this);
+void FreeInputPrwv(InputPrwv_t *this);
 bool GetInputPrwvMeta(InputPrwv_t *this);
 int get_prwv_anc(t_ncep_ancillary *anc,InputPrwv_t *this, float *data, int index);
 
 InputOzon_t *OpenInputOzon(char *file_name);
 bool GetInputOzon(InputOzon_t *this, int iband, int *read_buffer);
 bool CloseInputOzon(InputOzon_t *this);
-bool FreeInputOzon(InputOzon_t *this);
+void FreeInputOzon(InputOzon_t *this);
 bool GetInputOzonMeta(InputOzon_t *this);
 int get_ozon_anc(t_ncep_ancillary *anc,InputOzon_t *this, int*data, int index);
 

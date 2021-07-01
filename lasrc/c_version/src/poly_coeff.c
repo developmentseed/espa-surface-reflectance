@@ -1,5 +1,89 @@
 #include "poly_coeff.h"
 
+/* LU decomposition functions, taken from the Wikipedia page for
+   LU decomposition */
+
+/* INPUT: A - array of pointers to rows of a square matrix having dimension N
+          Tol - small tolerance number to detect failure when the matrix is
+                near degenerate
+   OUTPUT: Matrix A is changed, it contains both matrices L-E and U as
+           A=(L-E)+U such that P*A=L*U.
+           The permutation matrix is not stored as a matrix, but in an
+           integer vector P of size N containing column indexes where the
+           permutation matrix has "1". */
+static int LUPDecompose(float **a, int n, float tol, int *p)
+{
+    int i, j, k, imax;
+    float maxa, *ptr, absa;
+
+    for (i = 0; i < n; i++)
+        p[i] = i; // Unit permutation matrix, p[n] initialized with n
+
+    for (i = 0; i < n; i++)
+    {
+        maxa = 0;
+        imax = i;
+
+        for (k = i; k < n; k++)
+            if ((absa = fabs(a[k][i])) > maxa)
+            {
+                maxa = absa;
+                imax = k;
+            }
+
+        if (maxa < tol)
+            return 0;   //failure, matrix is degenerate
+
+        if (imax != i)
+        {
+            //pivoting p
+            j = p[i];
+            p[i] = p[imax];
+            p[imax] = j;
+
+            //pivoting rows of a
+            ptr = a[i];
+            a[i] = a[imax];
+            a[imax] = ptr;
+        }
+
+        for (j = i + 1; j < n; j++)
+        {
+            a[j][i] /= a[i][i];
+
+            for (k = i + 1; k < n; k++)
+                a[j][k] -= a[j][i]*a[i][k];
+        }
+    }
+
+    return 1;  //decomposition done
+}
+
+/* INPUT: A,P filled in LUPDecompose; b - rhs vector; N - dimension
+ * OUTPUT: x - solution vector of A*x=b
+ */
+static void LUPSolve(float **a, int *p, float *b, int n, float *x)
+{
+    int i, j;
+
+    for (i = 0; i < n; i++)
+    {
+        x[i] = b[p[i]];
+
+        for (j = 0; j < i; j++)
+            x[i] -= a[i][j]*x[j];
+    }
+
+    for (i = n - 1; i >= 0; i--)
+    {
+        for (j = i + 1; j < n; j++)
+            x[i] -= a[i][j]*x[j];
+
+        x[i] = x[i]/a[i][i];
+    }
+}
+
+
 /*****************************************************************
 MODULE:   get_3rd_order_poly_coeff
 *****************************************************************/
@@ -13,9 +97,11 @@ void get_3rd_order_poly_coeff
 {
     float y1[NCOEF] = {0.0, 0.0, 0.0, 0.0};
     float x[NAOT_VALS][NCOEF];
-    float z[NCOEF][NCOEF], z1[NCOEF*NCOEF], zinv[NCOEF][NCOEF], zinv1[16];
+    float z[NCOEF][NCOEF];
+    float *zptr[NCOEF];
     int i,j,k;
-  
+    int p[4];  /* permutation vector */
+
     for (i=0; i<nAtm; i++)
     {
         x[i][0] = aot[i] * aot[i] * aot[i];
@@ -25,91 +111,21 @@ void get_3rd_order_poly_coeff
     }
   
     for (i=0; i<NCOEF; i++)
+    {
         for (j=0; j<NCOEF; j++)
         {
            z[i][j] = 0.0;
            for (k=0; k<nAtm; k++)
                z[i][j] += x[k][i] * x[k][j];
-           z1[NCOEF*i + j] = z[i][j];
         }
-  
-    inverseMatrix4x4 (z1, zinv1);
-  
-    for (i=0; i<NCOEF; i++)
-        for (j=0; j<NCOEF; j++)
-            zinv[i][j] = zinv1[NCOEF*i + j];
-  
-    for (i=0; i<NCOEF; i++)
-        for (k=0; k<nAtm; k++)
-            y1[i] += x[k][i] * atm[k];
-  
-    for (i=0; i<NCOEF; i++)
-    {
-        coeff[i] = 0.0;
-        for (j=0; j<NCOEF; j++)
-            coeff[i] += zinv[i][j] * y1[j];
+
+        zptr[i] = z[i];
     }
-}
-
-
-/*****************************************************************
-MODULE:   invf
-*****************************************************************/
-float invf
-(
-    int i,
-    int j,
-    const float *m
-)
-{
-    int o = 2 + (j-i);
-    i += 4+o;
-    j += 4-o;
-  
-    #define e(a,b) m[ ((j+b)%4)*4 + ((i+a)%4) ]
-  
-    float inv =
-      e(+1,-1)*e(+0,+0)*e(-1,+1) +
-      e(+1,+1)*e(+0,-1)*e(-1,+0) +
-      e(-1,-1)*e(+1,+0)*e(+0,+1) -
-      e(-1,-1)*e(+0,+0)*e(+1,+1) -
-      e(-1,+1)*e(+0,-1)*e(+1,+0) -
-      e(+1,-1)*e(-1,+0)*e(+0,+1);
-  
-    return (o%2)?inv : -inv;
-  
-    #undef e
-}
-
-
-/*****************************************************************
-MODULE:   inverseMatrix4x4
-*****************************************************************/
-bool inverseMatrix4x4
-(
-    const float *m,
-    float *out
-)
-{
-    int i,j,k;
-    float inv[NCOEF*NCOEF];
-    float D = 0;
 
     for (i=0; i<NCOEF; i++)
-        for (j=0; j<NCOEF; j++)
-            inv[j*NCOEF+i] = invf(i,j,m);
-  
-    for (k=0; k<NCOEF; k++)
-        D += m[k] * inv[k*NCOEF];
-  
-    if (D == 0)
-        return false;
-  
-    D = 1.0 / D;
-  
-    for (i=0; i<NCOEF*NCOEF; i++)
-        out[i] = inv[i] * D;
-  
-    return true;
-}
+        for (j=0; j<nAtm; j++)
+            y1[i] += x[j][i] * atm[j];
 
+    LUPDecompose(zptr, NCOEF, 1e-10, p);
+    LUPSolve(zptr, p, y1, NCOEF, coeff);
+}

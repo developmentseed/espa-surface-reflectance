@@ -5,6 +5,7 @@
 #define min(A,B) (A>B?B:A)
 #define max(A,B) (A>B?A:B)
 
+#include <stdint.h>
 #include "mystring.h"
 #include "espa_metadata.h"
 #include "parse_metadata.h"
@@ -12,9 +13,6 @@
 #include "envi_header.h"
 
 #define NBAND_REFL_MAX (6)
-#define NBAND_QA       (1)
-#define NBAND_CAL_MAX (NBAND_REFL_MAX + NBAND_QA)
-#define QA_BAND_NUM (6)
 
 typedef signed short int16;
 typedef unsigned char uint8;
@@ -99,5 +97,16 @@ typedef struct {
   double max_lat;  /* Geodetic latitude coordinate (degrees) */ 
   bool is_fill;    /* Flag to indicate whether the point is a fill value; */
 } Geo_bounds_t;
+
+#define SCALE_FACTOR_REF     (0.0000275)
+#define SCALE_FACTOR_TH      (0.00341802)
+#define ADD_OFFSET_REF       (-0.2)
+#define ADD_OFFSET_TH        (149.0)
+
+/* data retreval functions*/
+double get_scale_refl();    /* scale for reflective bands */
+double get_offset_refl();   /* add offset for reflective bands */
+double get_scale_therm();   /* scale for thermal bands */
+double get_offset_therm();  /* add offset for thermal bands */
 
 #endif

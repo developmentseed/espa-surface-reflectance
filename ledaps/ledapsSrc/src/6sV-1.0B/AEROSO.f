@@ -14,7 +14,7 @@ c - to vary the number of quadratures
       real cosang(nqmax_p),weight(nqmax_p)
 c - to vary the number of quadratures
 
-      double precision cij(4),nis,sumni,ni(4)
+      double precision cij(4),nis,sumni
       real co(4),dd(4,20),qq(4,20),ci(4)
       real pha(5,20,nqmax_p),qha(5,20,nqmax_p),uha(5,20,nqmax_p)
       real sca(20),wldis(20),uu(4,20)
@@ -51,7 +51,7 @@ c      if(iaer.eq.0) return
           stop 'AEROSO.f: 6S processing error'
         endif
 
-	read (10,*) nbmu
+        read (10,*) nbmu
         read(10,*)
         do l=1,20
           read(10,'(10x,4(3x,f8.4,3x))')ext(l),sca(l),ome(l),gasym(l)
@@ -59,16 +59,16 @@ c      if(iaer.eq.0) return
         read(10,'(///)')
         do k=1,nbmu
           read(10,'(8x,20(1x,e10.4))')(phasel(l,k),l=1,20)
-        enddo   
-	if (ipol.ne.0)then
-	  do k=1,nbmu
- 	    read(10,'(8x,20(1x,e10.4))')(qhasel(l,k),l=1,20)
+        enddo
+        if (ipol.ne.0)then
+          do k=1,nbmu
+            read(10,'(8x,20(1x,e10.4))')(qhasel(l,k),l=1,20)
           enddo
-	  do k=1,nbmu
- 	    read(10,'(8x,20(1x,e10.4))')(uhasel(l,k),l=1,20)
+          do k=1,nbmu
+            read(10,'(8x,20(1x,e10.4))')(uhasel(l,k),l=1,20)
           enddo
-	endif
-	nquad=nbmu
+        endif
+        nquad=nbmu
         close(10)
       endif
       
@@ -105,12 +105,12 @@ c - calculation of gauss points
         do l=1,20
           phase(l)=phasel(l,j1)+coef*(phasel(l,j1)-phasel(l,j2))
         enddo
-	if (ipol.ne.0)then
+        if (ipol.ne.0)then
           do l=1,20
             qhase(l)=qhasel(l,j1)+coef*(qhasel(l,j1)-qhasel(l,j2))
             uhase(l)=uhasel(l,j1)+coef*(uhasel(l,j1)-uhasel(l,j2))
           enddo
-	endif
+        endif
         return
       endif
       
@@ -128,7 +128,7 @@ c - calculation of gauss points
         qhasel(l,k)=0.
         uhasel(l,k)=0.
     1 continue
- 
+
       do 2 j=1,4
        ci(j)=co(j)
     2 continue
@@ -149,7 +149,7 @@ c     (stratospherique aerosol model...)
 
 c     (user defined model from size distribution)
          if (iaer.ge.8.and.iaer.le.11) then
-	   call mie(iaer,wldis,ex,sc,asy,ipol)
+           call mie(iaer,wldis,ex,sc,asy,ipol)
          endif
 
          do l=1,20
@@ -158,16 +158,16 @@ c     (user defined model from size distribution)
              pha(1,l,k)=ph(l,k)
            enddo
          enddo
-	 if (ipol.ne.0)then
-	   do l=1,20
-	     qq(1,l)=qh(l,j1)+coef*(qh(l,j1)-qh(l,j2))
+         if (ipol.ne.0)then
+           do l=1,20
+             qq(1,l)=qh(l,j1)+coef*(qh(l,j1)-qh(l,j2))
              uu(1,l)=uh(l,j1)+coef*(uh(l,j1)-uh(l,j2))
              do k=1,nbmu
                qha(1,l,k)=qh(l,k)
                uha(1,l,k)=uh(l,k)
-	     enddo
+             enddo
            enddo
-	 endif
+         endif
          icp=1
          cij(1)=1.00
 c for normalization of the extinction coefficient
@@ -180,13 +180,13 @@ c calling each sra components
 c extrapolate each component for wavelength
 
       do l=1,20
-	  do j=1,4
- 	   ex(j,l)=0
-	   sc(j,l)=0. 
-	   asy(j,l)=0.
-	  enddo
-	  enddo
-   
+          do j=1,4
+           ex(j,l)=0
+           sc(j,l)=0. 
+           asy(j,l)=0.
+          enddo
+      enddo
+
 c  phase function of 4 components 
         do j=1,4
         if (j.eq.1) call dust
@@ -198,14 +198,14 @@ c  phase function of 4 components
            do k=1,nbmu
              pha(j,l,k)=ph(l,k)
            enddo
-	   if (ipol.ne.0)then
+           if (ipol.ne.0)then
              qq(j,l)=qh(l,j1)+coef*(qh(l,j1)-qh(l,j2))
              uu(j,l)=uh(l,j1)+coef*(uh(l,j1)-uh(l,j2))
              do k=1,nbmu
                qha(j,l,k)=qh(l,k)
                uha(j,l,k)=uh(l,k)
              enddo
-	   endif
+           endif
          enddo
       enddo 
 
@@ -236,14 +236,14 @@ c     mixing parameters calculation
           do 77 k=1,nbmu
             phasel(l,k)=sc(j,l)*cij(j)*pha(j,l,k)+phasel(l,k)
    77     continue
-	  if (ipol.ne.0)then
-	    qhase(l)=sc(j,l)*cij(j)*qq(j,l)+qhase(l)
-	    uhase(l)=sc(j,l)*cij(j)*uu(j,l)+uhase(l)
-	    do k=1,nbmu
-	      qhasel(l,k)=sc(j,l)*cij(j)*qha(j,l,k)+qhasel(l,k)
-	      uhasel(l,k)=sc(j,l)*cij(j)*uha(j,l,k)+uhasel(l,k)
-	    enddo
-	  endif
+          if (ipol.ne.0)then
+            qhase(l)=sc(j,l)*cij(j)*qq(j,l)+qhase(l)
+            uhase(l)=sc(j,l)*cij(j)*uu(j,l)+uhase(l)
+            do k=1,nbmu
+              qhasel(l,k)=sc(j,l)*cij(j)*qha(j,l,k)+qhasel(l,k)
+              uhasel(l,k)=sc(j,l)*cij(j)*uha(j,l,k)+uhasel(l,k)
+            enddo
+          endif
     6   continue
         ome(l)=sca(l)/ext(l)
         gasym(l)=gasym(l)/sca(l)
@@ -251,14 +251,14 @@ c     mixing parameters calculation
         do 78 k=1,nbmu
           phasel(l,k)=phasel(l,k)/sca(l)
    78   continue
-	if (ipol.ne.0)then
-	  qhase(l)=qhase(l)/sca(l)
-	  uhase(l)=uhase(l)/sca(l)
-	  do k=1,nbmu
+        if (ipol.ne.0)then
+          qhase(l)=qhase(l)/sca(l)
+          uhase(l)=uhase(l)/sca(l)
+          do k=1,nbmu
             qhasel(l,k)=qhasel(l,k)/sca(l)
             uhasel(l,k)=uhasel(l,k)/sca(l)
-	  enddo
-	endif
+          enddo
+        endif
         ext(l)=ext(l)*nis
         sca(l)=sca(l)*nis
     5 continue
@@ -271,7 +271,7 @@ c     mixing parameters calculation
           write(*,*) 'AEROSO.f: Current working directory: ', trim(cwd)
           stop 'AEROSO.f: 6S processing error'
         endif
-	write(10,*) nbmu
+        write(10,*) nbmu
         write(10,'(3x,A5,1x,5(1x,A10,1x),1x,A10)')'Wlgth','Nor_Ext_Co',
      s  'Nor_Sca_Co','Sg_Sca_Alb','Asymm_Para','Extinct_Co','Scatter_Co'
         do 79 l=1,20
@@ -284,14 +284,14 @@ c     mixing parameters calculation
           write(10,761)180.*acos(cgaus_S(k))/pi,(phasel(l,k),l=1,20)
  76     continue
  761    format (2x,f6.2,20(1x,e10.4))
-	if (ipol.ne.0)then
-	  do k=1,nbmu
+        if (ipol.ne.0)then
+          do k=1,nbmu
             write(10,761)180.*acos(cgaus_S(k))/pi,(qhasel(l,k),l=1,20)
-	  enddo
-	  do k=1,nbmu
+          enddo
+          do k=1,nbmu
             write(10,761)180.*acos(cgaus_S(k))/pi,(uhasel(l,k),l=1,20)
-	  enddo
-	endif
+          enddo
+        endif
         close(10)
       endif
       

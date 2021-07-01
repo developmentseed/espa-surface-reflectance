@@ -39,8 +39,9 @@ typedef struct {
 } t_ncep_ancillary;
 
 int read_grib_anc(t_ncep_ancillary *anc,int datatype);
-int interpol_spatial_anc(t_ncep_ancillary *anc,float lat, float lon,float *value);
-int free_anc_data(t_ncep_ancillary *anc);
+void interpol_spatial_anc(t_ncep_ancillary *anc, float lat, float lon,
+                          float *value);
+void free_anc_data(t_ncep_ancillary *anc);
 void print_anc_data(t_ncep_ancillary *anc, char* ancftype);
 
 #endif

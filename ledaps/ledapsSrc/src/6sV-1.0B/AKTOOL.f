@@ -53,8 +53,6 @@ c
 c
       call difr92
 c
-10    continue
-c
       rrl = rrls
       bq  = bi + bd
 c
@@ -640,7 +638,6 @@ c
       g   = (2.653d0*difmy + 1.432d0*difsig)*(sg  - .5d0) + .50072d0
       g1  = (2.653d0*difmy + 1.432d0*difsig)*(sg1 - .5d0) + .50072d0
 c
-49    continue
       return
 c
 c  ******************************    tl1 = 0.,  tl2=pi/2 - th1
@@ -1542,7 +1539,7 @@ c
       real albbrdf
       save /count/, /soildata/, /aaa/, /ggg/, /ladak/
 c
-      dimension uu(20), aa(20)
+      dimension uu(48), aa(48)
 c
       dimension u1(10), u2(10), a1(10), a2(10)
       common /count/ jl, jj, lg, jg, lf, nnx, n1, n2, u1, u2, a1, a2

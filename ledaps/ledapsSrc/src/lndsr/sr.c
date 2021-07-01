@@ -1,7 +1,9 @@
+#include <string.h>
 #include "sr.h"
 #include "ar.h"
 #include "const.h"
 #include "sixs_runs.h"
+#include "read_level1_qa.h"
 
 /* !Revision:
  *
@@ -12,79 +14,81 @@
  * - input saturated pixels are flagged as such and output as saturated
  */
 
-extern atmos_t atmos_coef;
-void SrInterpAtmCoef (Lut_t *lut, Img_coord_int_t *input_loc, atmos_t *atmos_coef, atmos_t *interpol_atmos_coef);
+void SrInterpAtmCoef(Lut_t *lut, double grid_line, double grid_sample,
+                     atmos_t *atmos_coef, atmos_t *interpol_atmos_coef);
 
 bool Sr
 (
     Lut_t *lut,           /* I: lookup table information */
     int nsamp,            /* I: number of samples to be processed */
     int il,               /* I: current line being processed */
-    int16 **line_in,      /* I: array of input lines, one for each band */
-    int16 **line_out,     /* O: array of output lines, one for each band */
+    atmos_t *atmos_coef,  /* I: atmospheric coefficients */
+    atmos_t *interpol_atmos_coef, /* I: storage space for interpolated
+                                        atmospheric coefficients */
+    uint16_t **line_in,   /* I: array of input lines, one for each band */
+    uint16_t *qa_line,    /* I: array of QA data for the current line */
+    uint16_t **line_out,  /* O: array of output lines, one for each band */
     Sr_stats_t *sr_stats  /* O: statistics for this line */
 )
 {
     int is;                   /* current sample in the line */
     int ib;                   /* current band for this pixel */
-    Img_coord_int_t loc;      /* line/sample location for current pix */
+    double grid_line, grid_sample; /* interpolation grid line and sample */
     float rho;                /* surface reflectance value */
-    float tmpflt;             /* temporary float value for corrections */
-    atmos_t interpol_atmos_coef; /* interpolated atmospheric coefficients,
-                                    based on the current line/sample location
-                                    in the aerosol data grid */
-
-    /* Allocate memory for the interpolated atmospheric coefficients and
-       start the location for the current line */
-    allocate_mem_atmos_coeff (1, &interpol_atmos_coef);
-    loc.l = il;
 
     /* loop through the samples in this line */
-    for (is = 0; is < nsamp; is++) {
-        loc.s = is;
+    grid_line = (double)il/lut->ar_region_size.l - 0.5;
+    double sample_step = 1./lut->ar_region_size.s;
+    for (is = 0, grid_sample = -0.5; is < nsamp;
+         is++, grid_sample += sample_step) {
 
         /* Interpolate the atmospheric coefficients for the current line/sample
            location */
         /* NAZMI 6/2/04 : correct even cloudy pixels */
-        SrInterpAtmCoef (lut, &loc, &atmos_coef, &interpol_atmos_coef);
+        SrInterpAtmCoef(lut, grid_line, grid_sample, atmos_coef,
+                        interpol_atmos_coef);
 
         /* Loop through each band, correcting the pixel.  Fill and saturated
            pixels are skipped and flagged. */
         for (ib = 0; ib < lut->nband; ib++) {
-            if (line_in[ib][is] == lut->in_fill) {
+            if (level1_qa_is_fill(qa_line[is])) {
                 /* fill pixel */
                 line_out[ib][is] = lut->output_fill;
                 sr_stats->nfill[ib]++;
                 continue;
             }
-            else if (line_in[ib][is] == lut->in_satu) {
+            if (line_in[ib][is] == lut->in_satu) {
                 /* saturated pixel */
                 line_out[ib][is] = lut->output_satu;
                 sr_stats->nsatu[ib]++;
                 continue;
             }
-            else {
-                rho = (float)line_in[ib][is] * 0.0001;
-                rho = (rho/interpol_atmos_coef.tgOG[ib][0] -
-                    interpol_atmos_coef.rho_ra[ib][0]);
-                tmpflt = interpol_atmos_coef.tgH2O[ib][0] *
-                    interpol_atmos_coef.td_ra[ib][0] *
-                    interpol_atmos_coef.tu_ra[ib][0];
-                rho /= tmpflt;
-                rho /= (1. + interpol_atmos_coef.S_ra[ib][0] * rho);
+
+            rho = compute_rho(line_in[ib][is] * lut->scale_factor 
+                              + lut->add_offset,
+                              *interpol_atmos_coef->tgOG[ib],
+                              *interpol_atmos_coef->tgH2O[ib],
+                              *interpol_atmos_coef->td_ra[ib],
+                              *interpol_atmos_coef->tu_ra[ib],
+                              *interpol_atmos_coef->rho_ra[ib],
+                              *interpol_atmos_coef->S_ra[ib]);
+
+            /* Scale the reflectance value for output and store it as 
+               an uint16 */
+            float temp;
+            temp = (rho - lut->add_offset) * lut->mult_factor;
     
-                /* Scale the reflectance value and store it as an int16 */
-                line_out[ib][is] = (short)(rho*10000.);  /* scale for output */
-    
-                /* Verify the reflectance value is within the valid range */
-                if (line_out[ib][is] < lut->min_valid_sr) {
-                    sr_stats->nout_range[ib]++;
-                    line_out[ib][is] = lut->min_valid_sr;
-                }
-                else if (line_out[ib][is] > lut->max_valid_sr) {
-                    sr_stats->nout_range[ib]++;
-                    line_out[ib][is] = lut->max_valid_sr;
-                }
+            /* Verify the reflectance value is within the valid range */
+                if (temp < lut->min_valid_sr) {
+                sr_stats->nout_range[ib]++;
+                line_out[ib][is] = lut->min_valid_sr;
+            }
+                else if (temp > lut->max_valid_sr) {
+                sr_stats->nout_range[ib]++;
+                line_out[ib][is] = lut->max_valid_sr;
+            }
+                else {
+                    line_out[ib][is] = (unsigned short) temp;
             }
     
             /* Keep track of the min/max value for the stats */
@@ -92,17 +96,13 @@ bool Sr
                 sr_stats->sr_min[ib] = sr_stats->sr_max[ib] = line_out[ib][is];
                 sr_stats->first[ib] = false;
             }
-            else {
-                if (line_out[ib][is] < sr_stats->sr_min[ib])
-                    sr_stats->sr_min[ib] = line_out[ib][is];
-    
-                else if (line_out[ib][is] > sr_stats->sr_max[ib])
-                    sr_stats->sr_max[ib] = line_out[ib][is];
-            } 
+            else if (line_out[ib][is] < sr_stats->sr_min[ib])
+                sr_stats->sr_min[ib] = line_out[ib][is];
+            else if (line_out[ib][is] > sr_stats->sr_max[ib])
+                sr_stats->sr_max[ib] = line_out[ib][is];
         }  /* end for ib */
     }  /* end for is */
 
-    free_mem_atmos_coeff(&interpol_atmos_coef);
     return true;
 }
 
@@ -110,7 +110,8 @@ bool Sr
 void SrInterpAtmCoef
 (
     Lut_t *lut,                    /* I: lookup table info */
-    Img_coord_int_t *input_loc,    /* I: input line/sample location */
+    double grid_line,              /* I: grid line location */
+    double grid_sample,            /* I: grid sample location */
     atmos_t *atmos_coef,           /* I: actual atmospheric coefficients */
     atmos_t *interpol_atmos_coef   /* O: interpolated atmospheric coefficients
                                          for the current line/samp */
@@ -128,115 +129,98 @@ NOTE: A handful of the coefficients are never used in the interpolated form.
   interpolation.
  */
 {
-    Img_coord_int_t p[4];      /* 4 points for the aerosol interpolation */
-    int i, n,ipt, ib;
-    double dl, ds, w;
-    double sum[7][13];  /* sum for each coefficient and each band */
-    double sum_w;       /* sum of the weights */
-    Img_coord_int_t ar_region_half;
+    Img_coord_int_t p0, p1, p2;      /* 3 of the corner points for the
+                                        aerosol interpolation */
+    int i, n, ipt[4], ib;
+    int lindex0, lindex1;
+    double dl, ds, w[4];
+    double sum_w;              /* sum of the weights */
 
-    ar_region_half.l = (lut->ar_region_size.l + 1) >> 1; /* divide by 2 */
-    ar_region_half.s = (lut->ar_region_size.s + 1) >> 1; /* divide by 2 */
-
-    p[0].l = (input_loc->l - ar_region_half.l) / lut->ar_region_size.l;
-
-    p[2].l = p[0].l + 1;
-    if (p[2].l >= lut->ar_size.l) {
-        p[2].l = lut->ar_size.l - 1;
-        if (p[0].l > 0)
-            p[0].l--;
-    }
-      
-    p[1].l = p[0].l;
-    p[3].l = p[2].l;
-
-    p[0].s = (input_loc->s - ar_region_half.s) / lut->ar_region_size.s;
-    p[1].s = p[0].s + 1;
-
-    if (p[1].s >= lut->ar_size.s) {
-        p[1].s = lut->ar_size.s - 1;
-        if (p[0].s > 0)
-            p[0].s--;
+    /* Set the four corner point indices. */
+    p0.l = (int)grid_line;
+    p2.l = p0.l + 1;
+    lindex0 = p0.l*lut->ar_size.s;
+    lindex1 = lindex0 + lut->ar_size.s;
+    if (p2.l >= lut->ar_size.l) {
+        p2.l = lut->ar_size.l - 1;
+        lindex1 = p2.l*lut->ar_size.s;
+        if (p0.l > 0)
+        {
+            p0.l--;
+            lindex0 -= lut->ar_size.s;
+        }
     }
 
-    p[2].s = p[0].s;
-    p[3].s = p[1].s;
+    p0.s = (int)grid_sample;
+    p1.s = p0.s + 1;
+    if (p1.s >= lut->ar_size.s) {
+        p1.s = lut->ar_size.s - 1;
+        if (p0.s > 0)
+            p0.s--;
+    }
 
     /* Initialize the variables to 0 */
     n = 0;
     sum_w = 0.0;
-    for (ib = 0; ib < 7; ib++)
-    {
-        for (ipt = 0; ipt < 13; ipt++)
-            sum[ib][ipt] = 0.;
+    for (ib = 0; ib < 6; ib++) {
+        *interpol_atmos_coef->tgOG[ib] = 0;
+        *interpol_atmos_coef->tgH2O[ib] = 0;
+        *interpol_atmos_coef->td_ra[ib] = 0;
+        *interpol_atmos_coef->tu_ra[ib] = 0;
+        *interpol_atmos_coef->rho_ra[ib] = 0;
+        *interpol_atmos_coef->S_ra[ib] = 0;
     }
 
+    /* Compute the fractional grid cell offset of the sample point from
+       the upper-left corner of the cell. */
+    dl = grid_line - p0.l;
+    ds = grid_sample - p0.s;
+    w[0] = (1 - dl)*(1 - ds);
+    w[1] = 1 - dl - w[0];
+    w[2] = 1 - ds - w[0];
+    w[3] = dl - w[2];
+
     /* Loop through the four points to be used in the interpolation */
+    ipt[0] = lindex0 + p0.s;
+    ipt[1] = lindex0 + p1.s;
+    ipt[2] = lindex1 + p0.s;
+    ipt[3] = lindex1 + p1.s;
     for (i = 0; i < 4; i++) {
-        /* If the points are valid */
-        if (p[i].l != -1 && p[i].s != -1) {
-            ipt = p[i].l * lut->ar_size.s + p[i].s;
-            if (!(atmos_coef->computed[ipt]))
-                continue; 
+        if (!atmos_coef->computed[ipt[i]])
+            continue;
 
-            dl = (input_loc->l - ar_region_half.l) -
-                 (p[i].l * lut->ar_region_size.l);
-            dl = fabs(dl) / lut->ar_region_size.l;
-            ds = (input_loc->s - ar_region_half.s) -
-                 (p[i].s * lut->ar_region_size.s);
-            ds = fabs(ds) / lut->ar_region_size.s;
-            w = (1.0 - dl) * (1.0 - ds);
+        /* Increment the count of valid points, and add the current weight
+           to the sum of weights. */
+        n++;
+        sum_w += w[i];
 
-            /* Increment the count of valid points and add the current weight
-               to the sum of weights */
-            n++;
-            sum_w += w;
-
-            /* Loop through each band and add in the coefficient * weight */
-            /* NOTE: some of these are not used as interpolated values in
-               lndsr.  To save compute time, they are commented out. */
-            for (ib = 0; ib < 6; ib++) {
-                sum[ib][0] += (atmos_coef->tgOG[ib][ipt] * w);
-                sum[ib][1] += (atmos_coef->tgH2O[ib][ipt] * w);
-                sum[ib][2] += (atmos_coef->td_ra[ib][ipt] * w);
-                sum[ib][3] += (atmos_coef->tu_ra[ib][ipt] * w);
-/*                sum[ib][4] += (atmos_coef->rho_mol[ib][ipt] * w); */
-                sum[ib][5] += (atmos_coef->rho_ra[ib][ipt] * w);
-/*                sum[ib][6] += (atmos_coef->td_da[ib][ipt] * w);
-                  sum[ib][7] += (atmos_coef->tu_da[ib][ipt] * w); */
-                sum[ib][8] += (atmos_coef->S_ra[ib][ipt] * w);
-/* These last four coefficients are never used in their interpolated form
-                sum[ib][9] += (atmos_coef->td_r[ib][ipt] * w);
-                sum[ib][10] += (atmos_coef->tu_r[ib][ipt] * w);
-                sum[ib][11] += (atmos_coef->S_r[ib][ipt] * w);
-                sum[ib][12] += (atmos_coef->rho_r[ib][ipt] * w);
-*/
-            }
-        }  /* end if */
-    } /* end for */
-
-    /* If there were valid points */
-    if (n > 0) {
-        /* Loop through each band and compute the coefficient */
+        /* Loop through each band, and add in the coefficient * weight. */
         for (ib = 0; ib < 6; ib++) {
-            interpol_atmos_coef->tgOG[ib][0] = sum[ib][0] / sum_w;
-            interpol_atmos_coef->tgH2O[ib][0] = sum[ib][1] / sum_w;
-            interpol_atmos_coef->td_ra[ib][0] = sum[ib][2] / sum_w;
-            interpol_atmos_coef->tu_ra[ib][0] = sum[ib][3] / sum_w;
-/*             interpol_atmos_coef->rho_mol[ib][0] = sum[ib][4] / sum_w; */
-            interpol_atmos_coef->rho_ra[ib][0] = sum[ib][5] / sum_w;
-/*             interpol_atmos_coef->td_da[ib][0] = sum[ib][6] / sum_w;
-               interpol_atmos_coef->tu_da[ib][0] = sum[ib][7] / sum_w; */
-            interpol_atmos_coef->S_ra[ib][0] = sum[ib][8] / sum_w;
-/* These last four coefficients are never used in their interpolated form
-            interpol_atmos_coef->td_r[ib][0] = sum[ib][9] / sum_w;
-            interpol_atmos_coef->tu_r[ib][0] = sum[ib][10] / sum_w;
-            interpol_atmos_coef->S_r[ib][0] = sum[ib][11] / sum_w;
-            interpol_atmos_coef->rho_r[ib][0] = sum[ib][12] / sum_w;
-*/
+            *interpol_atmos_coef->tgOG[ib] +=
+                                          atmos_coef->tgOG[ib][ipt[i]]*w[i];
+            *interpol_atmos_coef->tgH2O[ib] +=
+                                          atmos_coef->tgH2O[ib][ipt[i]]*w[i];
+            *interpol_atmos_coef->td_ra[ib] +=
+                                          atmos_coef->td_ra[ib][ipt[i]]*w[i];
+            *interpol_atmos_coef->tu_ra[ib] +=
+                                          atmos_coef->tu_ra[ib][ipt[i]]*w[i];
+            *interpol_atmos_coef->rho_ra[ib] +=
+                                          atmos_coef->rho_ra[ib][ipt[i]]*w[i];
+            *interpol_atmos_coef->S_ra[ib] +=
+                                          atmos_coef->S_ra[ib][ipt[i]]*w[i];
         }
     }
 
-    return;
+    /* Divide by the sum of the weights if it's not zero or one. */
+    if (n > 0 && n < 4) {
+        double inv_sum_w = 1/sum_w;
+        for (ib = 0; ib < 6; ib++) {
+            *interpol_atmos_coef->tgOG[ib] *= inv_sum_w;
+            *interpol_atmos_coef->tgH2O[ib] *= inv_sum_w;
+            *interpol_atmos_coef->td_ra[ib] *= inv_sum_w;
+            *interpol_atmos_coef->tu_ra[ib] *= inv_sum_w;
+            *interpol_atmos_coef->rho_ra[ib] *= inv_sum_w;
+            *interpol_atmos_coef->S_ra[ib] *= inv_sum_w;
+        }
+    }
 }
-

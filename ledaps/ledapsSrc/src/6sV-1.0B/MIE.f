@@ -116,12 +116,12 @@ C --- Junge power-law function
 c
 c --- from sun photometer
  303    nr=0.D+00
-	do 299 j=2,irsunph
-	if ((r-rsunph(j)).lt.0.000001)then
-         nr=(r-rsunph(j-1))/(rsunph(j)-rsunph(j-1))
-         nr=nrsunph(j-1)+nr*(nrsunph(j)-nrsunph(j-1))
-	 goto 398
-	endif
+        do 299 j=2,irsunph
+          if ((r-rsunph(j)).lt.0.000001)then
+            nr=(r-rsunph(j-1))/(rsunph(j)-rsunph(j-1))
+            nr=nrsunph(j-1)+nr*(nrsunph(j)-nrsunph(j-1))
+            goto 398
+          endif
  299   continue
 
 c The Mie's calculations have to be called several times (min=2, max=10 for
@@ -136,7 +136,7 @@ c relatif number of particle for each type of particle (has to be equal to 1)
        np(i)=np(i)+nr*dr
        
         do l=1,20
-	 alpha=2.D+00*pi*r/wldis(l)
+         alpha=2.D+00*pi*r/wldis(l)
          call EXSCPHASE(alpha,rn(l,i),ri(l,i),Qext,Qsca,
      &     p11,q11,u11,ipol,cgaus_S,pdgs_S)
          ext(l,i)=ext(l,i)+xndpr2*Qext
@@ -145,13 +145,12 @@ c relatif number of particle for each type of particle (has to be equal to 1)
 c phase function for each type of particle
          do k=1,nbmu
           p1(l,i,k)=p1(l,i,k)+4.D+00*p11(k)*xndpr2
-	  if (ipol.ne.0)then
+          if (ipol.ne.0)then
             q1(l,i,k)=q1(l,i,k)+4.D+00*q11(k)*xndpr2
             u1(l,i,k)=u1(l,i,k)+4.D+00*u11(k)*xndpr2
-	  endif
+          endif
          enddo
        enddo
-  599  continue
 
        vi(i)=vi(i)+r*r*r*nr*dr
 
@@ -161,7 +160,7 @@ c phase function for each type of particle
        goto 123
   600 continue
 
-     
+
 c NOW WE MIXT THE DIFFERENT TYPES OF PARTICLE
 c Computation of the scattering and extinction coefficients.
 c The coefficients will be normalized at 0.550 micron.
@@ -195,21 +194,21 @@ c of the mixture of particles
            ph(l,k)=ph(l,k)+real(cij(i)*p1(l,i,k))
           enddo
           ph(l,k)=ph(l,k)/sc(1,l)
-	  if (ipol.ne.0)then
-	    qh(l,k)=0.
-	    uh(l,k)=0.
-	    do i=1,icp
+          if (ipol.ne.0)then
+            qh(l,k)=0.
+            uh(l,k)=0.
+            do i=1,icp
               qh(l,k)=qh(l,k)+real(cij(i)*q1(l,i,k))
               uh(l,k)=uh(l,k)+real(cij(i)*u1(l,i,k))
-	    enddo
+            enddo
             qh(l,k)=qh(l,k)/sc(1,l)
             uh(l,k)=uh(l,k)/sc(1,l)
-	    xmug=180/pi*acos(cgaus_S(k))
-	  endif
-	  asy_n=asy_n+cgaus_S(k)*ph(l,k)*pdgs_S(k)
-	  asy_d=asy_d+ph(l,k)*pdgs_S(k)
+            xmug=180/pi*acos(cgaus_S(k))
+          endif
+          asy_n=asy_n+cgaus_S(k)*ph(l,k)*pdgs_S(k)
+          asy_d=asy_d+ph(l,k)*pdgs_S(k)
         enddo
-	  asy(1,l)=asy_n/asy_d
+        asy(1,l)=asy_n/asy_d
       enddo
 
       do i=1,icp
@@ -314,22 +313,22 @@ c     line (order max=mu) because a downward recursion is called for.
       xj(k)=0.D+00
       Rn(k-1)=X/(2.D+00*k+1.D+00-X*Rn(k))
       if (k.eq.2)then
-	  mub=mu
-	  xj(mub+1)=0.D+00
-	  xj(mub)=1.D+00
-	  goto 150
+        mub=mu
+        xj(mub+1)=0.D+00
+        xj(mub)=1.D+00
+        goto 150
       endif
       if (Rn(k-1).gt.1.D+00)then
-	  mub=k-1
-	  xj(mub+1)=Rn(mub)
-	  xj(mub)=1.D+00
-	  goto 150
+        mub=k-1
+        xj(mub+1)=Rn(mub)
+        xj(mub)=1.D+00
+        goto 150
       endif
       goto 149
  150  continue
 
       do k=mub,1,-1
-	xj(k-1)=(2.D+00*k+1.D+00)*xj(k)/X-xj(k+1)
+        xj(k-1)=(2.D+00*k+1.D+00)*xj(k)/X-xj(k+1)
       enddo
       coxj=(xj(0)-X*xj(1))*dcos(X)+X*xj(0)*sin(X)
 
@@ -339,12 +338,12 @@ c     downward recursion    - real and imaginary parts
       IDnY(mu)=0.D+00
       RDnX(mu)=0.D+00
       do k=mu,1,-1
-	 RDnX(k-1)=k/X-1.D+00/(RDnX(k)+k/X)
-	 XnumRDnY=RDnY(k)+Ren*k/X
-	 XnumIDnY=IDnY(k)+Imn*k/X
-	 XdenDnY=XnumRDnY*XnumRDnY+XnumIDnY*XnumIDnY
-	 RDnY(k-1)=k*Ren/X-XnumRDnY/XdenDnY
-	 IDnY(k-1)=k*Imn/X+XnumIDnY/XdenDnY
+        RDnX(k-1)=k/X-1.D+00/(RDnX(k)+k/X)
+        XnumRDnY=RDnY(k)+Ren*k/X
+        XnumIDnY=IDnY(k)+Imn*k/X
+        XdenDnY=XnumRDnY*XnumRDnY+XnumIDnY*XnumIDnY
+        RDnY(k-1)=k*Ren/X-XnumRDnY/XdenDnY
+        IDnY(k-1)=k*Imn/X+XnumIDnY/XdenDnY
 
       enddo 
 
@@ -356,56 +355,56 @@ c --- Initialization of the upward recursions
       Qsca=0.D+00
       Qext=0.D+00
       do k=1,mu
-	 if (k.le.mub)then
-	   xj(k)=xj(k)/coxj
-	 else
-	   xj(k)=Rn(k-1)*xj(k-1)
-	 endif
+        if (k.le.mub)then
+          xj(k)=xj(k)/coxj
+        else
+          xj(k)=Rn(k-1)*xj(k-1)
+        endif
 
 c --- Computation of bessel's function y(alpha)
-	 xy(k)=(2.D+00*k-1.D+00)*xy(k-1)/X-xy(k-2)
-	 xJonH=xj(k)/(xj(k)*xj(k)+xy(k)*xy(k))
+        xy(k)=(2.D+00*k-1.D+00)*xy(k-1)/X-xy(k-2)
+        xJonH=xj(k)/(xj(k)*xj(k)+xy(k)*xy(k))
 
 c --- Computation of Gn(alpha), Real and Imaginary part
-         XdenGNX=(RGnX(k-1)-k/X)**2.D+00+IGnX(k-1)*IGnX(k-1)
-	 RGnX(k)=(k/X-RGnX(k-1))/XdenGNX-k/X
-	 IGnX(k)=IGnX(k-1)/XdenGNX
+        XdenGNX=(RGnX(k-1)-k/X)**2.D+00+IGnX(k-1)*IGnX(k-1)
+        RGnX(k)=(k/X-RGnX(k-1))/XdenGNX-k/X
+        IGnX(k)=IGnX(k-1)/XdenGNX
 
 c --- Computation of An(alpha) and Bn(alpha), Real and Imaginary part
-	 Xnum1An=RDnY(k)-nr*RDnX(k)
-	 Xnum2An=IDnY(k)+ni*RDnX(k)
-	 Xden1An=RDnY(k)-nr*RGnX(k)-ni*IGnX(k)
-	 Xden2An=IDnY(k)+ni*RGnX(k)-nr*IGnX(k)
-	 XdenAn=Xden1An*Xden1An+Xden2An*Xden2An
-	 RAnb=(Xnum1An*Xden1An+Xnum2An*Xden2An)/XdenAn
-	 IAnb=(-Xnum1An*Xden2An+Xnum2An*Xden1An)/XdenAn
-	 RAn(k)=xJonH*(xj(k)*RAnb-xy(k)*IAnb)
-	 IAn(k)=xJonH*(xy(k)*RAnb+xj(k)*IAnb)
+        Xnum1An=RDnY(k)-nr*RDnX(k)
+        Xnum2An=IDnY(k)+ni*RDnX(k)
+        Xden1An=RDnY(k)-nr*RGnX(k)-ni*IGnX(k)
+        Xden2An=IDnY(k)+ni*RGnX(k)-nr*IGnX(k)
+        XdenAn=Xden1An*Xden1An+Xden2An*Xden2An
+        RAnb=(Xnum1An*Xden1An+Xnum2An*Xden2An)/XdenAn
+        IAnb=(-Xnum1An*Xden2An+Xnum2An*Xden1An)/XdenAn
+        RAn(k)=xJonH*(xj(k)*RAnb-xy(k)*IAnb)
+        IAn(k)=xJonH*(xy(k)*RAnb+xj(k)*IAnb)
 
-	 Xnum1Bn=nr*RDnY(k)+ni*IDnY(k)-RDnX(k)
-	 Xnum2Bn=nr*IDnY(k)-ni*RDnY(k)
-	 Xden1Bn=nr*RDnY(k)+ni*IDnY(k)-RGnX(k)
-	 Xden2Bn=nr*IDnY(k)-ni*RDnY(k)-IGnX(k)
-	 XdenBn=Xden1Bn*Xden1Bn+Xden2Bn*Xden2Bn
-	 RBnb=(Xnum1Bn*Xden1Bn+Xnum2Bn*Xden2Bn)/XdenBn
-	 IBnb=(-Xnum1Bn*Xden2Bn+Xnum2Bn*Xden1Bn)/XdenBn
-	 RBn(k)=xJonH*(xj(k)*RBnb-xy(k)*IBnb)
-	 IBn(k)=xJonH*(xy(k)*RBnb+xj(k)*IBnb)
+        Xnum1Bn=nr*RDnY(k)+ni*IDnY(k)-RDnX(k)
+        Xnum2Bn=nr*IDnY(k)-ni*RDnY(k)
+        Xden1Bn=nr*RDnY(k)+ni*IDnY(k)-RGnX(k)
+        Xden2Bn=nr*IDnY(k)-ni*RDnY(k)-IGnX(k)
+        XdenBn=Xden1Bn*Xden1Bn+Xden2Bn*Xden2Bn
+        RBnb=(Xnum1Bn*Xden1Bn+Xnum2Bn*Xden2Bn)/XdenBn
+        IBnb=(-Xnum1Bn*Xden2Bn+Xnum2Bn*Xden1Bn)/XdenBn
+        RBn(k)=xJonH*(xj(k)*RBnb-xy(k)*IBnb)
+        IBn(k)=xJonH*(xy(k)*RBnb+xj(k)*IBnb)
 
 c ---Criterion on the recursion formulas as defined by D. Deirmendjian 
 c    et al., J. Opt. Soc. Am., 1961, 51, 6, 620-633
- 	 test=(RAn(k)**2.+IAn(k)**2.+RBn(k)**2.+IBn(k)**2.)/k
- 	 if (test.lt.1.0D-14)then
+        test=(RAn(k)**2.+IAn(k)**2.+RBn(k)**2.+IBn(k)**2.)/k
+        if (test.lt.1.0D-14)then
            mu=k
            if (mu.le.0) then
             write(6,*) "attention mu <0 ",mu
-            endif
+           endif
            goto 400
-         endif
+        endif
 c --- Computation of the scattering and extinction efficiency factor
-         xpond=2.D+00/X/X*(2.D+00*k+1)
-         Qsca=Qsca+xpond*(RAn(k)**2.+IAn(k)**2.+RBn(k)**2.+IBn(k)**2.)
-         Qext=Qext+xpond*(RAn(k)+RBn(k))
+        xpond=2.D+00/X/X*(2.D+00*k+1)
+        Qsca=Qsca+xpond*(RAn(k)**2.+IAn(k)**2.+RBn(k)**2.+IBn(k)**2.)
+        Qext=Qext+xpond*(RAn(k)+RBn(k))
 
       enddo
  400  continue
@@ -414,29 +413,29 @@ c --- Computation of the amplitude functions S1 and S2 (cf MIE's theory)
 c     defined by PIn, TAUn, An and Bn with PIn and TAUn related to the 
 c     Legendre polynomials.
       do j=1,nbmu
-	 xmud=cgaus_S(j)
-	 RS1=0.D+00
-	 RS2=0.D+00
-	 IS1=0.D+00
-	 IS2=0.D+00
-	 PIn(0)=0.D+00
-	 PIn(1)=1.D+00
-	 TAUn(1)=xmud
-	 do k=1,mu
-          co_n=(2.D+00*k+1.D+00)/k/(k+1.D+00)
-	  RS1=RS1+co_n*(RAn(k)*PIn(k)+RBn(k)*TAUn(k))
-	  RS2=RS2+co_n*(RAn(k)*TAUn(k)+RBn(k)*PIn(k))
-	  IS1=IS1+co_n*(IAn(k)*PIn(k)+IBn(k)*TAUn(k))
-	  IS2=IS2+co_n*(IAn(k)*TAUn(k)+IBn(k)*PIn(k))
-          PIn(k+1)=((2.D+00*k+1)*xmud*PIn(k)-(k+1.D+00)*PIn(k-1))/k
-          TAUn(k+1)=(k+1.D+00)*xmud*PIn(k+1)-(k+2.D+00)*PIn(k)
+         xmud=cgaus_S(j)
+         RS1=0.D+00
+         RS2=0.D+00
+         IS1=0.D+00
+         IS2=0.D+00
+         PIn(0)=0.D+00
+         PIn(1)=1.D+00
+         TAUn(1)=xmud
+         do k=1,mu
+           co_n=(2.D+00*k+1.D+00)/k/(k+1.D+00)
+           RS1=RS1+co_n*(RAn(k)*PIn(k)+RBn(k)*TAUn(k))
+           RS2=RS2+co_n*(RAn(k)*TAUn(k)+RBn(k)*PIn(k))
+           IS1=IS1+co_n*(IAn(k)*PIn(k)+IBn(k)*TAUn(k))
+           IS2=IS2+co_n*(IAn(k)*TAUn(k)+IBn(k)*PIn(k))
+           PIn(k+1)=((2.D+00*k+1)*xmud*PIn(k)-(k+1.D+00)*PIn(k-1))/k
+           TAUn(k+1)=(k+1.D+00)*xmud*PIn(k+1)-(k+2.D+00)*PIn(k)
          enddo
 C --- Computation of the scattering intensity efficiency
          p11(j)=(RS1*RS1+IS1*IS1+RS2*RS2+IS2*IS2)/X/X/2.D+00
-	 if (ipol.ne.0)then
+         if (ipol.ne.0)then
            q11(j)=(RS2*RS2+IS2*IS2-RS1*RS1-IS1*IS1)/X/X/2.D+00
            u11(j)=(2.D+00*RS2*RS1+2.D+00*IS2*IS1)/X/X/2.D+00
-	 endif
+         endif
       enddo
                
       return

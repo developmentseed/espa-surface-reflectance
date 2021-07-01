@@ -6,24 +6,24 @@
        real rmo3(34),rmwh(34)
        real ps,xps,uo3,uw
 c      log linear interpolation
-           xps=-xps
-	   if (xps.ge.100.) xps=99.99
-           i=0
- 10        i=i+1
-           if (z(i).le.xps) goto 10
-           isup=i
-           iinf=i-1
-           xa=(z(isup)-z(iinf))/alog(p(isup)/p(iinf))
-           xb=z(isup)-xa*alog(p(isup))
-           ps=exp((xps-xb)/xa)
+      xps=-xps
+      if (xps.ge.100.) xps=99.99
+      i=0
+ 10   i=i+1
+      if (z(i).le.xps) goto 10
+      isup=i
+      iinf=i-1
+      xa=(z(isup)-z(iinf))/alog(p(isup)/p(iinf))
+      xb=z(isup)-xa*alog(p(isup))
+      ps=exp((xps-xb)/xa)
 c interpolating temperature wator vapor and ozone profile versus altitud
-	   xalt=xps
-	   xtemp=(t(isup)-t(iinf))/(z(isup)-z(iinf))
-	   xtemp=xtemp*(xalt-z(iinf))+t(iinf)
-	   xwo=(wo(isup)-wo(iinf))/(z(isup)-z(iinf))
-	   xwo=xwo*(xalt-z(iinf))+wo(iinf)
-	   xwh=(wh(isup)-wh(iinf))/(z(isup)-z(iinf))
-	   xwh=xwh*(xalt-z(iinf))+wh(iinf)
+      xalt=xps
+      xtemp=(t(isup)-t(iinf))/(z(isup)-z(iinf))
+      xtemp=xtemp*(xalt-z(iinf))+t(iinf)
+      xwo=(wo(isup)-wo(iinf))/(z(isup)-z(iinf))
+      xwo=xwo*(xalt-z(iinf))+wo(iinf)
+      xwh=(wh(isup)-wh(iinf))/(z(isup)-z(iinf))
+      xwh=xwh*(xalt-z(iinf))+wh(iinf)
 c uptading atmospheric profile
 c  1rst level: target     , complete to 34
 c  with interpolated layers

@@ -34,14 +34,14 @@ c - to vary the number of quadratures
         psl(0,-j)=1.D+00
         psl(1,j)=c
         psl(1,-j)=-c
-        xdb=(3.D+00*c*c-1.D+00)*0.5D+00
-	if (abs(xdb).lt.1.e-30) xdb =0.0D+00
+        xdb=(1.5D+00*c*c - 0.5D+00)
+        if (abs(xdb).lt.1.e-30) xdb =0.0D+00
         psl(2,j)=xdb
         psl(2,-j)=xdb
         rsl(1,j)=0.0D+00
         rsl(1,-j)=0.0D+00
-        xdb=3.D+00*(1.D+00-c*c)/2.D+00/sqrt(6.D+00)
-	if (abs(xdb).lt.1.e-30) xdb =0.0D+00
+        xdb = 1.5D+00*(1.D+00 - c*c)/sqrt(6.D+00)
+        if (abs(xdb).lt.1.e-30) xdb =0.0D+00
         rsl(2,j)=xdb
         rsl(2,-j)=xdb
         tsl(1,j)=0.0D+00
@@ -58,19 +58,19 @@ c
         c=dble(rm(j))
         x=1.d+00-c*c
         psl(0,j)=0.D+00
-        psl(0,-j)=0.D+00
+        psl(0,-j)=psl(0,j)
         psl(1,j)=dsqrt(x*0.5D+00)
-        psl(1,-j)=dsqrt(x*0.5d+00)
+        psl(1,-j)=psl(1,j)
         psl(2,j)=c*psl(1,j)*rac3
         psl(2,-j)=-psl(2,j)
         rsl(1,j)=0.0d+00
-        rsl(1,-j)=0.0d+00
+        rsl(1,-j)=rsl(1,j)
         rsl(2,j)=-c*dsqrt(x)*0.5d+00
         rsl(2,-j)=-rsl(2,j)
         tsl(1,j)=0.0d+00
-        tsl(1,-j)=0.0d+00
+        tsl(1,-j)=tsl(1,j)
         tsl(2,j)=-dsqrt(x)*0.5d+00
-        tsl(2,-j)=-dsqrt(x)*0.5d+00
+        tsl(2,-j)=tsl(2,j)
    26 continue
       psl(2,0)=-psl(2,0)
       rsl(2,0)=-rsl(2,0)
@@ -91,15 +91,15 @@ c
         rsl(is-1,j)=0.d+00
         tsl(is-1,j)=0.d+00
         xdb=a*xx**(is*0.5d+00)
-	if (abs(xdb).lt.1.e-30) xdb =0.0d+00
+        if (abs(xdb).lt.1.e-30) xdb =0.0d+00
         psl(is,-j)=xdb
         psl(is,j)=xdb
         xdb=b*(1.+c*c)*xx**(is*0.5-1.d+00)
-	if (abs(xdb).lt.1.e-30) xdb =0.0d+00
+        if (abs(xdb).lt.1.e-30) xdb =0.0d+00
         rsl(is,-j)=xdb
         rsl(is,j)=xdb
         xdb=2.d+00*b*c*xx**(is*0.5-1.d+00)
-	if (abs(xdb).lt.1.e-30) xdb =0.0d+00
+        if (abs(xdb).lt.1.e-30) xdb =0.0d+00
         tsl(is,-j)=-xdb
         tsl(is,j)=xdb
    28 continue
@@ -116,19 +116,19 @@ c
         a=(2*l+1.d+00)/sqrt((l+is+1.d+00)*(l-is+1.d+00))
         b=dsqrt(1.d+00*(l+is)*(l-is))/(2.*l+1.d+00)
         d=(l+1.d+00)*(2*l+1.d+00)
-  	d=d/dsqrt((l+3.d+00)*(l-1)*(l+is+1.d+00)*(l-is+1.))
-	e=dsqrt((l+2.d+00)*(l-2.)*(l+is)*(l-is))/(l*(2.*l+1.))
-	f=2.d+00*is/(l*(l+1.))
+        d=d/dsqrt((l+3.d+00)*(l-1)*(l+is+1.d+00)*(l-is+1.))
+        e=dsqrt((l+2.d+00)*(l-2.)*(l+is)*(l-is))/(l*(2.*l+1.))
+        f=2.d+00*is/(l*(l+1.))
         do 31 j=0,mu
           c=dble(rm(j))
           xdb=a*(c*psl(l,j)-b*psl(lm,j))
-	  if (abs(xdb).lt.1.e-30) xdb =0.0
+          if (abs(xdb).lt.1.e-30) xdb =0.0
           psl(lp,j)=xdb
           xdb=d*(c*rsl(l,j)-f*tsl(l,j)-e*rsl(lm,j))
-	  if (abs(xdb).lt.1.e-30) xdb =0.0
+          if (abs(xdb).lt.1.e-30) xdb =0.0
           rsl(lp,j)=xdb
           xdb=d*(c*tsl(l,j)-f*rsl(l,j)-e*tsl(lm,j))
-	  if (abs(xdb).lt.1.e-30) xdb =0.0
+          if (abs(xdb).lt.1.e-30) xdb =0.0
           tsl(lp,j)=xdb
           if(j.eq.0) go to 31
           psl(lp,-j)=ig*psl(lp,j)
@@ -145,28 +145,28 @@ c
 c      write(6,*) "xpl,xrl,xtl ",xpl(j),xrl(j),xtl(j),j
  1005 continue
 c      stop
-      
+
       ij=ip1
       do 32 j=0,mu
         do 32 k=-mu,mu
           sbp=0.
-	  sgr=0.
-	  sgt=0.
-	  satt=0.
-	  sarr=0.
-	  sart=0.
+          sgr=0.
+          sgt=0.
+          satt=0.
+          sarr=0.
+          sart=0.
           if(is.gt.ij) goto 1
-c	  write(6,*) "is,ij ",is,ij
+c          write(6,*) "is,ij ",is,ij
           do 33 l=is,ij
-	    r1=tsl(l,j)*tsl(l,k)
-	    r2=rsl(l,j)*rsl(l,k)
-	    r3=psl(l,j)*gammal(l)
+            r1=tsl(l,j)*tsl(l,k)
+            r2=rsl(l,j)*rsl(l,k)
+            r3=psl(l,j)*gammal(l)
             sbp=sbp+psl(l,j)*psl(l,k)*betal(l)
             sgr=sgr+rsl(l,k)*r3
             sgt=sgt+tsl(l,k)*r3
-c 	  if (is.eq.3.and.j.eq.1)then
-c 	      write(6,*)j,k,l,gammal(l),psl(l,j),tsl(l,k)
-c 	      endif
+c            if (is.eq.3.and.j.eq.1)then
+c              write(6,*)j,k,l,gammal(l),psl(l,j),tsl(l,k)
+c            endif
             satt=satt+r1*alphal(l)
      &          +r2*zetal(l)
             sarr=sarr+r1*zetal(l)
@@ -175,20 +175,19 @@ c 	      endif
      &          +rsl(l,j)*tsl(l,k)*zetal(l)
   33      continue
  1        continue
- 	  if (abs(sbp).lt.1.e-30) sbp =0.0
+          if (abs(sbp).lt.1.e-30) sbp =0.0
           bp(j,k)=sbp
- 	  if (abs(sgr).lt.1.e-30) sgr =0.0
+          if (abs(sgr).lt.1.e-30) sgr =0.0
           gr(j,k)=sgr
- 	  if (abs(sgt).lt.1.e-30) sgt =0.0
+          if (abs(sgt).lt.1.e-30) sgt =0.0
           gt(j,k)=sgt
- 	  if (abs(satt).lt.1.e-30) satt =0.0
+          if (abs(satt).lt.1.e-30) satt =0.0
           att(j,k)=satt
- 	  if (abs(sart).lt.1.e-30) sart =0.0
+          if (abs(sart).lt.1.e-30) sart =0.0
           art(j,k)=sart
- 	  if (abs(sarr).lt.1.e-30) sarr =0.0
+          if (abs(sarr).lt.1.e-30) sarr =0.0
           arr(j,k)=sarr
    32 continue
-   35 continue
 c      stop
       return
       end

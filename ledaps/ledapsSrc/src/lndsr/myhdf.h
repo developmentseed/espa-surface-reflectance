@@ -43,9 +43,9 @@
 #ifndef MYHDF_H
 #define MYHDF_H
 
-#include "hdf.h"
-#include "mfhdf.h"
-#include "bool.h"
+#include <hdf.h>
+#include <mfhdf.h>
+#include <stdbool.h>
 
 #define MYHDF_MAX_RANK (4)     /* maximum rank of an SDS expected */
 #define MYHDF_MAX_NATTR_VAL (3000)

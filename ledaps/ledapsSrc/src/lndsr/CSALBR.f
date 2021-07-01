@@ -9,7 +9,7 @@
 !	atmosphere (unitless).
 
 
-		
+
 !Output Parameters: 
 
 !	float xalb:   the spherical albedo (unitless).
@@ -23,10 +23,10 @@
 
 
 !Developer Header:
-		   
+
 !DEVELOPPERS:  Eric F Vermote, eric@kratmos.gsfc.nasa.gov, 301-286-6232 
-	      
-	      
+      
+      
 !References and Credits: 
 
 !Design Notes: This is a 6S routine.
@@ -45,7 +45,7 @@
 !Input parameters: 
 
 !	float xtau:   argument (unitless).
-		
+
 !Output Parameters: 
 
 !	float fintexp3: The exponential integral of order 3.
@@ -59,10 +59,10 @@
 
 
 !Developer Header:
-		   
+
 !DEVELOPPERS:  Eric F Vermote, eric@kratmos.gsfc.nasa.gov, 301-286-6232 
-	      
-	      
+      
+      
 !References and Credits: 
 
 !Design Notes: This is a 6S routine.
@@ -83,7 +83,7 @@
 !	float xtau:   argument (unitless).
 
 
-		
+
 !Output Parameters: 
 
 !	float fintexp1: The exponential integral of order 1 for xtau.
@@ -97,10 +97,10 @@
 
 
 !Developer Header:
-		   
+
 !DEVELOPPERS:  Eric F Vermote, eric@kratmos.gsfc.nasa.gov, 301-286-6232 
-	      
-	      
+      
+      
 !References and Credits: 
 
 !Design Notes: This is a 6S routine.

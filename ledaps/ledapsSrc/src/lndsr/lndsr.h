@@ -4,6 +4,7 @@
 #define bounded(A,B,C) (A>B?(A<C?A:C):B)
 #define nint(A)(A<0?(int)(A-0.5):(int)(A+0.5))
 
+#include <stdint.h>
 #include <stdio.h>
 #include "hdf.h"
 #include "mfhdf.h"
@@ -13,10 +14,11 @@
 #include "write_metadata.h"
 #include "envi_header.h"
 #include "espa_geoloc.h"
+#include "lut.h"
+#include "sixs_runs.h"
 
 /* Extra bands - atmos_opacity, cloud_QA */
 #define NBAND_SR_EXTRA (2)
-#define NBAND_REFL_MAX (6)
 #define NBAND_PRWV_MAX (3)
 #define NBAND_SR_MAX (NBAND_REFL_MAX + NBAND_SR_EXTRA)
 
@@ -45,44 +47,6 @@ typedef enum {
   SNOW_BIT,
   LAND_WATER_BIT,
 } QA_Band_Bit_t;
-
-/* Satellite type definition */
-
-typedef enum {
-  SAT_NULL = -1,
-  SAT_LANDSAT_1 = 0, 
-  SAT_LANDSAT_2, 
-  SAT_LANDSAT_3, 
-  SAT_LANDSAT_4, 
-  SAT_LANDSAT_5, 
-  SAT_LANDSAT_7, 
-  SAT_MAX
-} Sat_t;
-
-extern const Key_string_t Sat_string[SAT_MAX];
-
-/* Instrument type definition */
-
-typedef enum {
-  INST_NULL = -1,
-  INST_MSS = 0, 
-  INST_TM,
-  INST_ETM, 
-  INST_MAX
-} Inst_t;
-
-extern const Key_string_t Inst_string[INST_MAX];
-
-/* World Reference System (WRS) type definition */
-
-typedef enum {
-  WRS_NULL = -1,
-  WRS_1 = 0, 
-  WRS_2,
-  WRS_MAX
-} Wrs_t;
-
-extern const Key_string_t Wrs_string[WRS_MAX];
 
 /* Ozone source */
 
@@ -116,7 +80,20 @@ float *tgOG[7],*tgH2O[7],*td_ra[7],*tu_ra[7],*rho_mol[7],*rho_ra[7],*td_da[7],*t
 float *td_r[7],*tu_r[7],*S_r[7],*rho_r[7];
 } atmos_t;
 
+void update_gridcell_atmos_coefs(int ipt, atmos_t *atmos_coef,
+                                 Ar_gridcell_t *ar_gridcell,
+                                 sixs_tables_t *sixs_tables, int line_ar,
+                                 Lut_t *lut, int nband, int bkgd_aerosol);
+
 int allocate_mem_atmos_coeff(int nbpts,atmos_t *atmos_coef);
 int free_mem_atmos_coeff(atmos_t *atmos_coef);
 
+/* default scaling values */
+#define SCALE_FACTOR     (0.0000275)
+#define ADD_OFFSET       (-0.2)
+
+/* data retrieval functions*/
+double get_scale_refl();    /* scale for reflective bands */
+double get_offset_refl();   /* add offset for reflective bands */
+int get_num_threads();   /* number of threads for processing */
 #endif

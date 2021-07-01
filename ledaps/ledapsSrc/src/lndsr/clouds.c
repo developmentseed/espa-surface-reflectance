@@ -3,15 +3,15 @@
 #include "error.h"
 #include "sixs_runs.h"
 #include "clouds.h"
+#include "read_level1_qa.h"
 
 /* #define VRA_THRESHOLD 0.1 */
 #define VRA_THRESHOLD 0.08
 
-extern atmos_t atmos_coef;
-
 int allocate_mem_atmos_coeff(int nbpts,atmos_t *atmos_coef);
 int free_mem_atmos_coeff(atmos_t *atmos_coef);
-void SrInterpAtmCoef (Lut_t *lut, Img_coord_int_t *input_loc, atmos_t *atmos_coef, atmos_t *interpol_atmos_coef);
+void SrInterpAtmCoef(Lut_t *lut, double grid_line, double grid_sample,
+                     atmos_t *atmos_coef, atmos_t *interpol_atmos_coef);
 
 
 bool cloud_detection_pass1
@@ -19,142 +19,134 @@ bool cloud_detection_pass1
     Lut_t *lut,              /* I: lookup table informat */
     int nsamp,               /* I: number of samples to be processed */
     int il,                  /* I: current line being processed */
-    int16 **line_in,         /* I: array of input lines, one for each band */
-    uint8 *qa_line,          /* I: array of QA data for the current line */
-    int16 *b6_line,          /* I: array of thermal data for the current line */
+    uint16_t **line_in,      /* I: array of input lines, one for each band */
+    uint16_t *qa_line,       /* I: QA data (bqa_pixel) for the current line */
+    uint16_t *qa2_line,      /* I: QA data (bqa_radsat) for the current line */
+    uint16_t *b6_line,       /* I: array of thermal data for the current line */
     float *atemp_line,       /* I: auxiliary temperature for the line */
+    atmos_t *atmos_coef,     /* I: atmospheric coefficients */
+    atmos_t *interpol_atmos_coef, /* I: storage space for interpolated
+                                        atmospheric coefficients */
     cld_diags_t *cld_diags   /* I/O: cloud diagnostics (stats are updated) */
 )
 {
     int is;                   /* current sample in the line */
-    bool is_fill;             /* is the current pixel fill */
     float tmpflt;             /* temporary floating point value */
     float rho1, rho3, rho4, rho5, rho7, t6;  /* reflectance and temp values */
     int C1, C2=0, C3, C4=0, C5=0, water;  /* cloud and water
                                                             indicators */
     int cld_row, cld_col;     /* cloud line, sample location */
     float vra, ndvi;          /* NDVI value */
-    Img_coord_int_t loc;      /* line/sample location for current pix */
-    atmos_t interpol_atmos_coef; /* interpolated atmospheric coefficients,
-                                    based on the current line/sample location
-                                    in the aerosol data grid */
+    double grid_line, grid_sample; /* interpolation grid line and sample */
 
-    /* Allocate memory for the interpolated atmospheric coefficients and
-       start the location for the current line and current cloud row */
-    allocate_mem_atmos_coeff (1, &interpol_atmos_coef);
-    loc.l = il;
+    /* Start the location for the current line and current cloud row. */
     cld_row = il / cld_diags->cellheight;
 
+    /* Calculate a threshold that was a hardcoded magic number before.
+       This was set to 5000 with the original scaling factor. */
+    int thresh_tm = (0.5 - lut->add_offset) * lut->mult_factor;
+
     /* Loop through the samples in this line */
-    for (is = 0; is < nsamp; is++) {
-        loc.s = is;
-        cld_col = is / cld_diags->cellwidth;
+    grid_line = (double)il/lut->ar_region_size.l - 0.5;
+    double sample_step = 1./lut->ar_region_size.s;
+    int next_cld_step = cld_diags->cellwidth;
+    for (is = 0, grid_sample = -0.5, cld_col = 0; is < nsamp;
+         is++, grid_sample += sample_step) {
+        if (is == next_cld_step) {
+            cld_col++;
+            next_cld_step += cld_diags->cellwidth;
+        }
 
-        if ((qa_line[is]&0x01)==0x01)
-            is_fill=true;
-        else
-            is_fill=false;
+        if (!level1_qa_is_fill(qa_line[is]) &&
+            (!level1_qa_is_saturated(qa2_line[is],3) ||
+             (lut->meta.inst == INST_TM && line_in[AR_B3][is] < thresh_tm)))
+        { /* not fill and no saturation in band 3 */
+            /* Interpolate the atmospheric coefficients for the current
+               pixel */
+            SrInterpAtmCoef(lut, grid_line, grid_sample, atmos_coef,
+                            interpol_atmos_coef);
 
-        if (!is_fill) {
-            if (((qa_line[is] & 0x08) == 0x00) ||
-              ((lut->meta.inst == INST_TM) && (line_in[2][is] < 5000)))
-            { /* no saturation in band 3 */
-                /* Interpolate the atmospheric coefficients for the current
-                   pixel */
-                SrInterpAtmCoef(lut, &loc, &atmos_coef, &interpol_atmos_coef);
+            /* Compute the reflectance for each band using the interpolated
+               atmospheric coefficients */
+            uint16 *lin[5] = {line_in[AR_B1], line_in[AR_B3], line_in[AR_B4],
+                              line_in[AR_B5], line_in[AR_B7]};
+            float *rho[5] = {&rho1, &rho3, &rho4, &rho5, &rho7};
+            float tgog[5] = {*interpol_atmos_coef->tgOG[0],
+                             *interpol_atmos_coef->tgOG[2],
+                             *interpol_atmos_coef->tgOG[3],
+                             *interpol_atmos_coef->tgOG[4],
+                             *interpol_atmos_coef->tgOG[5]};
+            float tgh2o[5] = {*interpol_atmos_coef->tgH2O[0],
+                              *interpol_atmos_coef->tgH2O[2],
+                              *interpol_atmos_coef->tgH2O[3],
+                              *interpol_atmos_coef->tgH2O[4],
+                              *interpol_atmos_coef->tgH2O[5]};
+            float rho_ra[5] = {*interpol_atmos_coef->rho_ra[0],
+                               *interpol_atmos_coef->rho_ra[2],
+                               *interpol_atmos_coef->rho_ra[3],
+                               *interpol_atmos_coef->rho_ra[4],
+                               *interpol_atmos_coef->rho_ra[5]};
+            float td_ra[5] = {*interpol_atmos_coef->td_ra[0],
+                              *interpol_atmos_coef->td_ra[2],
+                              *interpol_atmos_coef->td_ra[3],
+                              *interpol_atmos_coef->td_ra[4],
+                              *interpol_atmos_coef->td_ra[5]};
+            float tu_ra[5] = {*interpol_atmos_coef->tu_ra[0],
+                              *interpol_atmos_coef->tu_ra[2],
+                              *interpol_atmos_coef->tu_ra[3],
+                              *interpol_atmos_coef->tu_ra[4],
+                              *interpol_atmos_coef->tu_ra[5]};
+            float s_ra[5] = {*interpol_atmos_coef->S_ra[0],
+                             *interpol_atmos_coef->S_ra[2],
+                             *interpol_atmos_coef->S_ra[3],
+                             *interpol_atmos_coef->S_ra[4],
+                             *interpol_atmos_coef->S_ra[5]};
+            int i;
+            for (i=0; i<5; i++)
+                *rho[i] = compute_rho(lin[i][is] * lut->scale_factor 
+                                      + lut->add_offset, tgog[i], tgh2o[i],
+                                      td_ra[i], tu_ra[i], rho_ra[i], s_ra[i]);
 
-                /* Compute the reflectance for each band using the interpolated
-                   atmospheric coefficients */
-                rho1=line_in[0][is] * 0.0001;
-                rho1= (rho1/interpol_atmos_coef.tgOG[0][0] -
-                    interpol_atmos_coef.rho_ra[0][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[0][0] *
-                    interpol_atmos_coef.td_ra[0][0] *
-                    interpol_atmos_coef.tu_ra[0][0]);
-                rho1 /= tmpflt;
-                rho1 /= (1. + interpol_atmos_coef.S_ra[0][0] * rho1);
+            /* Get the temperature */
+            t6 = b6_line[is] * lut->b6_scale_factor + lut->b6_add_offset;
 
-                rho3 = line_in[2][is] * 0.0001;
-                rho3 = (rho3 / interpol_atmos_coef.tgOG[2][0] -
-                    interpol_atmos_coef.rho_ra[2][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[2][0] *
-                    interpol_atmos_coef.td_ra[2][0] *
-                    interpol_atmos_coef.tu_ra[2][0]);
-                rho3 /= tmpflt;
-                rho3 /= (1. + interpol_atmos_coef.S_ra[2][0] * rho3);
-
-                rho4 = line_in[3][is] * 0.0001;
-                rho4 = (rho4 / interpol_atmos_coef.tgOG[3][0] -
-                    interpol_atmos_coef.rho_ra[3][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[3][0] *
-                    interpol_atmos_coef.td_ra[3][0] *
-                    interpol_atmos_coef.tu_ra[3][0]);
-                rho4 /= tmpflt;
-                rho4 /= (1. + interpol_atmos_coef.S_ra[3][0] * rho4);
-
-                rho5 = line_in[4][is] * 0.0001;
-                rho5 = (rho5 / interpol_atmos_coef.tgOG[4][0] -
-                    interpol_atmos_coef.rho_ra[4][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[4][0] *
-                    interpol_atmos_coef.td_ra[4][0] *
-                    interpol_atmos_coef.tu_ra[4][0]);
-                rho5 /= tmpflt;
-                rho5 /= (1. + interpol_atmos_coef.S_ra[4][0] * rho5);
-
-                rho7 = line_in[5][is] * 0.0001;
-                rho7 = (rho7 / interpol_atmos_coef.tgOG[5][0] -
-                    interpol_atmos_coef.rho_ra[5][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[5][0] *
-                    interpol_atmos_coef.td_ra[5][0] *
-                    interpol_atmos_coef.tu_ra[5][0]);
-                rho7 /= tmpflt;
-                rho7 /= (1. + interpol_atmos_coef.S_ra[5][0] * rho7);
-
-                /* Get the temperature */
-                t6 = b6_line[is] * 0.1;
-
-                /* Compute cloud coefficients */
-                vra = rho1 - rho3 * 0.5;
+            /* Compute cloud coefficients */
+            vra = rho1 - rho3 * 0.5;
                     
-                C1 = (int)(vra > VRA_THRESHOLD);
-                C2 = (t6 < (atemp_line[is]-7.));  
+            C1 = (int)(vra > VRA_THRESHOLD);
+            C2 = (t6 < atemp_line[is] - 7);
    
-                tmpflt = rho4 / rho3;
-                C3 = ((tmpflt >= 0.9) && (tmpflt <= 1.3));
+            tmpflt = rho4 / rho3;
+            C3 = (tmpflt >= 0.9 && tmpflt <= 1.3);
 
-                C4 = (rho7 > 0.03);
-                C5 = ((rho3 > 0.6)||(rho4 > 0.6));
+            C4 = (rho7 > 0.03);
+            C5 = (rho3 > 0.6 || rho4 > 0.6);
                     
-                /**
-                Water test :
-                ndvi < 0 => water
-                ((0<ndvi<0.1) or (b4<5%)) and b5 < 0.01 => turbid water
-                **/
-                if (rho4 + rho3 != 0)
-                    ndvi = (rho4 - rho3) / (rho4 + rho3);
-                else
-                    ndvi = 0.01;
-                water = (ndvi < 0) || ((((ndvi > 0) && (ndvi < 0.1)) ||
-                    (rho4 < 0.05)) && (rho5 < 0.02));
-
-                if (!water) { /* if not water */
-                    if ((t6 > (atemp_line[is] - 20.)) && (!C5)) { 
-                        if (!((C1||C3)&&C2&&C4)) { /* clear */
-                            cld_diags->avg_t6_clear[cld_row][cld_col] += t6;
-                            cld_diags->std_t6_clear[cld_row][cld_col] +=
-                                (t6*t6);
-                            cld_diags->avg_b7_clear[cld_row][cld_col] += rho7;
-                            cld_diags->std_b7_clear[cld_row][cld_col] +=
-                                (rho7*rho7);
-                            cld_diags->nb_t6_clear[cld_row][cld_col]++;
-                        }
-                    }
-                }
-            }  /* end if no saturation in band 3 */
-        }  /* end if !is_fill */ 
+            /**
+               Water test :
+               ndvi < 0 => water
+               ((0<ndvi<0.1) or (b4<5%)) and b5 < 0.01 => turbid water
+            **/
+            if (rho4 + rho3 != 0)
+                ndvi = (rho4 - rho3)/(rho4 + rho3);
+            else
+                ndvi = 0.01;
+            water = ndvi < 0 || (((ndvi > 0 && ndvi < 0.1) || rho4 < 0.05) &&
+                                 rho5 < 0.02);
+            if (!water &&
+                (t6 > atemp_line[is] - 20. && !C5) &&
+                !((C1 || C3) && C2 && C4))
+            {
+                /* not water and clear */
+                cld_diags->avg_t6_clear[cld_row][cld_col] += t6;
+                cld_diags->std_t6_clear[cld_row][cld_col] += t6*t6;
+                cld_diags->avg_b7_clear[cld_row][cld_col] += rho7;
+                cld_diags->std_b7_clear[cld_row][cld_col] += rho7*rho7;
+                cld_diags->nb_t6_clear[cld_row][cld_col]++;
+            }
+        }  /* not fill and no saturation in band 3 */
     }  /* end for is */
 
-    free_mem_atmos_coeff(&interpol_atmos_coef);
     return true;
 }
 
@@ -164,9 +156,13 @@ bool cloud_detection_pass2
     Lut_t *lut,              /* I: lookup table informat */
     int nsamp,               /* I: number of samples to be processed */
     int il,                  /* I: current line being processed */
-    int16 **line_in,         /* I: array of input lines, one for each band */
-    uint8 *qa_line,          /* I: array of QA data for the current line */
-    int16 *b6_line,          /* I: array of thermal data for the current line */
+    uint16_t **line_in,      /* I: array of input lines, one for each band */
+    uint16_t *qa_line,       /* I: QA data (bqa_pixel) for the current line */
+    uint16_t *qa2_line,      /* I: QA data (bqa_radsat) for the current line */
+    uint16_t *b6_line,       /* I: array of thermal data for the current line */
+    atmos_t *atmos_coef,     /* I: atmospheric coefficients */
+    atmos_t *interpol_atmos_coef, /* I: storage space for interpolated
+                                        atmospheric coefficients */
     cld_diags_t *cld_diags,  /* I: cloud diagnostics */
     char *ddv_line           /* O: dark dense vegetation line */
             /**
@@ -181,7 +177,6 @@ bool cloud_detection_pass2
 )
 {
     int is;                   /* current sample in the line */
-    bool is_fill;             /* is the current pixel fill */
     int il_ar, is_ar;         /* line/sample in the aerosol region */
     bool thermal_band;        /* is thermal data available */
     float rho1, rho2, rho3, rho4, rho5, rho7;  /* reflectance & temp values */
@@ -191,22 +186,27 @@ bool cloud_detection_pass2
     int cld_row, cld_col;     /* cloud line, sample location */
     float vra, ndvi, ndsi, temp_snow_thshld; /* NDVI, NDSI, snow threshold */
     float temp_b6_clear,temp_thshld1,temp_thshld2,atemp_ancillary;
-    float tmpflt;             /* temporary float */
-    Img_coord_int_t loc;      /* line/sample location for current pix */
-    atmos_t interpol_atmos_coef; /* interpolated atmospheric coefficients,
-                                    based on the current line/sample location
-                                    in the aerosol data grid */
+    float tmpflt_arr[2];      /* temporary floats */
+    double grid_line, grid_sample; /* interpolation grid line and sample */
 
     /* Initialize the thermal band information and snow threshold */
     thermal_band = true;
     if (b6_line == NULL) 
         thermal_band = false;
+
+    /* This is an unscaled value in Kelvin.  Note: This threshold is outside
+       the current maximum valid value for the thermal band. */
     temp_snow_thshld = 380.;  /* now flag snow and possibly salt pan */
 
-    /* Allocate memory for the interpolated atmospheric coefficients and
-       start the location for the current line and current cloud row */
-    allocate_mem_atmos_coeff(1,&interpol_atmos_coef);
-    loc.l = il;
+    /* Calculate a threshold that was a hardcoded magic number before.
+       This was set to 2000 with the original scaling factor. */
+    int band5_thresh = (0.2 - lut->add_offset) * lut->mult_factor;
+
+    /* Calculate a threshold that was a hardcoded magic number before.
+       This was set to 5000 with the original scaling factor. */
+    int thresh_tm = (0.5 - lut->add_offset) * lut->mult_factor;
+
+    /* Start the location for the current line and current cloud row. */
     cld_row = il / cld_diags->cellheight;
 
     /* Initialize the aerosol line location value */
@@ -215,218 +215,180 @@ bool cloud_detection_pass2
         il_ar = lut->ar_size.l - 1;
 
     /* Loop through the samples in this line */
-    for (is = 0; is < nsamp; is++) {
-        loc.s = is;
-        cld_col = is / cld_diags->cellwidth;
-        is_ar = is / lut->ar_region_size.s;
-        if (is_ar >= lut->ar_size.s)
-            is_ar = lut->ar_size.s - 1;
-
-        is_fill = false;
-        if (thermal_band) {
-            if (b6_line[is] == lut->in_fill) {
-                is_fill = true;
-                ddv_line[is] = 0x08;
-            }
+    int ar_sample = 0;
+    grid_line = (double)il/lut->ar_region_size.l - 0.5;
+    double sample_step = 1./lut->ar_region_size.s;
+    int next_cld_step = cld_diags->cellwidth;
+    for (is = 0, cld_col = 0, is_ar = 0, grid_sample = -0.5; is < nsamp;
+         is++, ar_sample++, grid_sample += sample_step) {
+        if (is == next_cld_step)
+        {
+            cld_col++;
+            next_cld_step += cld_diags->cellwidth;
+        }
+        if (ar_sample == lut->ar_region_size.s && is_ar < lut->ar_size.s - 1)
+        {
+            is_ar++;
+            ar_sample = 0;
         }
 
-        if ((qa_line[is] & 0x01) == 0x01) {
-            is_fill = true;
-            ddv_line[is] = 0x08;
+        /* If fill, continue with the next sample. */
+        if (level1_qa_is_fill(qa_line[is])) {
+            ddv_line[is] = AR_FILL;
+            continue;
         }
 
-        if (! is_fill) {
-            ddv_line[is] &= 0x44; /* reset all bits except cloud shadow and
-                                     adjacent cloud */ 
+        ddv_line[is] &= AR_ADJ_CLOUD_OR_SHADOW; /* reset all bits except cloud
+                                                   shadow and adjacent cloud */ 
 
-            if (((qa_line[is] & 0x08) == 0x08) ||
-                ((lut->meta.inst == INST_TM) &&
-                (line_in[2][is] >= 5000))) {  /* saturated band 3 */
-                if (thermal_band) {
-                    t6 = b6_line[is] * 0.1;
+        if (level1_qa_is_saturated(qa2_line[is],3) ||
+            ((lut->meta.inst == INST_TM) &&
+            (line_in[AR_B3][is] >= thresh_tm))) {
+            if (thermal_band) {
+                t6 = b6_line[is]*lut->b6_scale_factor + lut->b6_add_offset;
 
-                    /* Interpolate the cloud diagnostics for current pixel */
-                    interpol_clddiags_1pixel (cld_diags, il, is, &temp_b6_clear,
-                        &atemp_ancillary);
-                    if (temp_b6_clear < 0.) {
-                        temp_thshld1 = atemp_ancillary - 20.;
-                        temp_thshld2 = atemp_ancillary - 20.;
-                    }
-                    else {
-                        if (cld_diags->std_t6_clear[cld_row][cld_col] > 0.) {
-                            temp_thshld1 = temp_b6_clear -
-                               (cld_diags->std_t6_clear[cld_row][cld_col] + 4.);
-                            temp_thshld2 = temp_b6_clear -
-                               cld_diags->std_t6_clear[cld_row][cld_col];
-                        }
-                        else {
-                            temp_thshld1 = temp_b6_clear - 4.;
-                            temp_thshld2 = temp_b6_clear - 2.;
-                        }
-                    }
-
-                    if ((((qa_line[is] & 0x20) == 0x20) ||
-                         ((lut->meta.inst == INST_TM) &&
-                          (line_in[4][is] >= 5000))) && (t6 < temp_thshld1)) {
-                        /* saturated band 5 and t6 < threshold => cloudy */
-                        ddv_line[is] &= 0xbf; /* reset shadow bit */
-                        ddv_line[is] &= 0xfb; /* reset adjacent cloud bit */
-                        ddv_line[is] |= 0x20; /* set cloud bit */
-                    }
-                    else if ((line_in[4][is] < 2000) &&
-                             (t6 < temp_snow_thshld)) { /* snow */
-                        ddv_line[is] |= 0x80;
-                    }
-                    else { /* assume cloudy */
-                        ddv_line[is] &= 0xbf; /* reset shadow bit */
-                        ddv_line[is] &= 0xfb; /* reset adjacent cloud bit */
-                        ddv_line[is] |= 0x20; /* set cloud bit */
-                    }
-                }
-            }
-            else {
-                /* Interpolate the atmospheric conditions for current pixel */
-                SrInterpAtmCoef (lut, &loc, &atmos_coef, &interpol_atmos_coef);
-
-                /* Compute the reflectance for each band using the interpolated
-                   atmospheric coefficients */
-                rho1 = line_in[0][is] * 0.0001;
-                rho1 = (rho1/interpol_atmos_coef.tgOG[0][0] -
-                    interpol_atmos_coef.rho_ra[0][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[0][0] *
-                    interpol_atmos_coef.td_ra[0][0] *
-                    interpol_atmos_coef.tu_ra[0][0]);
-                rho1 /= tmpflt;
-                rho1 /= (1. + interpol_atmos_coef.S_ra[0][0] * rho1);
-
-                rho2 = line_in[1][is] * 0.0001;
-                rho2 = (rho2/interpol_atmos_coef.tgOG[1][0] -
-                    interpol_atmos_coef.rho_ra[1][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[1][0] *
-                    interpol_atmos_coef.td_ra[1][0] *
-                    interpol_atmos_coef.tu_ra[1][0]);
-                rho2 /= tmpflt;
-                rho2 /= (1. + interpol_atmos_coef.S_ra[1][0] * rho2);
-
-                rho3 = line_in[2][is] * 0.0001;
-                rho3 = (rho3 / interpol_atmos_coef.tgOG[2][0] -
-                    interpol_atmos_coef.rho_ra[2][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[2][0] *
-                    interpol_atmos_coef.td_ra[2][0] *
-                    interpol_atmos_coef.tu_ra[2][0]);
-                rho3 /= tmpflt;
-                rho3 /= (1. + interpol_atmos_coef.S_ra[2][0] * rho3);
-
-                rho4 = line_in[3][is] * 0.0001;
-                rho4 = (rho4 / interpol_atmos_coef.tgOG[3][0] -
-                    interpol_atmos_coef.rho_ra[3][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[3][0] *
-                    interpol_atmos_coef.td_ra[3][0] *
-                    interpol_atmos_coef.tu_ra[3][0]);
-                rho4 /= tmpflt;
-                rho4 /= (1. + interpol_atmos_coef.S_ra[3][0] * rho4);
-
-                rho5 = line_in[4][is] * 0.0001;
-                rho5 = (rho5 / interpol_atmos_coef.tgOG[4][0] -
-                    interpol_atmos_coef.rho_ra[4][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[4][0] *
-                    interpol_atmos_coef.td_ra[4][0] *
-                    interpol_atmos_coef.tu_ra[4][0]);
-                rho5 /= tmpflt;
-                rho5 /= (1. + interpol_atmos_coef.S_ra[4][0] * rho5);
-
-                rho7 = line_in[5][is] * 0.0001;
-                rho7 = (rho7 / interpol_atmos_coef.tgOG[5][0] -
-                    interpol_atmos_coef.rho_ra[5][0]);
-                tmpflt = (interpol_atmos_coef.tgH2O[5][0] *
-                    interpol_atmos_coef.td_ra[5][0] *
-                    interpol_atmos_coef.tu_ra[5][0]);
-                rho7 /= tmpflt;
-                rho7 /= (1. + interpol_atmos_coef.S_ra[5][0] * rho7);
-
-                /* Get the temperature */
-                if (thermal_band)
-                    t6 = b6_line[is] * 0.1;
-
-                /* Interpolate the cloud diagnostics for the current pixel */
-                interpol_clddiags_1pixel (cld_diags, il, is, &temp_b6_clear,
-                    &atemp_ancillary);
-
+                /* Interpolate the cloud diagnostics for current pixel */
+                interpol_clddiags_1pixel (cld_diags, il, is, tmpflt_arr);
+                temp_b6_clear = tmpflt_arr[0];
+                atemp_ancillary = tmpflt_arr[1];
                 if (temp_b6_clear < 0.) {
                     temp_thshld1 = atemp_ancillary - 20.;
                     temp_thshld2 = atemp_ancillary - 20.;
                 }
+                else if (cld_diags->std_t6_clear[cld_row][cld_col] > 0.) {
+                    temp_thshld1 = temp_b6_clear -
+                        (cld_diags->std_t6_clear[cld_row][cld_col] + 4.);
+                    temp_thshld2 = temp_b6_clear -
+                        cld_diags->std_t6_clear[cld_row][cld_col];
+                }
                 else {
-                    if (cld_diags->std_t6_clear[cld_row][cld_col] > 0.) {
-                        temp_thshld1 = temp_b6_clear -
-                            (cld_diags->std_t6_clear[cld_row][cld_col] + 4.);
-                        temp_thshld2 = temp_b6_clear -
-                            cld_diags->std_t6_clear[cld_row][cld_col];
-                    }
-                    else {
-                        temp_thshld1 = temp_b6_clear - 4.;
-                        temp_thshld2 = temp_b6_clear - 2.;
-                    }
+                    temp_thshld1 = temp_b6_clear - 4.;
+                    temp_thshld2 = temp_b6_clear - 2.;
                 }
 
-                if (thermal_band) {
-                    /* Compute cloud coefficients */
-                    vra = rho1 - rho3 * 0.5;
+                if ((level1_qa_is_saturated(qa2_line[is],5) ||
+                     ((lut->meta.inst == INST_TM) &&
+                      (line_in[AR_B5][is] >= thresh_tm))) &&
+                      (t6 < temp_thshld1)) {
+                    /* saturated band 5 and t6 < threshold => cloudy */
+                    ddv_line[is] &= AR_RESET_SHADOW; /* reset shadow bit */
+                    ddv_line[is] &= AR_RESET_ADJ_CLOUD; /* reset adjcloud bit */
+                    ddv_line[is] |= AR_CLOUD; /* set cloud bit */
+                }
+                else if ((line_in[AR_B5][is] < band5_thresh) &&
+                         (t6 < temp_snow_thshld)) { /* snow */
+                    ddv_line[is] |= AR_SNOW;
+                }
+                else { /* assume cloudy */
+                    ddv_line[is] &= AR_RESET_SHADOW; /* reset shadow bit */
+                    ddv_line[is] &= AR_RESET_ADJ_CLOUD; /* reset adjcloud bit */
+                    ddv_line[is] |= AR_CLOUD; /* set cloud bit */
+                }
+            }  /* end if thermal */
+        }  /* end if band 3 saturated .... */
+        else {
+            /* Interpolate the atmospheric conditions for current pixel */
+            SrInterpAtmCoef(lut, grid_line, grid_sample, atmos_coef,
+                            interpol_atmos_coef);
 
-                    C1 = (int)(vra > VRA_THRESHOLD);
-                    C2 = (t6 < temp_thshld1);
+            /* Compute the reflectance for each band using the interpolated
+               atmospheric coefficients */
+            float *rho[6] = {&rho1, &rho2, &rho3, &rho4, &rho5, &rho7};
+            float **tgog = interpol_atmos_coef->tgOG;
+            float **tgh2o = interpol_atmos_coef->tgH2O;
+            float **rho_ra = interpol_atmos_coef->rho_ra;
+            float **td_ra = interpol_atmos_coef->td_ra;
+            float **tu_ra = interpol_atmos_coef->tu_ra;
+            float **s_ra = interpol_atmos_coef->S_ra;
+            int i;
+            for (i=0; i<6; i++)
+            {
+                *rho[i] = compute_rho(line_in[i][is] * lut->scale_factor
+                                      + lut->add_offset, *tgog[i], *tgh2o[i],
+                                      *td_ra[i], *tu_ra[i], *rho_ra[i],
+                                      *s_ra[i]);
+            }
+
+            /* Get the temperature */
+            if (thermal_band)
+                t6 = b6_line[is] * lut->b6_scale_factor + lut->b6_add_offset;
+
+            /* Interpolate the cloud diagnostics for the current pixel */
+            interpol_clddiags_1pixel (cld_diags, il, is, tmpflt_arr);
+            temp_b6_clear = tmpflt_arr[0];
+            atemp_ancillary = tmpflt_arr[1];
+
+            if (temp_b6_clear < 0.) {
+                temp_thshld1 = atemp_ancillary - 20.;
+                temp_thshld2 = atemp_ancillary - 20.;
+            }
+            else if (cld_diags->std_t6_clear[cld_row][cld_col] > 0.) {
+                temp_thshld1 = temp_b6_clear -
+                    (cld_diags->std_t6_clear[cld_row][cld_col] + 4.);
+                temp_thshld2 = temp_b6_clear -
+                    cld_diags->std_t6_clear[cld_row][cld_col];
+            }
+            else {
+                temp_thshld1 = temp_b6_clear - 4.;
+                temp_thshld2 = temp_b6_clear - 2.;
+            }
+
+            if (thermal_band) {
+                /* Compute cloud coefficients */
+                vra = rho1 - rho3 * 0.5;
+
+                C1 = (int)(vra > VRA_THRESHOLD);
+                C2 = (t6 < temp_thshld1);
    
-                    tmpflt = rho4 / rho3;
+                C4 = (rho7 > 0.03);
+                C5 = (t6 < temp_thshld2) && C1;
+            }
 
-                    C4 = (rho7 > 0.03);
-                    C5 = (t6 < temp_thshld2) && C1;
-                }
+            /**
+               Water test :
+               ndvi < 0 => water
+               ((0<ndvi<0.1) or (b4<5%)) and b5 < 0.01 => turbid water
+            **/
+            if (rho4 + rho3 != 0)
+                ndvi = (rho4 - rho3) / (rho4 + rho3);
+            else
+                ndvi = 0.01;
+            water = ndvi < 0 || (((ndvi > 0 && ndvi < 0.1) || rho4 < 0.05) &&
+                                 rho5 < 0.02);
 
-                /**
-                Water test :
-                ndvi < 0 => water
-                ((0<ndvi<0.1) or (b4<5%)) and b5 < 0.01 => turbid water
-                **/
-                if ((rho4 + rho3) != 0)
-                    ndvi = (rho4 - rho3) / (rho4 + rho3);
-                else
-                    ndvi = 0.01;
-                water = (ndvi < 0) || ((((ndvi > 0) && (ndvi < 0.1)) ||
-                    (rho4 < 0.05)) && (rho5 < 0.02));
 
-                if (thermal_band) {
-                    if (!water) { /* if not water */
-                        ddv_line[is] |= 0x10;
-                        if ((C2 || C5) && C4) { /* cloudy */
-                            ddv_line[is] &= 0xbf; /* reset shadow bit */
-                            ddv_line[is] &= 0xfb; /* reset adjacent cloud bit */
-                            ddv_line[is] |= 0x20; /* set cloud bit */
-                        }
-                        else { /* clear */
-                            ddv_line[is] &= 0xdf;
-                            ndsi = (rho2 - rho5) / (rho2 + rho5);
-                            if ((ndsi > 0.3) && (t6 < temp_snow_thshld) &&
-                                (rho4 > 0.2))
-                                ddv_line[is] |= 0x80;
-                        }
+
+            if (thermal_band) {
+                if (!water) { /* if not water */
+                    ddv_line[is] |= AR_WATER;
+                    if ((C2 || C5) && C4) { /* cloudy */
+                        ddv_line[is] &= AR_RESET_SHADOW; /* reset shadow bit */
+                        ddv_line[is] &= AR_RESET_ADJ_CLOUD; /* reset adjcloud */
+                        ddv_line[is] |= AR_CLOUD; /* set cloud bit */
                     }
-                    else 
-                        ddv_line[is] &= 0xef; 
-                }
-                else { /* no thermal band - cannot run cloud mask */
-                    ddv_line[is] &= 0xdf; /* assume clear */
-                    if (!water) { /* if not water */
-                        ddv_line[is] |= 0x10;
-                    }
-                    else {
-                        ddv_line[is] &= 0xef; 
+                    else { /* clear */
+                        ddv_line[is] &= AR_RESET_CLOUD;
+                        ndsi = (rho2 - rho5) / (rho2 + rho5);
+                        if ((ndsi > 0.3) && (t6 < temp_snow_thshld) &&
+                            (rho4 > 0.2))
+                            ddv_line[is] |= AR_SNOW;
                     }
                 }
-            }  /* end else saturated band 3 */
-        }  /* if ! is_fill */ 
+                else 
+                    ddv_line[is] &= AR_RESET_WATER;
+            }
+            else { /* no thermal band - cannot run cloud mask */
+                ddv_line[is] &= AR_RESET_CLOUD; /* assume clear */
+                if (!water) { /* if not water */
+                    ddv_line[is] |= AR_WATER;
+                }
+                else {
+                    ddv_line[is] &= AR_RESET_WATER;
+                }
+            }
+        }  /* end else saturated band 3 */
     }  /* end for is */
 
-    free_mem_atmos_coeff(&interpol_atmos_coef);
     return true;
 }
 
@@ -443,39 +405,56 @@ bool dilate_cloud_mask
     int k;
 
     for (il = 0; il < lut->ar_region_size.l; il++) {
+        int k_start = il - dilate_dist;
         for (is = 0; is < nsamp; is++) {
-            if (cloud_buf[1][il][is] & 0x20) { /* if cloudy dilate */
-                for (k = (il-dilate_dist); k < (il+dilate_dist); k++) {
-                    il_adj = k;
+            /* If not cloudy, continue with next sample. */
+            if (!(cloud_buf[1][il][is] & AR_CLOUD))
+                continue;
+
+            /* Cloudy, so dilate. */
+            if (k_start <= 0)
+            {
+                buf_ind = 0;
+                il_adj = k_start + lut->ar_region_size.l;
+            }
+            else
+            {
+                buf_ind = 1;
+                il_adj = k_start;
+            }
+            for (k = k_start; k < il + dilate_dist; k++, il_adj++) {
+                if (k == 0) {
                     buf_ind = 1;
-                    if (k < 0) {
-                        buf_ind--;
-                        il_adj += lut->ar_region_size.l; 
+                    il_adj = 0;
+                }
+                else if (k == lut->ar_region_size.l) {
+                    buf_ind = 2;
+                    il_adj = 0;
+                }
+
+                /* If il_adj is out of range, continue with the next value. */
+                if (il_adj < 0 || il_adj >= lut->ar_region_size.l)
+                    continue;
+
+                int is_start, is_end;
+                if (is > dilate_dist)
+                    is_start = is - dilate_dist;
+                else
+                    is_start = 0;
+                if (is < nsamp - dilate_dist)
+                    is_end = is + dilate_dist;
+                else
+                    is_end = nsamp;
+                for (is_adj = is_start; is_adj < is_end; is_adj++) {
+                    if (!(cloud_buf[buf_ind][il_adj][is_adj] & AR_CLOUD)) {
+                        /* not cloudy */
+                        /* reset shadow bit */
+                        cloud_buf[buf_ind][il_adj][is_adj] &= AR_RESET_SHADOW;
+                        /* set adjacent cloud bit */
+                        cloud_buf[buf_ind][il_adj][is_adj] |= AR_ADJ_CLOUD;
                     }
-                    if (k >= lut->ar_region_size.l) {
-                        buf_ind++;
-                        il_adj -= lut->ar_region_size.l; 
-                    }
-                    if ((il_adj>=0)&&(il_adj<lut->ar_region_size.l)) {
-                        for (is_adj = (is-dilate_dist);
-                             is_adj < (is+dilate_dist);
-                             is_adj++) {
-                            if ((is_adj>=0)&&(is_adj<nsamp)) {
-                                /* if not cloudy */
-                                if (!(cloud_buf[buf_ind][il_adj][is_adj] &
-                                    0x20)) {
-                                    /* reset adjacent cloud bit */
-                                    cloud_buf[buf_ind][il_adj][is_adj] &= 0xfb;
-                                    /* reset shadow bit */
-                                    cloud_buf[buf_ind][il_adj][is_adj] &= 0xbf;
-                                    /* set adjacent cloud bit */
-                                    cloud_buf[buf_ind][il_adj][is_adj] |= 0x04;
-                                }
-                            }
-                        }  /* for is_adj */
-                    }  /* if il_adj */
-                }  /* for k */
-            } /* if cloudy */
+                }  /* for is_adj */
+            }  /* for k */
         }  /* for is */
     }  /* for il */
     return true;
@@ -487,8 +466,8 @@ void cast_cloud_shadow
     Lut_t *lut,
     int nsamp,
     int il_start,
-    int16 ***line_in,
-    int16 **b6_line,
+    uint16_t ***line_in,
+    uint16_t **b6_line,
     cld_diags_t *cld_diags,
     char ***cloud_buf,
     Ar_gridcell_t *ar_gridcell,
@@ -497,9 +476,10 @@ void cast_cloud_shadow
 )
 {
     int il,is,il_ar,is_ar,shd_buf_ind;
-    float t6,temp_b6_clear,atemp_ancillary;
-    float conv_factor,cld_height,ts,tv,fs,fv,dx,dy;
+    float t6,temp_b6_clear,atemp_ancillary,tmpflt_arr[2];
+    float conv_factor,cld_height,ts,fs,dx,dy;
     int shd_x,shd_y;
+    float shadow_factor = 1000/pixel_size;
 
 /***
     Cloud Shadow
@@ -507,142 +487,141 @@ void cast_cloud_shadow
     il_ar = il_start / lut->ar_region_size.l;
     if (il_ar >= lut->ar_size.l)
         il_ar = lut->ar_size.l - 1;
+    int index = il_ar*lut->ar_size.s;
     for (il = 0; il <lut->ar_region_size.l; il++) {
-        for (is = 0; is < nsamp; is++) {
-            is_ar = is / lut->ar_region_size.s;
-            if (is_ar >= lut->ar_size.s)
-                is_ar = lut->ar_size.s - 1;
+        int ar_sample = 0;
+        for (is = 0, is_ar = 0; is < nsamp; is++, ar_sample++) {
+            if (ar_sample == lut->ar_region_size.s &&
+                is_ar < lut->ar_size.s - 1)
+            {
+                is_ar++;
+                ar_sample = 0;
+            }
 
             /* Get the thermal info */
-            t6 = b6_line[il][is]*0.1;
+            t6 = b6_line[il][is] * lut->b6_scale_factor + lut->b6_add_offset;
 
             /* Interpolate the cloud diagnostics for this pixel */
-            interpol_clddiags_1pixel (cld_diags, il+il_start, is,
-                &temp_b6_clear, &atemp_ancillary);
+            interpol_clddiags_1pixel (cld_diags, il+il_start, is, tmpflt_arr);
+            temp_b6_clear = tmpflt_arr[0];
+            atemp_ancillary = tmpflt_arr[1];
 
-            if (cloud_buf[1][il][is] & 0x20) { /* if cloudy cast shadow */
-                conv_factor = 6.;
-                while (conv_factor <= 6.) {
-                    /* Determine the cloud height */
-                    if (temp_b6_clear > 0)
-                        cld_height = (temp_b6_clear - t6) / conv_factor;
-                    else
-                        cld_height = (atemp_ancillary - t6) / conv_factor;
+            /* If not cloudy, continue with next sample. */
+            if (!(cloud_buf[1][il][is] & AR_CLOUD))
+                continue;
 
-                    /* If the cloud height is greater than 0, then determine
-                       the shadow */
-                    if (cld_height > 0.) {
-                        ts = ar_gridcell->sun_zen[il_ar*lut->ar_size.s+is_ar]
-                            / DEG;
-                        fs = (ar_gridcell->rel_az[il_ar*lut->ar_size.s+is_ar]
-                            - adjust_north) / DEG;
-                        tv = ar_gridcell->view_zen[il_ar*lut->ar_size.s+is_ar]
-                            / DEG;
-                        fv = 0.;
+            conv_factor = 6.;
+            while (conv_factor <= 6.) {
+                /* Determine the cloud height */
+                if (temp_b6_clear > 0)
+                    cld_height = (temp_b6_clear - t6) / conv_factor;
+                else
+                    cld_height = (atemp_ancillary - t6) / conv_factor;
 
-/*                        dy = sin(2.*M_PI - fv) * tan(tv) * cld_height;
-                        dx = cos(2.*M_PI - fv) * tan(tv) * cld_height;
-                        dy=0;
-                        dx=0;
+                /* If the cloud height is less than or equal to 0, there is
+                   no shadow.  So continue with the next value.  */
+                conv_factor++;
+                if (cld_height <= 0)
+                    continue;
 
-                        shd_x = is - dx * 1000. / pixel_size;
-                        shd_y = il + dy * 1000. / pixel_size;
-*/
-                        dy = cos(fs) * tan(ts) * cld_height;
-                        dx = sin(fs) * tan(ts) * cld_height;
-                        shd_x = is - dx * 1000. / pixel_size;
-                        shd_y = il + dy * 1000. / pixel_size;
+                ts = ar_gridcell->sun_zen[index+is_ar]/DEG;
+                fs = (ar_gridcell->rel_az[index+is_ar] - adjust_north)/DEG;
 
-                        if ((shd_x >= 0) && (shd_x < nsamp)) {
-                            shd_buf_ind = 1;
-                            if (shd_y < 0) {
-                                shd_buf_ind--;
-                                shd_y += lut->ar_region_size.l;
-                            }
-                            if (shd_y >= lut->ar_region_size.l) {
-                                shd_buf_ind++;
-                                shd_y -= lut->ar_region_size.l;
-                            }
-                            /* Mask as cloud shadow */
-                            if (shd_y >= 0 && shd_y < lut->ar_region_size.l) {
-                                /* if not cloud, adjacent cloud or cloud
-                                   shadow */
-                                if (!((cloud_buf[shd_buf_ind][shd_y][shd_x] &
-                                       0x20) ||
-                                      (cloud_buf[shd_buf_ind][shd_y][shd_x] &
-                                       0x04) ||
-                                      (cloud_buf[shd_buf_ind][shd_y][shd_x] &
-                                       0x40)))
-                                    /* set cloud shadow bit */
-                                   cloud_buf[shd_buf_ind][shd_y][shd_x] |= 0x40;
-                            }
-                        }
-                    } /* if cld_height > 0 */
+                dy = cos(fs) * tan(ts) * cld_height;
+                dx = sin(fs) * tan(ts) * cld_height;
+                shd_x = is - dx*shadow_factor;
+                shd_y = il + dy*shadow_factor;
 
-                    conv_factor += 1.;
-                } /* while conv_fact <= 6. */
-            }
-        }
-    }
-
-    return;
+                if ((shd_x >= 0) && (shd_x < nsamp)) {
+                    shd_buf_ind = 1;
+                    if (shd_y < 0) {
+                        shd_buf_ind--;
+                        shd_y += lut->ar_region_size.l;
+                    }
+                    if (shd_y >= lut->ar_region_size.l) {
+                        shd_buf_ind++;
+                        shd_y -= lut->ar_region_size.l;
+                    }
+                    /* Mask as cloud shadow */
+                    if (shd_y >= 0 && shd_y < lut->ar_region_size.l) {
+                        /* if not cloud, adjacent cloud or cloud
+                           shadow */
+                        if (!((cloud_buf[shd_buf_ind][shd_y][shd_x] &
+                               AR_CLOUD) ||
+                              (cloud_buf[shd_buf_ind][shd_y][shd_x] &
+                               AR_ADJ_CLOUD) ||
+                              (cloud_buf[shd_buf_ind][shd_y][shd_x] &
+                               AR_CLOUD_SHADOW)))
+                            /* set cloud shadow bit */
+                            cloud_buf[shd_buf_ind][shd_y][shd_x] |=
+                                AR_CLOUD_SHADOW;
+                    }
+                }
+            } /* while conv_fact <= 6. */
+        } /* sample loop */
+    } /* line loop */
 }
 
 bool dilate_shadow_mask
 (
     Lut_t *lut,          /* I: lookup table */
     int nsamp,           /* I: number of samples in the current line */
-    char ***cloud_buf,   /* I: I/O: cloud buffer */
+    char *fill_mask,     /* I: storage for fill mask */
+    char ***cloud_buf,   /* I/O: cloud buffer */
     int dilate_dist      /* I: size of dilation window */
 )
 {
     int il,is,il_adj,is_adj,buf_ind;
     int k;
-    char *fill_mask = NULL;
 
-    if ((fill_mask = calloc(lut->ar_region_size.l*nsamp, sizeof(char))) == NULL)
-        return false;
+    /* Initialize the fill mask. */
+    memset(fill_mask, 0, lut->ar_region_size.l*nsamp);
 
+    int index = 0;
     for (il = 0; il < lut->ar_region_size.l; il++) {
-        for (is = 0; is < nsamp; is++) {
-            if ((cloud_buf[0][il][is] & 0x40) && (!fill_mask[il*nsamp+is])) {
-                /* if cloud shadow dilate */
-                for (k = (il-dilate_dist); k <= (il+dilate_dist); k++) {
-                    il_adj = k;
-                    buf_ind = 0;
-                    if (k >= lut->ar_region_size.l) {
-                        buf_ind++;
-                        il_adj -= lut->ar_region_size.l; 
-                    }
+        int k_start;
+        if (il > dilate_dist)
+            k_start = il - dilate_dist;
+        else
+            k_start = 0;
 
-                    if (k >= 0) {
-                        if ((il_adj >= 0) && (il_adj < lut->ar_region_size.l)) {
-                            for (is_adj = (is-dilate_dist);
-                                 is_adj <= (is+dilate_dist); is_adj++) {
-                                if ((is_adj >= 0) && (is_adj < nsamp)) {
-                                    /* if not cloud, adjacent cloud or cloud
-                                       shadow */
-                                    if (!((cloud_buf[buf_ind][il_adj][is_adj] &
-                                           0x20) ||
-                                          (cloud_buf[buf_ind][il_adj][is_adj] &
-                                           0x04) ||
-                                          (cloud_buf[buf_ind][il_adj][is_adj] &
-                                           0x40))) {
-                                        /* set adjacent cloud shadow bit */
-                                        cloud_buf[buf_ind][il_adj][is_adj] |=
-                                            0x40;
-                                        fill_mask[il_adj*nsamp+is_adj]=1;
-                                    }
-                                }
-                            }
-                        }
+        for (is = 0; is < nsamp; is++, index++) {
+            /* If not cloud shadow, continue with the next sample.
+               Otherwise, dilate. */
+            if (!(cloud_buf[0][il][is] & AR_CLOUD_SHADOW) || fill_mask[index])
+                continue;
+
+            for (k = k_start, il_adj = k, buf_ind = 0; k <= il + dilate_dist;
+                 k++, il_adj++) {
+                if (k == lut->ar_region_size.l) {
+                    buf_ind = 1;
+                    il_adj = 0;
+                }
+
+                int adj_start, adj_end;
+                if (is > dilate_dist)
+                    adj_start = is - dilate_dist;
+                else
+                    adj_start = 0;
+                if (is < nsamp - dilate_dist - 1)
+                    adj_end = is + dilate_dist;
+                else
+                    adj_end = nsamp - 1;
+                int index_adj = il_adj*nsamp + adj_start;
+                for (is_adj = adj_start; is_adj <= adj_end;
+                     is_adj++, index_adj++) {
+                    /* if not cloud, adjacent cloud or cloud shadow */
+                    if (!(cloud_buf[buf_ind][il_adj][is_adj] &
+                          AR_CLOUD_OR_ADJ_CLOUD_OR_SHADOW)) {
+                        /* set adjacent cloud shadow bit */
+                        cloud_buf[buf_ind][il_adj][is_adj] |= AR_CLOUD_SHADOW;
+                        fill_mask[index_adj] = 1;
                     }
                 }
-            } /* if cloud shadow */
+            }
         }  /* for is */
     }  /* for il */
 
-    free (fill_mask);
     return true;
 }
 
@@ -664,36 +643,36 @@ int allocate_cld_diags
     cld_diags->nbrows = (scene_height - 1) / cell_height + 1;
     cld_diags->nbcols = (scene_width - 1) / cell_width + 1;
 
-    if ((cld_diags->avg_t6_clear = malloc (cld_diags->nbrows*sizeof(float *)))
+    if ((cld_diags->avg_t6_clear = malloc (cld_diags->nbrows*sizeof(double *)))
         ==NULL)
         return -1;
     for (i = 0; i < cld_diags->nbrows; i++)
         if ((cld_diags->avg_t6_clear[i] = calloc(cld_diags->nbcols,
-            sizeof(float)))==NULL)
+            sizeof(double)))==NULL)
             return -1;
 
-    if ((cld_diags->std_t6_clear = malloc (cld_diags->nbrows*sizeof(float *)))
+    if ((cld_diags->std_t6_clear = malloc (cld_diags->nbrows*sizeof(double *)))
         ==NULL)
         return -1;
     for (i = 0; i < cld_diags->nbrows; i++)
         if ((cld_diags->std_t6_clear[i] = calloc(cld_diags->nbcols,
-            sizeof(float)))==NULL)
+            sizeof(double)))==NULL)
             return -1;
 
-    if ((cld_diags->avg_b7_clear = malloc (cld_diags->nbrows*sizeof(float *)))
+    if ((cld_diags->avg_b7_clear = malloc (cld_diags->nbrows*sizeof(double *)))
         ==NULL)
         return -1;
     for (i = 0; i < cld_diags->nbrows; i++) 
         if ((cld_diags->avg_b7_clear[i] = calloc(cld_diags->nbcols,
-            sizeof(float)))==NULL)
+            sizeof(double)))==NULL)
             return -1;
 
-    if ((cld_diags->std_b7_clear = malloc (cld_diags->nbrows*sizeof(float *)))
+    if ((cld_diags->std_b7_clear = malloc (cld_diags->nbrows*sizeof(double *)))
         ==NULL)
         return -1;
     for (i = 0; i < cld_diags->nbrows; i++) 
         if ((cld_diags->std_b7_clear[i] = calloc(cld_diags->nbcols,
-            sizeof(float)))==NULL)
+            sizeof(double)))==NULL)
             return -1;
 
     if ((cld_diags->airtemp_2m = malloc (cld_diags->nbrows*sizeof(float *)))
@@ -753,7 +732,7 @@ the standard deviation of the optical depth which is set to -9999 for a filling.
     for (i=0;i<cld_diags->nbrows;i++) {
         for (j=0;j<cld_diags->nbcols;j++) {
             missing_flag[i][j]=1;
-            if (cld_diags->avg_t6_clear[i][j]!=-9999.)  {
+            if (cld_diags->avg_t6_clear[i][j]!=CLOUD_FILL)  {
                 count++;
                 lastt6=cld_diags->avg_t6_clear[i][j];
                 lastb7=cld_diags->avg_b7_clear[i][j];
@@ -784,7 +763,7 @@ the standard deviation of the optical depth which is set to -9999 for a filling.
             min_nb_values=3;
             max_distance=4;    
             pass=0;
-            while ((cld_diags->avg_t6_clear[i][j] == -9999.) &&
+            while ((cld_diags->avg_t6_clear[i][j] == CLOUD_FILL) &&
                    (pass<max_distance)) {
                 pass++;
                 sumdist=0.;
@@ -821,7 +800,7 @@ the standard deviation of the optical depth which is set to -9999 for a filling.
             min_nb_values=2;
             max_distance=6;    
             pass=0;
-            while ((cld_diags->avg_t6_clear[i][j] == -9999.) &&
+            while ((cld_diags->avg_t6_clear[i][j] == CLOUD_FILL) &&
                    (pass<max_distance)) {
                 pass++;
                 sumdist=0.;
@@ -858,7 +837,7 @@ the standard deviation of the optical depth which is set to -9999 for a filling.
             min_nb_values=1;
             max_distance=10;    
             pass=0;
-            while ((cld_diags->avg_t6_clear[i][j] == -9999.) &&
+            while ((cld_diags->avg_t6_clear[i][j] == CLOUD_FILL) &&
                    (pass<max_distance)) {
                 pass++;
                 sumdist=0.;
@@ -897,8 +876,7 @@ void interpol_clddiags_1pixel
     cld_diags_t *cld_diags,  /* I: cloud diagnostics */
     int img_line,            /* I: current line in image */
     int img_sample,          /* I: current sample in image */
-    float *t6_clear,         /* O: interpolated t6_clear value */
-    float *airtemp_2m        /* O: interpolated airtemp_2m value */
+    float *inter_value       /* O: interpolated cloud diagnostic value */
 )
 /* 
   Point order:
@@ -907,6 +885,9 @@ void interpol_clddiags_1pixel
     |      |    |
     |      |    v
     2 ---- 3   line
+
+    inter_value[0] => t6_clear
+    inter_value[1] => airtemp_2m
 
     Updated by Gail Schmidt, USGS EROS, on 10/20/2014
     We want the airtemp_2m to be calculated regardless of whether the band6
@@ -921,18 +902,23 @@ void interpol_clddiags_1pixel
       int s;                /* sample number */
     } Img_coord_int_t;
     
-    Img_coord_int_t p[4];
+    Img_coord_int_t p[FOUR_PTS];
     int i, n, n_anc;
-    float dl, ds, w;
-    float sum_w, sum_anc_w, sum_t6_clear, sum_airtemp_2m;
+    float dl, ds, w[FOUR_PTS];
+    float grid_line, grid_sample;
+    float sum_w, sum_anc_w;
+
     int cell_half_height, cell_half_width;
 
-    *t6_clear = -9999;
-    *airtemp_2m = -9999;
+    inter_value[0] = inter_value[1] = 0;
+
     cell_half_height = (cld_diags->cellheight + 1) >> 1;  /* divide by 2 */
     cell_half_width = (cld_diags->cellwidth + 1) >> 1;  /* divide by 2 */
 
-    p[0].l = (img_line - cell_half_height) / cld_diags->cellheight;
+    /* Set the four corner point indices. */
+    grid_line = (float)(img_line  - cell_half_height)/cld_diags->cellheight;
+    grid_sample = (float)(img_sample - cell_half_width)/cld_diags->cellwidth;
+    p[0].l = (int)grid_line;
     if (p[0].l < 0)
         p[0].l = 0;
     p[2].l = p[0].l + 1;
@@ -941,21 +927,18 @@ void interpol_clddiags_1pixel
             if (p[0].l > 0)
                 p[0].l--;
     }
-        
     p[1].l = p[0].l;
     p[3].l = p[2].l;
 
-    p[0].s = (img_sample - cell_half_width) / cld_diags->cellwidth;
+    p[0].s = (int)grid_sample;
     if (p[0].s < 0)
         p[0].s = 0;
     p[1].s = p[0].s + 1;
-
     if (p[1].s >= cld_diags->nbcols) {
         p[1].s = cld_diags->nbcols - 1;
         if (p[0].s > 0)
             p[0].s--;
     }
-
     p[2].s = p[0].s;
     p[3].s = p[1].s;
 
@@ -964,42 +947,44 @@ void interpol_clddiags_1pixel
     n_anc = 0;
     sum_w = 0.0;
     sum_anc_w = 0.0;
-    sum_t6_clear = 0.0;
-    sum_airtemp_2m = 0.0;
 
-    /* Loop through the four points to be used in the interpolation */
-    for (i = 0; i < 4; i++) {
-        /* If the points are valid */
-        if (p[i].l != -1 && p[i].s != -1) {
-            dl = fabs(img_line - cell_half_height) -
-                (p[i].l * cld_diags->cellheight);
-            dl = fabs(dl) / cld_diags->cellheight; 
-            ds = fabs(img_sample - cell_half_width) -
-                (p[i].s * cld_diags->cellwidth);
-            ds = fabs(ds) / cld_diags->cellwidth; 
-            w = (1.0 - dl) * (1.0 - ds);
+    /* Compute the fractional grid cell offset of the sample point from
+       the upper-left corner of the cell and the weights for each corner
+       sammple. */
+    dl = grid_line - p[0].l;
+    ds = grid_sample - p[0].s;
+    w[0] = (1 - dl)*(1 - ds);
+    w[1] = 1 - dl - w[0];
+    w[2] = 1 - ds - w[0];
+    w[3] = ds - w[1];
 
-            if (cld_diags->avg_t6_clear[p[i].l][p[i].s] != -9999.) {
-                n++;
-                sum_w += w;
-                sum_t6_clear += (cld_diags->avg_t6_clear[p[i].l][p[i].s] * w);
-            }
+    /* Apply the bilinear interpolation for the sample point. */
+    for (i = 0; i < 4; i++)
+    {
+        if (cld_diags->avg_t6_clear[p[i].l][p[i].s] != CLOUD_FILL)
+        {
+            n++;
+            sum_w += w[i];
+            inter_value[0] += cld_diags->avg_t6_clear[p[i].l][p[i].s]*w[i];
+        }
 
-            if (cld_diags->airtemp_2m[p[i].l][p[i].s] != -9999) {
-                n_anc++;
-                sum_anc_w += w;
-                sum_airtemp_2m += (cld_diags->airtemp_2m[p[i].l][p[i].s] * w);
-            }
-        }  /* end if points are valid */
-    }  /* end for i */
-
-    if ((n > 0) && (sum_w > 0)) {
-        *t6_clear = sum_t6_clear / sum_w;
+        if (cld_diags->airtemp_2m[p[i].l][p[i].s] != CLOUD_FILL)
+        {
+            n_anc++;
+            sum_anc_w += w[i];
+            inter_value[1] += cld_diags->airtemp_2m[p[i].l][p[i].s]*w[i];
+        }
     }
 
-    if ((n_anc > 0) && (sum_anc_w > 0)) {
-        *airtemp_2m = sum_airtemp_2m / sum_anc_w;
-    }
+    /* Divide by the sum of the weights if it's not zero or one. */
+    if (sum_w > 0 && n < 4)
+        inter_value[0] /= sum_w;
+    else if (sum_w == 0)
+        inter_value[0] = CLOUD_FILL;
 
-    return;
+    if (sum_anc_w > 0 && n_anc < 4)
+        inter_value[1] /= sum_anc_w;
+    else if (sum_anc_w == 0)
+        inter_value[1] = CLOUD_FILL;
+
 }

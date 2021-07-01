@@ -40,41 +40,44 @@
 #ifndef LUT_H
 #define LUT_H
 
-#include "lndcal.h"
+#include <stdbool.h>
 #include "lndcal.h"
 #include "input.h"
 #include "param.h"
-#include "bool.h"
+
+#define VALID_MIN_REF        (-0.01) /* Unscaled */
+#define VALID_MAX_REF        (1.6)   /* Unscaled */
+#define VALID_MIN_TH         (150)   /* Unscaled */
+#define VALID_MAX_TH         (350)   /* Unscaled */
 
 /* Structure for the 'lut' data type */
 
 typedef struct {
   char *file_name;             /* Lookup table file name                    */
-  unsigned char in_fill;       /* Input fill value                          */
   int out_fill;                /* Output fill value                         */
   int out_satu;                /* Output saturation value (Feng, 3/23/09)   */
-  int qa_fill;                 /* QA fill value                             */
-  int qa_satu;                 /* QA saturation value                       */
   Input_meta_t meta;           /* Input metadata                            */
   float cos_sun_zen;           /* Cosine of the solar zenith angle          */
   float esun[NBAND_REFL_MAX];  /* Mean solar exoatmospheric irradiances     */ 
   float dsun2;                 /* Earth sun distance squared                */
-  float K1;                    /* K1 constant                               */
-  float K2;                    /* K2 constant                               */
+  float K1[2];                 /* K1 constant
+                                  [0] is TM band 6  OR
+                                  [0] is ETM+ band 6L, [1] is ETM+ band 6H  */
+  float K2[2];                 /* K2 constant
+                                  [0] is TM band 6  OR
+                                  [0] is ETM+ band 6L, [1] is ETM+ band 6H  */
   char* long_name_prefix_ref;  /* ref long name prefix (append band num)    */
   char* units_ref;             /* ref units                                 */
   int valid_range_ref[2];      /* ref valid range                           */
   double scale_factor_ref;     /* ref scale factor                          */
-  double scale_factor_err_ref; /* ref scale factor error                    */
+  double mult_factor_ref;      /* ref multiplication factor                 */
   double add_offset_ref;       /* ref add offset                            */
-  double add_offset_err_ref;   /* ref add offset error                      */
   char* long_name_prefix_th;   /* thermal long name prefix (append band num)*/ 
   char* units_th;              /* thermal units                             */
   int valid_range_th[2];       /* thermal valid range                       */
   double scale_factor_th;      /* thermal scale factor                      */
-  double scale_factor_err_th;  /* thermal scale factor error                */
+  double mult_factor_th;       /* thermal multiplication factor             */
   double add_offset_th;        /* thermal add offset                        */
-  double add_offset_err_th;    /* thermal add offset error                  */
   double refl_conv[NBAND_REFL_MAX];
 } Lut_t;
 

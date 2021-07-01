@@ -149,7 +149,7 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
 
     if (ib < nband)  /* image band */
     {
-      bmeta[ib].data_type = ESPA_INT16;
+      bmeta[ib].data_type = ESPA_UINT16;
       bmeta[ib].fill_value = lut->output_fill;
       bmeta[ib].saturate_value = lut->output_satu;
       strcpy (bmeta[ib].category, "image");
@@ -165,14 +165,14 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
     else if (ib == nband)  /* atmospheric opacity */
     {
       bmeta[ib].data_type = ESPA_INT16;
-      bmeta[ib].fill_value = lut->output_fill;
+      bmeta[ib].fill_value = lut->output_fill_opacity;
       strcpy (bmeta[ib].category, "image");
       sprintf (bmeta[ib].name, "sr_%s", band_name_extra[ib-nband]);
       bmeta[ib].scale_factor = lut->atmos_opacity_scale_factor;
       strcpy (bmeta[ib].long_name, band_name_extra[ib-nband]);
       strcpy (bmeta[ib].data_units, lut->units);
-      bmeta[ib].valid_range[0] = (float) lut->min_valid_sr;
-      bmeta[ib].valid_range[1] = (float) lut->max_valid_sr;
+      bmeta[ib].valid_range[0] = (float) lut->min_valid_opacity;
+      bmeta[ib].valid_range[1] = (float) lut->max_valid_opacity;
     }
     else  /* QA bands */
     {
@@ -273,7 +273,7 @@ bool FreeOutput(Output_t *this)
 }
 
 
-bool PutOutputLine(Output_t *this, int iband, int iline, int16 *line)
+bool PutOutputLine(Output_t *this, int iband, int iline, uint16_t *line)
 /* 
 !C******************************************************************************
 
@@ -283,7 +283,7 @@ bool PutOutputLine(Output_t *this, int iband, int iline, int16 *line)
  this           'output' data structure
  iband          index (within Output_t struct) of output band to be written
  iline          output line number (used for validation only)
- line           buffer of data to be written (int16); if it's QA data then
+ line           buffer of data to be written (uint16); if it's QA data then
                 it will get converted to uint8 before writing
 
 !Output Parameters:

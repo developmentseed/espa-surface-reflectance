@@ -41,7 +41,7 @@ int set_qamap_(int32 *sds) {
 char message[2600] = {"\0"};
 strcpy(message, QAMAP_1KM);  
 if(SDsetattr(*sds, "QA index\0", 4, strlen(message), (void *)message)){
-       printf("SDS %d: Error: Unable to write QA map indices for QA\n", sds);
+       printf("SDS %d: Error: Unable to write QA map indices for QA\n", *sds);
        return(1);
      }  
 return(0);

@@ -41,8 +41,8 @@
 #define OUTPUT_H
 
 #include <time.h>
+#include <stdbool.h>
 #include "lndsr.h"
-#include "bool.h"
 #include "input.h"
 #include "param.h"
 #include "lut.h"
@@ -66,7 +66,7 @@ typedef struct {
 
 Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
   Param_t *param, Lut_t *lut);
-bool PutOutputLine(Output_t *this, int iband, int iline, int16 *line);
+bool PutOutputLine(Output_t *this, int iband, int iline, uint16_t *line);
 bool CloseOutput(Output_t *this);
 bool FreeOutput(Output_t *this);
 

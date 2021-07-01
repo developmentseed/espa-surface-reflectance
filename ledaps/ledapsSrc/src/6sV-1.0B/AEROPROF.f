@@ -1,12 +1,12 @@
-      subroutine aero_prof (ta,piz,tr,hr,nt,xmus,
+      subroutine aero_prof (ta,piz,tr,hr,nt,xmusinv,
      s   h,ch,ydel,xdel,altc)    
 
       include "paramdef.inc"
       double precision xdel(0:nt),ydel(0:nt),ch(0:nt),h(0:nt)
-      double precision altc(0:nt),ta,piz,tr,hr,xmus
+      double precision altc(0:nt),ta,piz,tr,hr,xmusinv
       double precision dz,z_up,dtau_ray,dtau_aer,dtau,dtau_OS
 
-      real alt_z,taer_z,taer55_z,ssa_aer					 
+      real alt_z,taer_z,taer55_z,ssa_aer
 
       integer j,i,nt,num_z
       common /aeroprof/ num_z,alt_z(0:nt_p_max),
@@ -60,7 +60,7 @@ c (molecular + aerosol) optical thickness.
       if (dtau.ge.dtau_OS) then
         altc(j)=z
         h(j)=h(j-1)+dtau
-        ch(j)=exp(-h(j)/xmus)/2
+        ch(j)=0.5*exp(-h(j)*xmusinv)
         xdel(j)=dtau_aer*ssa_aer/dtau ! aerosol portion in the j-th layer
         ydel(j)=dtau_ray/dtau         ! molecular portion in the j-th layer
 c        write(6,*)j,z,dtau_ray,dtau_aer,dtau,(ta+tr)/nt
@@ -72,7 +72,7 @@ c        write(6,*)j,z,dtau_ray,dtau_aer,dtau,(ta+tr)/nt
 
        altc(nt)=0
        h(nt)=tr+ta
-       ch(nt)=exp(-h(nt)/xmus)/2
+       ch(nt)=0.5*exp(-h(nt)*xmusinv)
        xdel(nt)=dtau_aer*ssa_aer/dtau
        ydel(nt)=dtau_ray/dtau
 

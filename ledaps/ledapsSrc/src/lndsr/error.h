@@ -45,7 +45,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include "bool.h"
+#include <stdbool.h>
 
 #define EXIT_ERROR(message, module) \
           Error((message), (module), (__FILE__), (long)(__LINE__), true)

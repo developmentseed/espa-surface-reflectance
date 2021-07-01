@@ -60,7 +60,7 @@ class SurfaceReflectance():
         if xml_infile == None:
             # Get version number
             cmdstr = ('lasrc --version')
-            (status, self.version) = subprocess.getstatusoutput(cmdstr)
+            (exit_code, self.version) = subprocess.getstatusoutput(cmdstr)
 
             # get the command line argument for the XML file
             parser = OptionParser(version = self.version)
@@ -140,9 +140,13 @@ class SurfaceReflectance():
                   .format(xml_infile, aux_file))
         msg = 'Executing lasrc command: {}'.format(cmdstr)
         logger.debug (msg)
-        (status, output) = subprocess.getstatusoutput (cmdstr)
+        (exit_code, output) = subprocess.getstatusoutput (cmdstr)
         logger.info (output)
+<<<<<<< HEAD
         if status != 0:
+=======
+        if exit_code != 0:
+>>>>>>> dev_c2
             msg = 'Error running lasrc.  Processing will terminate.'
             logger.error (msg)
             os.chdir (mydir)

@@ -3,8 +3,8 @@
 C
 C INPUT:  pws=wind speed (in m/s)
 C         paw= azim. of sun - azim. of wind (in deg.)
-C	  xsal=salinity (in ppt)
-C	  pcl=pigment concentration (in mg.m-3)
+C         xsal=salinity (in ppt)
+C         pcl=pigment concentration (in mg.m-3)
 C         pwl=wavelength of the computation (in micrometer)
 C         mu=number of zenith angle
 C         np=number of azimuth
@@ -13,14 +13,16 @@ C         rp=Gauss's angles for angles between 0 and 2*PI
 C OUTPUT: brdfint(j,k)=the total reflectance of the sea water
 C
       parameter (nta=24,nfa=48)
-      integer np,mu,k,j,m,n,iwl
+      integer np,mu,k,j
+C      integer m, n, iwl
       real rm(-mu:mu),rp(np),brdfint(-mu:mu,np)
-      real teta1,teta2,phi1,phi2,ta(nta),fa(nfa),wta(nta),wfa(nfa)
+C      real teta1,teta2,phi1,phi2,ta(nta),fa(nfa),wta(nta),wfa(nfa)
       real Ref(39)
       real pwl,paw,pcl,pws,wl,wspd,C,azw,xsal
       real pi,fac,nr,ni,n12
-      real tetas,w,wlp,ref_i,rwc,rw,tds,summ,tp,fip
-      real rogp,pond,tetav,tw,tdv,fi,rog,a,rwb
+      real tetas
+      real tetav,fi,rog,a
+C      real wlp, tds, summ, tp, fip, rogp, pond, tw, tdv
 c effective reflectance of the whitecaps (Koepke, 1984)
       data Ref/
      &0.220,0.220,0.220,0.220,0.220,0.220,0.215,0.210,0.200,0.190,

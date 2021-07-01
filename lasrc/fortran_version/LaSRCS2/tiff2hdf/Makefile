@@ -14,7 +14,8 @@ NCFLAGS   = $(CFLAGS) $(C_EXTRA) $(INCDIR)
 
 C_OBJECTS = tif2hdf.o TIFF_reader2.o
 
-TARGET = TIFF_reader2
+#TARGET = TIFF_reader2
+TARGET = tif2hdf
 
 all: $(TARGET)
 

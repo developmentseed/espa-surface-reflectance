@@ -1,26 +1,25 @@
-	   subroutine degtoutm(utmzone,lat,lon,x0,y0,gsize,j,i)
-	   IMPLICIT NONE
-	   integer i,j
-	   real x0,y0,x,y,gsize
-	   integer utmzone,zone
-	   real lat,lon
-           real sa,inv_flattening,sb
-	   real e2,e2cuadrada,c
-	   real S,v,a,a1,a2,j2,j4,j6
-	   real alfa,beta,gama
-	   real bm,b,nab,senoheps
-	   real epsi,eps,pi
-	   real delt,ta0
-	   real deltas,epsilon,latr,lonr,nu,ta
+           subroutine degtoutm(utmzone,lat,lon,x0,y0,gsize,j,i)
+           IMPLICIT NONE
+           integer i,j
+           real x0,y0,x,y,gsize
+           integer utmzone
+           real lat,lon
+           real sa,sb
+           real e2,e2cuadrada,c
+           real S,v,a,a1,a2,j2,j4,j6
+           real alfa,beta,gama
+           real bm
+           real pi
+           real deltas,epsilon,latr,lonr,nu,ta
            sa = 6378137.
            sb = 6356752.314245
            e2=(((sa**2)-(sb**2))**0.5)/sb
            e2cuadrada= (e2**2)
            c=(sa**2)/sb
-	   pi=atan(1.)*4.
-	   latr=lat*pi/180.
-	   lonr=lon*pi/180.
-	   S=((utmzone*6)-183.)
+           pi=atan(1.)*4.
+           latr=lat*pi/180.
+           lonr=lon*pi/180.
+           S=((utmzone*6)-183.)
            deltaS=lonr-(S*(pi/180.))
            a=cos(latr)*sin(deltaS)
            epsilon=0.5*log((1.+a)/(1.-a))
@@ -38,9 +37,9 @@
            Bm=0.9996*c*(latr-alfa*j2+beta*j4-gama*j6)
            x=epsilon*v*(1+(ta/3.))+500000
            y=nu*v*(1+ta)+Bm
-	   i=int((y0-y)/gsize)
-	   j=int((x-x0)/gsize)
-	   return
-	   end
-	   
+           i=int((y0-y)/gsize)
+           j=int((x-x0)/gsize)
+           return
+           end
+           
 

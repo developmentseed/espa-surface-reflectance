@@ -123,14 +123,14 @@ C          if((roatm(1,linf).le..001).or.(roatm(1,lsup).le..001)) then
 C            rorayl=roatm(1,linf)+(roatm(1,lsup)-roatm(1,linf))
 C     s       *(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
 C          else
-             alphar=alog(roatm(1,lsup)/roatm(1,linf))/ coef
-             betar=roatm(1,linf)/(wlinf**(alphar))
- 	    rorayl=betar*(wl**alphar)
-	    do ifi=1,nfi
-	    alphar=alog(roatm_fi(1,lsup,ifi)/roatm_fi(1,linf,ifi))/ coef
+          alphar=alog(roatm(1,lsup)/roatm(1,linf))/ coef
+          betar=roatm(1,linf)/(wlinf**(alphar))
+          rorayl=betar*(wl**alphar)
+          do ifi=1,nfi
+            alphar=alog(roatm_fi(1,lsup,ifi)/roatm_fi(1,linf,ifi))/ coef
             betar=roatm_fi(1,linf,ifi)/(wlinf**(alphar))
-	    rorayl_fi(ifi)=betar*(wl**alphar)
-            enddo
+            rorayl_fi(ifi)=betar*(wl**alphar)
+          enddo
 C          endif
 c         write(6,*)'Ib ',phar,rorayl,betar,alphar,roatm(1,lsup),
 c    s            roatm(1,linf)
@@ -139,18 +139,18 @@ C            romix=roatm(2,linf)+(roatm(2,lsup)-roatm(2,linf))
 C     s       *(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
 C            xtmp=(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
 C            do ifi=1,nfi
-C	    romix_fi(ifi)=roatm_fi(2,linf,ifi)+
+C            romix_fi(ifi)=roatm_fi(2,linf,ifi)+
 C     s      (roatm_fi(2,lsup,ifi)-roatm_fi(2,linf,ifi))*xtmp
 C            enddo
 C          else
-            alphac=alog(roatm(2,lsup)/roatm(2,linf))/coef
-            betac=roatm(2,linf)/(wlinf**(alphac))
-	    romix=betac*(wl**alphac)
-     	    do ifi=1,nfi
+          alphac=alog(roatm(2,lsup)/roatm(2,linf))/coef
+          betac=roatm(2,linf)/(wlinf**(alphac))
+          romix=betac*(wl**alphac)
+          do ifi=1,nfi
             alphac=alog(roatm_fi(2,lsup,ifi)/roatm_fi(2,linf,ifi))/coef
             betac=roatm_fi(2,linf,ifi)/(wlinf**(alphac))
-	    romix_fi(ifi)=betac*(wl**alphac)
-	    enddo
+            romix_fi(ifi)=betac*(wl**alphac)
+          enddo
 C          endif
           if(iaer.eq.0) goto 2234
 C          if((roatm(3,linf).lt..001).or.(roatm(3,lsup).le..001))then
@@ -161,62 +161,62 @@ C          else
             betaa=roatm(3,linf)/(wlinf**(alphaa))
             roaero=betaa*(wl**alphaa)
 C          endif
-	  
+          
 C Look up table update
         coefl=(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
-	do i=1,mu
-	do j=1,nfilut(i)
-C	if ((roluts(lsup,i,j).gt.0.001).and.(roluts(linf,i,j).gt.0.001)) then
+        do i=1,mu
+        do j=1,nfilut(i)
+C        if ((roluts(lsup,i,j).gt.0.001).and.(roluts(linf,i,j).gt.0.001)) then
            alphac=alog(roluts(lsup,i,j)/roluts(linf,i,j))/coef
            betac=roluts(linf,i,j)/(wlinf**(alphac))
-	   rolut(i,j)=betac*(wl**alphac)
-C	   else
-C	   rolut(i,j)=roluts(linf,i,j)
+           rolut(i,j)=betac*(wl**alphac)
+C        else
+C           rolut(i,j)=roluts(linf,i,j)
 C     &      +(roluts(lsup,i,j)-roluts(linf,i,j))*coefl
-C	endif
-	
-	if ((rolutsq(lsup,i,j).gt.0.001)
-     &  .and.(rolutsq(linf,i,j).gt.0.001)) then
+C        endif
+
+        if ((rolutsq(lsup,i,j).gt.0.001)
+     &      .and.(rolutsq(linf,i,j).gt.0.001)) then
            alphac=alog(rolutsq(lsup,i,j)/rolutsq(linf,i,j))/coef
            betac=rolutsq(linf,i,j)/(wlinf**(alphac))
-	   rolutq(i,j)=betac*(wl**alphac)
-	   else
-	   rolutq(i,j)=rolutsq(linf,i,j)
+           rolutq(i,j)=betac*(wl**alphac)
+        else
+           rolutq(i,j)=rolutsq(linf,i,j)
      &      +(rolutsq(lsup,i,j)-rolutsq(linf,i,j))*coefl
-	endif
+        endif
 
 
-	if ((rolutsu(lsup,i,j).gt.0.001)
-     &  .and.(rolutsu(linf,i,j).gt.0.001)) then
+        if ((rolutsu(lsup,i,j).gt.0.001)
+     &      .and.(rolutsu(linf,i,j).gt.0.001)) then
            alphac=alog(rolutsu(lsup,i,j)/rolutsu(linf,i,j))/coef
            betac=rolutsu(linf,i,j)/(wlinf**(alphac))
-	   rolutu(i,j)=betac*(wl**alphac)
-	   else
-	   rolutu(i,j)=rolutsu(linf,i,j)
+           rolutu(i,j)=betac*(wl**alphac)
+        else
+           rolutu(i,j)=rolutsu(linf,i,j)
      &      +(rolutsu(lsup,i,j)-rolutsu(linf,i,j))*coefl
-	endif
+        endif
 
-	enddo
-	enddo
-C End Look up table update	
+        enddo
+        enddo
+C End Look up table update      
  2234     continue
 
 c we continue with the parameter Q ....
         if(iaer.eq.0) goto 3240
-	if ((qhase(lsup).gt.0.001).and.(qhase(linf).gt.0.001)) then
-        alphaa=alog(qhase(lsup)/qhase(linf))/coef
-        betaa=qhase(linf)/(wlinf**(alphaa))
-        qhaa=betaa*(wl**alphaa)
-	else
-	qhaa=qhase(linf)+(qhase(lsup)-qhase(linf))*coefl
-	endif
+        if ((qhase(lsup).gt.0.001).and.(qhase(linf).gt.0.001)) then
+          alphaa=alog(qhase(lsup)/qhase(linf))/coef
+          betaa=qhase(linf)/(wlinf**(alphaa))
+          qhaa=betaa*(wl**alphaa)
+        else
+          qhaa=qhase(linf)+(qhase(lsup)-qhase(linf))*coefl
+        endif
  3240   continue
         qhar=depolar1*.75*(xmud*xmud-1.)
         if (idatmp.eq.0) goto 3234
 
-	test1=abs(rqatm(1,linf))
-	test2=abs(rqatm(1,lsup))
-	test3=rqatm(1,lsup)*rqatm(1,linf)
+        test1=abs(rqatm(1,linf))
+        test2=abs(rqatm(1,lsup))
+        test3=rqatm(1,lsup)*rqatm(1,linf)
         if((test1.lt.0.001).or.(test2.lt.0.001)
      s            .or.(test3.lt.0.0)) then
           rqrayl=rqatm(1,linf)+(rqatm(1,lsup)-rqatm(1,linf))
@@ -224,59 +224,58 @@ c we continue with the parameter Q ....
         else
           alphar=alog(rqatm(1,lsup)/rqatm(1,linf))/ coef
           betar=rqatm(1,linf)/(wlinf**(alphar))
-	  rqrayl=betar*(wl**alphar)
-	endif
+          rqrayl=betar*(wl**alphar)
+        endif
 c       write(6,*)'Q ',qhar,rqrayl,betar,alphar,rqatm(1,lsup),
 c    s          rqatm(1,linf)
 
-	test1=abs(rqatm(2,linf))
-	test2=abs(rqatm(2,lsup))
-	test3=rqatm(2,lsup)*rqatm(2,linf)
+        test1=abs(rqatm(2,linf))
+        test2=abs(rqatm(2,lsup))
+        test3=rqatm(2,lsup)*rqatm(2,linf)
         if((test1.lt.0.001).or.(test2.lt.0.001)
      s            .or.(test3.lt.0.0)) then
           rqmix=rqatm(2,linf)+(rqatm(2,lsup)-rqatm(2,linf))
      s     *(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
-	else
+        else
           alphac=alog(rqatm(2,lsup)/rqatm(2,linf))/coef
           betac=rqatm(2,linf)/(wlinf**(alphac))
           rqmix=betac*(wl**alphac)
         endif
         if(iaer.eq.0) goto 3234
 C        write(6,*) "rqaero ",rqatm(3,linf),rqatm(3,lsup)
-	
-	test1=abs(rqatm(3,linf))
-	test2=abs(rqatm(3,lsup))
-	test3=rqatm(3,lsup)*rqatm(3,linf)
+        
+        test1=abs(rqatm(3,linf))
+        test2=abs(rqatm(3,lsup))
+        test3=rqatm(3,lsup)*rqatm(3,linf)
         if((test1.lt.0.001).or.(test2.lt.0.001)
      s            .or.(test3.lt.0.0)) then
           rqaero=rqatm(3,linf)+(rqatm(3,lsup)-rqatm(3,linf))
      s     *(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
-	else
-	  
+        else
           alphaa=alog(rqatm(3,lsup)/rqatm(3,linf))/coef
           betaa=rqatm(3,linf)/(wlinf**(alphaa))
           rqaero=betaa*(wl**alphaa)
-	endif
+        endif
 C        write(6,*) "rqaero ",rqaero
- 3234  	continue
+ 3234   continue
 
 c .... and we finish with the parameter U
         if(iaer.eq.0) goto 4242
-	if ((uhase(lsup).gt.0.001).and.(uhase(linf).gt.0.001)) then
-        alphaa=alog(uhase(lsup)/uhase(linf))/coef
-        betaa=uhase(linf)/(wlinf**(alphaa))
-        uhaa=betaa*(wl**alphaa)
-	else
-	uhaa=uhase(linf)+(uhase(lsup)-uhase(linf))*coefl
-	endif
+        if ((uhase(lsup).gt.0.001).and.(uhase(linf).gt.0.001)) then
+          alphaa=alog(uhase(lsup)/uhase(linf))/coef
+          betaa=uhase(linf)/(wlinf**(alphaa))
+          uhaa=betaa*(wl**alphaa)
+        else
+          uhaa=uhase(linf)+(uhase(lsup)-uhase(linf))*coefl
+        endif
  4242   continue
         uhar=depolar1*3./2.*xmud
         if (idatmp.eq.0) goto 4234
 
-	test1=abs(ruatm(1,linf))
-	test2=abs(ruatm(1,lsup))
-	test3=ruatm(1,lsup)*ruatm(1,linf)
-	
+        test1=abs(ruatm(1,linf))
+        test2=abs(ruatm(1,lsup))
+        test3=ruatm(1,lsup)*ruatm(1,linf)
+        
         if((test1.lt.0.001).or.(test2.lt.0.001)
      s            .or.(test3.lt.0.0)) then
           rurayl=ruatm(1,linf)+(ruatm(1,lsup)-ruatm(1,linf))
@@ -284,36 +283,36 @@ c .... and we finish with the parameter U
         else
           alphar=alog(ruatm(1,lsup)/ruatm(1,linf))/ coef
           betar=ruatm(1,linf)/(wlinf**(alphar))
-	  rurayl=betar*(wl**alphar)
-	endif
+          rurayl=betar*(wl**alphar)
+        endif
 c       write(6,*)'U ',uhar,rurayl,betar,alphar,ruatm(1,lsup),
 c    s          ruatm(1,linf)
-	test1=abs(ruatm(2,linf))
-	test2=abs(ruatm(2,lsup))
-	test3=ruatm(2,lsup)*ruatm(2,linf)
+        test1=abs(ruatm(2,linf))
+        test2=abs(ruatm(2,lsup))
+        test3=ruatm(2,lsup)*ruatm(2,linf)
         if((test1.lt.0.001).or.(test2.lt.0.001)
      s            .or.(test3.lt.0.0)) then
           rumix=ruatm(2,linf)+(ruatm(2,lsup)-ruatm(2,linf))
      s     *(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
-	else
+        else
           alphac=alog(ruatm(2,lsup)/ruatm(2,linf))/coef
           betac=ruatm(2,linf)/(wlinf**(alphac))
           rumix=betac*(wl**alphac)
         endif
         if(iaer.eq.0) goto 4234
-	test1=abs(ruatm(3,linf))
-	test2=abs(ruatm(3,lsup))
-	test3=ruatm(3,lsup)*ruatm(3,linf)
+        test1=abs(ruatm(3,linf))
+        test2=abs(ruatm(3,lsup))
+        test3=ruatm(3,lsup)*ruatm(3,linf)
         if((test1.lt.0.001).or.(test2.lt.0.001)
      s            .or.(test3.lt.0.0)) then
           ruaer0=ruatm(3,linf)+(ruatm(3,lsup)-ruatm(3,linf))
      s     *(wl-wldis(linf))/(wldis(lsup)-wldis(linf))
-	else
+        else
           alphaa=alog(ruatm(3,lsup)/ruatm(3,linf))/coef
           betaa=ruatm(3,linf)/(wlinf**(alphaa))
           ruaero=betaa*(wl**alphaa)
         endif
- 4234  	continue
+ 4234   continue
 c
 c
       alphar=alog(trayl(lsup)/trayl(linf))/coef

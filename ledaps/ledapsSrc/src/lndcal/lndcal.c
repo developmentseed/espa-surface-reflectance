@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "lndcal.h"
 #include "keyvalue.h"
@@ -10,7 +11,6 @@
 #include "lut.h"
 #include "output.h"
 #include "cal.h"
-#include "bool.h"
 #include "error.h"
 
 #include <time.h>
@@ -19,49 +19,36 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-/* Type definitions */
-
-#define NSDS NBAND_CAL_MAX
-
-/* Functions */
-
 int main (int argc, char *argv[]) {
   Param_t *param = NULL;
   Input_t *input = NULL;
   Lut_t *lut = NULL;
   Output_t *output = NULL;
   Output_t *output_th = NULL;
-  int iline, isamp, ib, jb, val;
-  int curr_line, curr_pix;   /* current location in the QA band for the start
-                                of the current line and for the current pixel */
-  int my_pix;
+  int iline, ib;
+  int curr_line;        /* current location in the QA band for the start
+                           of the current line and for the current pixel */
   unsigned char *line_in = NULL;
   int16 *line_in_sun_zen = NULL;     /* solar zenith representative band */
-  unsigned char *line_out_qa = NULL;
-  int16 *line_out = NULL;
-  int16 *line_out_th = NULL;
-  Cal_stats_t cal_stats;
-  Cal_stats6_t cal_stats6;
+  uint16_t *line_qa = NULL;
+  uint16_t *line_out = NULL;
+  uint16_t *line_out_th = NULL;
   int nps,nls, nps6, nls6;
-  int i,odometer_flag=0;
+  int odometer_flag=0;
   char msgbuf[1024];
   char envi_file[STR_SIZE]; /* name of the output ENVI header file */
   char *cptr=NULL;          /* pointer to the file extension */
   size_t input_psize;
-  int qa_band = QA_BAND_NUM;
   int nband_refl = NBAND_REFL_MAX;
-  int ifill, num_zero;
-  int mss_flag=0;
   Espa_internal_meta_t xml_metadata;  /* XML metadata structure */
   Envi_header_t envi_hdr;   /* output ENVI header information */
 
-  printf ("\nRunning lndcal ...\n");
-  for (i=1; i<argc; i++)if ( !strcmp(argv[i],"-o") )odometer_flag=1;
-
   /* Read the parameters from the input parameter file */
-  param = GetParam(argc, argv);
+  param = GetParam(argc, argv, &odometer_flag);
   if (param == (Param_t *)NULL) EXIT_ERROR("getting runtime parameters",
     "main");
+
+  printf ("\nRunning lndcal ...\n");
 
   /* Validate the input metadata file */
   if (validate_xml_file (param->input_xml_file_name) != SUCCESS)
@@ -101,14 +88,8 @@ int main (int argc, char *argv[]) {
   nps =  input->size.s;
   nls =  input->size.l;
 
-  for (ib = 0; ib < input->nband; ib++) 
-    cal_stats.first[ib] = true;
-  cal_stats6.first = true;
-  if (input->meta.inst == INST_MSS)mss_flag=1; 
-
   /* Open the output files.  Raw binary band files will be be opened. */
-  output = OpenOutput(&xml_metadata, input, param, lut, false /*not thermal*/,
-    mss_flag);
+  output = OpenOutput(&xml_metadata, input, param, lut, false /*not thermal*/);
   if (output == NULL) EXIT_ERROR("opening output file", "main");
 
   /* Allocate memory for the input buffer, enough for all reflectance bands */
@@ -125,14 +106,13 @@ int main (int argc, char *argv[]) {
 
   /* Create and open output thermal band, if one exists */
   if ( input->nband_th > 0 ) {
-    output_th = OpenOutput (&xml_metadata, input, param, lut, true /*thermal*/,
-      mss_flag);
+    output_th = OpenOutput (&xml_metadata, input, param, lut, true /*thermal*/);
     if (output_th == NULL)
       EXIT_ERROR("opening output therm file", "main");
 
     /* Allocate memory for the thermal input and output buffer, only holds
        one band */
-    line_out_th = calloc(nps6, sizeof(int16));
+    line_out_th = calloc(nps6, sizeof(uint16_t));
     if (line_out_th == NULL) 
       EXIT_ERROR("allocating thermal output line buffer", "main");
   } else {
@@ -140,84 +120,43 @@ int main (int argc, char *argv[]) {
   }
 
   /* Allocate memory for a single output line for the image data */
-  line_out = calloc (nps, sizeof (int16));
+  line_out = calloc (nps, sizeof (uint16_t));
   if (line_out == NULL) 
     EXIT_ERROR("allocating output line buffer", "main");
 
-  /* Allocate memory for an entire band for the QA data.  Need to store the
-     thermal saturation QA for all lines, then update with the reflectance
-     QA.  It will be written as one overall QA band. */
-  line_out_qa = calloc (nls * nps, sizeof(unsigned char));
-  if (line_out_qa == NULL) 
-    EXIT_ERROR("allocating qa output line buffer", "main");
-  memset (line_out_qa, 0, nls * nps * sizeof(unsigned char));
-
-  /* Loop through the thermal and reflectance data ahead of time, masking the
-     fill and saturated pixels. If a pixel is fill in any band, then it will be
-     processed as fill for all bands. */
-  ifill= (int)lut->in_fill;
-  for (iline = 0; iline < nls; iline++){
-    curr_line = iline * nps;  /* start of the line in the QA band */
-
-    /* Process thermal if it exists */
-    if (input->nband_th > 0) {
-      /* Read the input thermal data */
-      if (!GetInputLineTh(input, iline, line_in))
-        EXIT_ERROR("reading input data for a line", "main");
-
-      /* Flag fill and saturated pixels for thermal */
-      curr_pix = curr_line;  /* start at the beginning of the current line */
-      for (isamp = 0; isamp < nps; isamp++, curr_pix++) {
-        val= line_in[isamp];
-        if ( val==ifill) line_out_qa[curr_pix] = lut->qa_fill; 
-        else if ( val>=SATU_VAL6 ) line_out_qa[curr_pix] = ( 0x000001 << 6 ); 
-      }
-    }  /* end if thermal */
-
-    /* Read the input reflectance data */
-    for (ib = 0; ib < input->nband; ib++) {
-      if (!GetInputLine(input, ib, iline, &line_in[ib*nps]))
-        EXIT_ERROR("reading input data for a line", "main");
-    }
-
-    /* Flag fill and saturated pixels.  If one band is fill, then the pixel
-       is fill in the QA and masked as fill in all bands. */
-    curr_pix = curr_line;  /* start at the beginning of the current line */
-    for (isamp = 0; isamp < nps; isamp++, curr_pix++){
-      /* If this pixel wasn't already flagged as fill */
-      if ( line_out_qa[curr_pix] != lut->qa_fill ) {
-        num_zero=0;
-        my_pix = isamp;
-        for (ib = 0; ib < input->nband; ib++, my_pix += nps) {
-          jb= (ib != 5 ) ? ib+1 : ib+2;
-          val= line_in[my_pix];
-          if ( val==ifill   )num_zero++;
-          if ( val==SATU_VAL[ib] ) line_out_qa[curr_pix] |= ( 0x000001 <<jb ); 
-        }
-
-        /* If it's fill in any band, it's flagged as fill in the QA.  The
-           reflectance values will be set to fill in the Cal routine. */
-        if ( num_zero >  0 ) line_out_qa[curr_pix] = lut->qa_fill; 
-      }  /* end if not fill */
-    }  /* end for isamp */
-  }  /* end for iline */
+  /* Allocate memory for one line of the QA data. */
+  line_qa = calloc (nps, sizeof(uint16_t));
+  if (line_qa == NULL)
+    EXIT_ERROR("allocating qa input line buffer", "main");
 
   /* Do for each THERMAL line */
   if (input->nband_th > 0) {
-    ifill= (int)lut->in_fill;
-    for (iline = 0; iline < nls6; iline++) {
-      curr_line = iline * nps6;  /* start of the line in the QA band */
-      if ( odometer_flag && ( iline==0 || iline ==(nls-1) || iline%100==0  ) )
-        printf("--- main loop BAND6 Line %d --- \r",iline); fflush(stdout); 
+    for (iline = 0, curr_line = 0; iline < nls6; iline++, curr_line += nps6) {
+      if (odometer_flag && (iline == 0 || iline == nls-1 || iline%100 == 0)) {
+          printf("--- main loop BAND6 Line %d --- \r", iline);
+          fflush(stdout);
+      }
 
       /* Read the input thermal data */
-      if (!GetInputLineTh(input, iline, line_in))
+      if (!GetInputLineTh(input, iline, line_in, &line_in[nps6]))
+        EXIT_ERROR("reading input data for a line", "main");
+
+      /* Read the input L1 QA data */
+      if (!GetInputLineQA(input, iline, line_qa))
         EXIT_ERROR("reading input data for a line", "main");
 
       /* Handle the TOA brightness temp corrections */
-      if (!Cal6(lut, input, line_in, line_out_th, &line_out_qa[curr_line],
-        &cal_stats6, iline))
-        EXIT_ERROR("doing calibration for a line", "main");
+      if (input-> nband_th == 1)
+      {
+        if (!Cal_TM_thermal(lut, input, line_in, line_out_th, line_qa, iline))
+            EXIT_ERROR("doing calibration for a line", "main");
+      }
+      else if (input->nband_th == 2)
+      {
+        if (!Cal_ETM_thermal(lut, input, line_in, &line_in[nps6], line_out_th,
+            line_qa, iline))
+            EXIT_ERROR("doing calibration for a line", "main");
+      }
 
       /* Write the results */
       ib=0;
@@ -234,11 +173,11 @@ int main (int argc, char *argv[]) {
       EXIT_ERROR("closing output thermal file", "main");
 
   /* Do for each REFLECTIVE line */
-  ifill= (int)lut->in_fill;
-  for (iline = 0; iline < nls; iline++){
-    curr_line = iline * nps;  /* start of the line in the QA band */
-    if ( odometer_flag && ( iline==0 || iline ==(nls-1) || iline%100==0  ) )
-     {printf("--- main reflective loop Line %d ---\r",iline); fflush(stdout);}
+  for (iline = 0, curr_line = 0; iline < nls; iline++, curr_line+=nps) {
+    if (odometer_flag && (iline == 0 || iline == nls-1 || iline%100 == 0)) {
+        printf("--- main reflective loop Line %d ---\r", iline);
+        fflush(stdout);
+    }
 
     /* Read the input reflectance data */
     for (ib = 0; ib < input->nband; ib++) {
@@ -250,21 +189,21 @@ int main (int argc, char *argv[]) {
     if (!GetInputLineSunZen(input, iline, line_in_sun_zen))
       EXIT_ERROR("reading input solar zenith data for a line", "main");
 
+    /* Read the input L1 QA data */
+    if (!GetInputLineQA(input, iline, line_qa))
+        EXIT_ERROR("reading input data for a line", "main");
+
     /* Handle the TOA reflectance corrections for every band, and write the
        results */
     for (ib = 0; ib < input->nband; ib++) {
       if (!Cal(param, lut, ib, input, &line_in[ib*nps], line_in_sun_zen,
-        line_out, &line_out_qa[curr_line], &cal_stats, iline))
+        line_out, line_qa, iline))
         EXIT_ERROR("doing calibraton for a line", "main");
 
       if (!PutOutputLine(output, ib, iline, line_out))
         EXIT_ERROR("reading input data for a line", "main");
     } /* End loop for each band */
         
-    /* Write the radiometric saturation QA data */
-    if (input->meta.inst != INST_MSS) 
-      if (!PutOutputLine(output, qa_band, iline, &line_out_qa[curr_line]))
-        EXIT_ERROR("writing qa data for a line", "main");
   } /* End loop for each line */
 
   if ( odometer_flag )printf("\n");
@@ -278,23 +217,8 @@ int main (int argc, char *argv[]) {
   line_in_sun_zen = NULL;
   free(line_out_th);
   line_out_th = NULL;
-  free(line_out_qa);
-  line_out_qa = NULL;
-
-#ifdef DO_STATS
-  for (ib = 0; ib < input->nband; ib++) {
-    printf(
-      " band %d rad min %8.5g max %8.4f  |  ref min  %8.5f max  %8.4f\n", 
-      input->meta.iband[ib], cal_stats.rad_min[ib], cal_stats.rad_max[ib],
-      cal_stats.ref_min[ib], cal_stats.ref_max[ib]);
-  }
-
-  if ( input->nband_th > 0 )
-    printf(
-      " band %d rad min %8.5g max %8.4f  |  tmp min  %8.5f max  %8.4f\n", 6,
-      cal_stats6.rad_min,  cal_stats6.rad_max,
-      cal_stats6.temp_min, cal_stats6.temp_max);
-#endif
+  free(line_qa);
+  line_qa = NULL;
 
   /* Close input and output files */
   if (!CloseInput(input)) EXIT_ERROR("closing input file", "main");

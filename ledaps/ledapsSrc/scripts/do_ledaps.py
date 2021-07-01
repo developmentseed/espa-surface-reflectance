@@ -158,7 +158,7 @@ class Ledaps():
 
             # Get version number
             cmdstr = ('lndsr --version')
-            (status, self.version) = subprocess.getstatusoutput(cmdstr)
+            (exit_code, self.version) = subprocess.getstatusoutput(cmdstr)
 
             # Get the command line argument for the XML file
             parser = OptionParser(version = self.version)
@@ -233,28 +233,6 @@ class Ledaps():
                 logger.error (msg)
                 return ERROR
 
-            # Set up the command-line option for lndsr for processing
-            # collections. The per-pixel angle bands need to be generated for
-            # band 4 (representative band) and the thermal band(s)
-            cmdstr = ('create_landsat_angle_bands --xml {}'
-                      .format(base_xmlfile))
-            (status, output) = subprocess.getstatusoutput(cmdstr)
-            logger.info(output)
-            if status != 0:
-                logger.error('Error running create_landsat_angle_bands. '
-                             'Processing will terminate.')
-                return ERROR
-
-            # Mask the angle bands to match the band quality band
-            cmdstr = ('mask_per_pixel_angles.py --xml {}'
-                      .format(base_xmlfile))
-            (status, output) = subprocess.getstatusoutput(cmdstr)
-            logger.info(output)
-            if status != 0:
-                logger.error('Error masking angle bands with the band '
-                             'quality band. Processing will terminate.')
-                return ERROR
-
             # Set up the command-line option for lndpm if processing surface
             # reflectance
             if process_sr == "True":
@@ -266,24 +244,24 @@ class Ledaps():
             # Exit if any errors occur.
             cmdstr = ('lndpm --xml {} {}'
                       .format(base_xmlfile, process_sr_opt_str))
-            (status, output) = subprocess.getstatusoutput(cmdstr)
+            (exit_code, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
-            if status != 0:
+            if exit_code != 0:
                 logger.error('Error running lndpm.  Processing will terminate.')
                 return ERROR
 
             cmdstr = 'lndcal --pfile lndcal.{}.txt'.format(xml)
-            (status, output) = subprocess.getstatusoutput(cmdstr)
+            (exit_code, output) = subprocess.getstatusoutput(cmdstr)
             logger.info(output)
-            if status != 0:
+            if exit_code != 0:
                 logger.error('Error running lndcal. Processing will terminate.')
                 return ERROR
 
             if process_sr == 'True':
                 cmdstr = 'lndsr --pfile lndsr.{}.txt'.format(xml)
-                (status, output) = subprocess.getstatusoutput(cmdstr)
+                (exit_code, output) = subprocess.getstatusoutput(cmdstr)
                 logger.info(output)
-                if status != 0:
+                if exit_code != 0:
                     logger.error('Error running lndsr. Processing will '
                                  'terminate.')
                     return ERROR

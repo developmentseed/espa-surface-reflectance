@@ -39,7 +39,7 @@ CCCC End Variable for Look up table generation
       Real tamoyp,trmoyp,palt,phirad
       real delta,sigma
       double precision hr,ta,tr,trp
-      double precision tap,piz,accu,accu2,ha,xmus,zx,yy,dd
+      double precision tap,piz,accu,accu2,ha,xmus,xmusinv,zx,yy,dd
       double precision ppp2,ppp1,ca,cr,ratio
       double precision taup,th,xt1,xt2,pi,phi,aaaa,ron
       double precision roavion1,roavion2,roavion,spl,sa1
@@ -108,6 +108,7 @@ c     it's a mixing rayleigh+aerosol
       endif
 c
       xmus=-rm(0)
+      xmusinv = 1.0/xmus
 c
 c compute mixing rayleigh, aerosol
 c case 1: pure rayleigh
@@ -117,7 +118,7 @@ c
       if((ta.le.accu2).and.(tr.gt.ta)) then
       do j=0,ntp
       h(j)=j*tr/ntp
-      ch(j)=exp(-h(j)/xmus)/2.
+      ch(j)=0.5*exp(-h(j)*xmusinv)
       ydel(j)=1.0
       xdel(j)=0.0
       if (j.eq.0) then
@@ -130,7 +131,7 @@ c
       if((tr.le.accu2).and.(ta.gt.tr)) then
       do j=0,ntp
       h(j)=j*ta/ntp
-      ch(j)=exp(-h(j)/xmus)/2.
+      ch(j)=0.5*exp(-h(j)*xmusinv)
       ydel(j)=0.0
       xdel(j)=piz
       if (j.eq.0) then
@@ -173,7 +174,7 @@ c
       cr=tr*dexp(xx)
       h(it)=cr+ca
       altc(it)=zx
-      ch(it)=exp(-h(it)/xmus)/2.
+      ch(it)=0.5*exp(-h(it)*xmusinv)
       cr=cr/hr
       ca=ca/ha
       ratio=cr/(cr+ca)
@@ -183,8 +184,10 @@ c     print *,'discre ',it,cr,ca,xdel(it),ydel(it),zx
   14  continue
       endif
 
+c acu2 is not declared or set in this routine, so not sure if the
+c following conditional is correct.
       if(tr.gt.acu2.and.ta.gt.acu2.and.iaer_prof.eq.1)then
-       call aero_prof(ta,piz,tr,hr,ntp,xmus,
+       call aero_prof(ta,piz,tr,hr,ntp,xmusinv,
      s   h,ch,ydel,xdel,altc)
       endif
 
@@ -223,7 +226,7 @@ c update the layer from the end to the position to update if necessary
          xdel(iplane)=(1.e+00-ratio)*piz
          ydel(iplane)=ratio
          altc(iplane)=palt
-         ch(iplane)=exp(-h(iplane)/xmus)/2.
+         ch(iplane)=0.5*exp(-h(iplane)*xmusinv)
          endif
          if ( tr.gt.accu2.and.ta.le.accu2) then
          ydel(iplane)=1.
@@ -274,12 +277,12 @@ c use integer for g95 compatible
          temp = nbisca
 c use integer for g95 compatible
          filut(i,temp)=180.0
-	 scaa=iscama
+         scaa=iscama
          do j=2,nfilut(i)-1
           scaa=scaa-4.0
           cscaa=cos(scaa*pi/180.)
           cfi=-(cscaa+xmus*lutmuv)/(sqrt(1-xmus*xmus)
-     S	  *sqrt(1.-lutmuv*lutmuv))
+     S       *sqrt(1.-lutmuv*lutmuv))
           filut(i,j)=acos(cfi)*180.0/pi
          enddo
       enddo
@@ -669,6 +672,6 @@ c     if(z.gt.0.001) go to 24     #6Sv4.0 choice
    24 continue
   243 continue
       nt=snt
-c     write(6,*) 'reflectance ', xl(mu,1)/xmus
+c     write(6,*) 'reflectance ', xl(mu,1)*xmusinv
       return
       end

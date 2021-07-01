@@ -60,7 +60,7 @@ class SurfaceReflectance():
         if xml_infile == None:
             # Get version number
             cmdstr = ('lasrc --version')
-            (status, self.version) = subprocess.getstatusoutput(cmdstr)
+            (exit_code, self.version) = subprocess.getstatusoutput(cmdstr)
 
             # get the command line argument for the XML file
             parser = OptionParser(version = self.version)
@@ -147,6 +147,7 @@ class SurfaceReflectance():
             os.chdir (mydir)
             return ERROR
 
+<<<<<<< HEAD
         # generate per-pixel angle bands for band 4 (representative band)
         cmdstr = 'create_l8_angle_bands --xml {}'.format(base_xmlfile)
         logger.debug('per-pixel angles command: {0}'.format(cmdstr))
@@ -168,6 +169,8 @@ class SurfaceReflectance():
                          'quality band. Processing will terminate.')
             return ERROR
 
+=======
+>>>>>>> dev_c2
         # run surface reflectance algorithm, checking the return status.  exit
         # if any errors occur.
         process_sr_opt_str = '--process_sr=true '
@@ -183,9 +186,13 @@ class SurfaceReflectance():
                           write_toa_opt_str))
         msg = 'Executing lasrc command: {}'.format(cmdstr)
         logger.debug (msg)
-        (status, output) = subprocess.getstatusoutput (cmdstr)
+        (exit_code, output) = subprocess.getstatusoutput (cmdstr)
         logger.info (output)
+<<<<<<< HEAD
         if status != 0:
+=======
+        if exit_code != 0:
+>>>>>>> dev_c2
             msg = 'Error running lasrc.  Processing will terminate.'
             logger.error (msg)
             os.chdir (mydir)

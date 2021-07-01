@@ -35,7 +35,7 @@
 #include "cal.h"
 
 Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
-  Param_t *param, Lut_t *lut, bool thermal, int mss_flag)
+  Param_t *param, Lut_t *lut, bool thermal)
 /* 
 !C******************************************************************************
 
@@ -48,7 +48,6 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
  param          input paramter information (LEDAPS version)
  lut            lookup table (fill and saturation values)
  thermal        is this the thermal data?
- mss_flag       is this MSS data?
 
 !Output Parameters:
  (returns)      'output' data structure or NULL when an error occurs
@@ -61,7 +60,6 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
   char rep_band[STR_SIZE];     /* representative band in the XML file */
   int ib;             /* looping variables */
   int nband;          /* number of bands for this dataset */
-  int nband_tot;      /* number of total bands with refl/thermal and QA */
   int rep_indx=0;     /* band index in XML file for the current product */
   char production_date[MAX_DATE_LEN+1]; /* current date/time for production */
   time_t tp;          /* time structure */
@@ -72,16 +70,8 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
   /* Determine the number of output bands */
   if (!thermal)
     nband = input->nband;
-  else
-    nband = input->nband_th;
-
-  /* QA will not be writen for MSS data or for thermal.  In the case of the
-     thermal processing, the saturation QA band has already been generated as
-     part of the XML information in the reflectance bands. */
-  if (mss_flag == 1 || thermal)
-    nband_tot = nband;
-  else
-    nband_tot = nband + NBAND_QA;
+  else /* There is only one thermal band output */
+    nband = 1;
 
   /* Check parameters */
   if (input->size.l < 1)
@@ -122,7 +112,7 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
   init_metadata_struct (&this->metadata);
 
   /* Allocate memory for the total bands */
-  if (allocate_band_metadata (&this->metadata, nband_tot) != SUCCESS)
+  if (allocate_band_metadata (&this->metadata, nband) != SUCCESS)
     RETURN_ERROR("allocating band metadata", "OpenOutput", NULL);
   bmeta = this->metadata.band;
 
@@ -142,10 +132,10 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
 
   /* Populate the data structure */
   this->open = false;
-  this->nband = nband_tot;
+  this->nband = nband;
   this->size.l = input->size.l;
   this->size.s = input->size.s;
-  for (ib = 0; ib < nband_tot; ib++) {
+  for (ib = 0; ib < nband; ib++) {
     strncpy (bmeta[ib].short_name, in_meta->band[rep_indx].short_name, 4);
     bmeta[ib].short_name[4] = '\0';
     if (!thermal)
@@ -168,14 +158,12 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
     sprintf (bmeta[ib].app_version, "LEDAPS_%s", param->LEDAPSVersion);
     strcpy (bmeta[ib].production_date, production_date);
 
-    if (ib < nband)  /* image band */
+    bmeta[ib].data_type = ESPA_UINT16;
+    bmeta[ib].fill_value = lut->out_fill;
+    bmeta[ib].saturate_value = lut->out_satu;
+    strcpy (bmeta[ib].category, "image");
+    if (!thermal)
     {
-      bmeta[ib].data_type = ESPA_INT16;
-      bmeta[ib].fill_value = lut->out_fill;
-      bmeta[ib].saturate_value = lut->out_satu;
-      strcpy (bmeta[ib].category, "image");
-      if (!thermal)
-      {
         sprintf (bmeta[ib].name, "toa_band%d", input->meta.iband[ib]);
         bmeta[ib].scale_factor = lut->scale_factor_ref;
         bmeta[ib].add_offset = lut->add_offset_ref;
@@ -184,56 +172,26 @@ Output_t *OpenOutput(Espa_internal_meta_t *in_meta, Input_t *input,
         strcpy (bmeta[ib].data_units, lut->units_ref);
         bmeta[ib].valid_range[0] = (float) lut->valid_range_ref[0];
         bmeta[ib].valid_range[1] = (float) lut->valid_range_ref[1];
-      }
-      else
-      {
+    }
+    else
+    {
         sprintf (bmeta[ib].name, "bt_band%d", input->meta.iband_th);
         bmeta[ib].scale_factor = lut->scale_factor_ref;
         bmeta[ib].scale_factor = lut->scale_factor_th;
         bmeta[ib].add_offset = lut->add_offset_th;
-        sprintf (bmeta[ib].long_name, "band %d top-of-atmosphere brightness "
-          "temperature", input->meta.iband_th);
+        if (input->nband_th == 1)
+        {
+            sprintf (bmeta[ib].long_name, "band %d top-of-atmosphere brightness"
+              " temperature", input->meta.iband_th);
+        }
+        else if (input->nband_th >= 1)
+        {
+            sprintf (bmeta[ib].long_name, "combined band %d top-of-atmosphere"
+                " brightness temperature", input->meta.iband_th);
+        }
         strcpy (bmeta[ib].data_units, lut->units_th);
         bmeta[ib].valid_range[0] = (float) lut->valid_range_th[0];
         bmeta[ib].valid_range[1] = (float) lut->valid_range_th[1];
-      }
-    }
-    else  /* QA band */
-    {
-      /* Set up QA bitmap information */
-      strcpy (bmeta[ib].name, "radsat_qa");
-      if (allocate_bitmap_metadata (&bmeta[ib], 8) != SUCCESS)
-        RETURN_ERROR("allocating 8 bits for the bitmap", "OpenOutput", NULL); 
-      strcpy (bmeta[ib].bitmap_description[0],
-        "Data Fill Flag (0 = valid data, 1 = invalid data)");
-      strcpy (bmeta[ib].bitmap_description[1],
-        "Band 1 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-      strcpy (bmeta[ib].bitmap_description[2],
-        "Band 2 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-      strcpy (bmeta[ib].bitmap_description[3],
-        "Band 3 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-      strcpy (bmeta[ib].bitmap_description[4],
-        "Band 4 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-      strcpy (bmeta[ib].bitmap_description[5],
-        "Band 5 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-      strcpy (bmeta[ib].bitmap_description[6],
-        "Band 6 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-      strcpy (bmeta[ib].bitmap_description[7],
-        "Band 7 Data Saturation Flag (0 = valid data, 1 = saturated data)");
-
-      /* Update RADSAT-specific fields */
-      strcpy (bmeta[ib].product, "toa_refl");
-      bmeta[ib].data_type = ESPA_UINT8;
-      bmeta[ib].fill_value = lut->qa_fill;
-      strcpy (bmeta[ib].long_name, "saturation mask");
-      strcpy (bmeta[ib].data_units, "bitmap");
-      strcpy (bmeta[ib].category, "qa");
-      bmeta[ib].valid_range[0] = 0.0;
-      bmeta[ib].valid_range[1] = 255.0;
-
-      strncpy (bmeta[ib].short_name, in_meta->band[rep_indx].short_name, 4);
-      bmeta[ib].short_name[4] = '\0';
-      strcat (bmeta[ib].short_name, "RADSAT");
     }
 
     /* Set up the filename with the scene name and band name and open the
@@ -347,6 +305,8 @@ bool PutOutputLine(Output_t *this, int iband, int iline, void *line)
   /* Write the data, only the current line (i.e. one line at a time) */
   if (bmeta[iband].data_type == ESPA_INT16)
     nbytes = sizeof (int16);
+  else if (bmeta[iband].data_type == ESPA_UINT16)
+    nbytes = sizeof (uint16_t);
   else
     nbytes = sizeof (unsigned char);
   if (write_raw_binary (this->fp_bin[iband], 1, this->size.s, nbytes, line)

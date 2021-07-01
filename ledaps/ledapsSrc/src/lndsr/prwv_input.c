@@ -348,7 +348,7 @@ bool CloseInputPrwv(InputPrwv_t *this)
 }
 
 
-bool FreeInputPrwv(InputPrwv_t *this)
+void FreeInputPrwv(InputPrwv_t *this)
 /* 
 !C******************************************************************************
 
@@ -357,10 +357,6 @@ bool FreeInputPrwv(InputPrwv_t *this)
 !InputPrwv Parameters:
  this           'input' data structure; the following fields are input:
                    sds.rank, sds.dim[*].name, sds.name, file_name
-
-!Output Parameters:
- (returns)      status:
-                  'true' = okay (always returned)
 
 !Team Unique Header:
 
@@ -376,19 +372,15 @@ bool FreeInputPrwv(InputPrwv_t *this)
   if (this != (InputPrwv_t *)NULL) {
     for (ib = 0; ib < this->nband; ib++) {
       for (ir = 0; ir < this->sds[ib].rank; ir++) {
-        if (this->sds[ib].dim[ir].name != (char *)NULL) 
           free(this->sds[ib].dim[ir].name);
       }
-      if (this->sds[ib].name != (char *)NULL) 
-        free(this->sds[ib].name);
+      free(this->sds[ib].name);
     }
-    if (this->buf[0] != NULL)
-      free(this->buf[0]);
-    if (this->file_name != (char *)NULL) free(this->file_name);
+    free(this->buf[0]);
+    free(this->file_name);
     free(this);
+    this = NULL;
   }
-
-  return true;
 }
 
 
@@ -879,7 +871,7 @@ bool CloseInputOzon(InputOzon_t *this)
 }
 
 
-bool FreeInputOzon(InputOzon_t *this)
+void FreeInputOzon(InputOzon_t *this)
 /* 
 !C******************************************************************************
 
@@ -888,10 +880,6 @@ bool FreeInputOzon(InputOzon_t *this)
 !InputOzon Parameters:
  this           'input' data structure; the following fields are input:
                    sds.rank, sds.dim[*].name, sds.name, file_name
-
-!Output Parameters:
- (returns)      status:
-                  'true' = okay (always returned)
 
 !Team Unique Header:
 
@@ -907,19 +895,15 @@ bool FreeInputOzon(InputOzon_t *this)
   if (this != (InputOzon_t *)NULL) {
     for (ib = 0; ib < this->nband; ib++) {
       for (ir = 0; ir < this->sds[ib].rank; ir++) {
-        if (this->sds[ib].dim[ir].name != (char *)NULL) 
           free(this->sds[ib].dim[ir].name);
       }
-      if (this->sds[ib].name != (char *)NULL) 
-        free(this->sds[ib].name);
+      free(this->sds[ib].name);
     }
-    if (this->buf[0] != (int16 *)NULL)
-      free(this->buf[0]);
-    if (this->file_name != (char *)NULL) free(this->file_name);
+    free(this->buf[0]);
+    free(this->file_name);
     free(this);
+    this = NULL;
   }
-
-  return true;
 }
 
 

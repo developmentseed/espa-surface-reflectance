@@ -4,25 +4,25 @@ C by MOREL within the spectral range 400-700nm (1988, Journal of Geophysical
 C Research, Vol.93, No C9, pp 10749-10768)
 C
 C input parameters:	wl wavelength (IN MICROMETERS)
-C			C  pigment concentration
+C                       C  pigment concentration
 C output parameter:	R2  reflectance of water
 C
 C According Morel,1988, we use:
 C
-C Kd	spectral value of the attenuation coefficient for 
-C	 downwelling irradiance
-C	 with: Kd=Kw+Xc*C**e
-C Kw	spectral value of the diffuse attenuation coefficient 
-C	 for pure oceanic water
+C Kd    spectral value of the attenuation coefficient for 
+C       downwelling irradiance
+C       with: Kd=Kw+Xc*C**e
+C Kw    spectral value of the diffuse attenuation coefficient 
+C       for pure oceanic water
 C Xc, e	spectral coefficients to compute the diffuse attenuation 
-C	 coefficient for pigment
-C bb	total backscattering coefficient
-C	 with: bb=0.5*bw+bbt*b
-C bw	spectral value of the molecular scattering coefficient of water
+C       coefficient for pigment
+C bb    total backscattering coefficient
+C       with: bb=0.5*bw+bbt*b
+C bw    spectral value of the molecular scattering coefficient of water
 C bbt,b	parameters to compute the scattering coefficients of pigments
 C
-C R2	reflectance of water below the surface
-C	 with: R2=(0.33/u)*(bb/Kd)	where u is depending of R2
+C R2    reflectance of water below the surface
+C       with: R2=(0.33/u)*(bb/Kd) where u is depending of R2
 C
       real Kw,Kd
       real tKw(61),tXc(61),te(61),tbw(61)
@@ -82,8 +82,8 @@ C
      & 0.0007,0.0007,0.0007,0.0007,0.0007,
      & 0.0007/
       if (wl.lt.0.400.or.wl.gt.0.700)then
-	R2=0.000
-	goto 60
+        R2=0.000
+        goto 60
       endif
 
       iwl=1+nint((wl-0.400)/0.005)
@@ -187,7 +187,7 @@ c        N.J., 1942, p 173.
         nrc=0.006
         nic=0.000
         nr=nr+nrc*(xsal/34.3)
-	ni=ni+nic*(xsal/34.3)
+        ni=ni+nic*(xsal/34.3)
         return
         end
 C
@@ -332,14 +332,14 @@ c     integration between 1 and costt instead of 1 and 0
 c loops on the zenith angle of the emitted radiation
       do km=1,ntb
         costet=(km-1)*htb
-	if (costet.lt.0.99999999) then
+        if (costet.lt.0.99999999) then
            tet=acos(costet)
-	   else
-	   tet=0.0
-	   endif
+        else
+           tet=0.0
+        endif
         sintet=sin(tet)
-	tet=tet/fac
-C	write(6,*) "sintet ",sintet,tet,costet
+        tet=tet/fac
+C        write(6,*) "sintet ",sintet,tet,costet
 c Simpson's rules for the angle of the emitted radiation teta
         cotb=2.
         diff=abs(km/2-km/2.)

@@ -65,8 +65,8 @@ c       *                       from                           *       c
 c       *                                                      *       c
 c       *     (1) Affiliation: Department of Geography         *       c
 c       *         University of Maryland and                   *       c
-c       *         Goddard Space Flight Center	               *       c
-c       *         Code 614.5    		      	       *       c
+c       *         Goddard Space Flight Center                  *       c
+c       *         Code 614.5                                   *       c
 c       *         USA                                          *       c
 c       *                                                      *       c
 c       *     (2) ELICO/LOCL                                   *       c
@@ -188,18 +188,18 @@ c****************************************************************************c
         real rolut(mu_p,41),roluts(20,mu_p,41),roluti(mu_p,41)
         real rolutq(mu_p,41),rolutsq(20,mu_p,41),rolutiq(mu_p,41)
         real rolutu(mu_p,41),rolutsu(20,mu_p,41),rolutiu(mu_p,41)
-	real filut(mu_p,41)
-	integer aerod
-	real its,lutmuv,luttv,iscama,iscami,scaa,cscaa,cfi
-	integer nfilut(mu_p),nbisca
-	real dtr 
+        real filut(mu_p,41)
+        integer aerod
+        real its,lutmuv,luttv,iscama,iscami,scaa,cscaa,cfi
+        integer nfilut(mu_p),nbisca
+        real dtr 
         real anglem,weightm,rm,gb,accu2,accu3
         real rp,gp,xlmus,xlmuv,angmu,angphi,brdfints,brdfdats
         real brdfintv,brdfdatv,robar,robarp,robard,xlm1,xlm2
         real c,wldisc,ani,anr,aini,ainr,rocl,roel,zpl,ppl,tpl,whpl
         real wopl,xacc,s,wlinf,wlsup,delta
-	real nwlinf,nwlsup
-	integer niinf,nisup
+        real nwlinf,nwlsup
+        integer niinf,nisup
         real sigma,z,p,t,wh,wo,ext,ome,gasym,phase,qhase,roatm,dtdir
         real dtdif,utdir,utdif,sphal,wldis,trayl,traypl,pi,pi2,step
         real asol,phi0,avis,phiv,tu,xlon,xlat,xlonan,hna,dsol,campm
@@ -210,8 +210,7 @@ c****************************************************************************c
         real albbrdf,par1,par2,par3,par4,robar1,xnorm1,rob,xnor,rodir
         real rdown,rdir,robar2,xnorm2,ro,roc,roe,rapp,rocave,roeave
         real seb,sbor,swl,sb,refet,refet1,refet2,refet3,alumet
-	real refeti,pinst,ksiinst,ksirad
-        real rpfet,rpfet1,rpfet2,rpfet3,plumet,plumeas
+        real rpfet,rpfet1,rpfet2,rpfet3,plumet
         real tgasm,rog,dgasm,ugasm,sdwava,sdozon,sddica,sdoxyg
         real sdniox,sdmoca,sdmeth,suwava,suozon,sudica,suoxyg
         real suniox,sumoca,sumeth,stwava,stozon,stdica,stoxyg,stniox
@@ -222,17 +221,17 @@ c****************************************************************************c
         real utmeth,utmoca,attwava,ttozon,ttdica,ttoxyg,ttniox
         real ttmeth,ttmoca,dtwava,utwava,ttwava,coef,romix,rorayl
         real roaero,phaa,phar,tsca,tray,trayp,taerp,dtott,utott
-	real rqmix,rqrayl,rqaero,qhaa,qhar,foqhsr,foqhsa,foqhst
-	real rumix,rurayl,ruaero,uhaa,uhar,rpmix,rpaero,rprayl
-	real srpray,srpaer,srptot,rpmeas1,rpmeas2,rpmeas3
-	real srqray,srqaer,srqtot,sruray,sruaer,srutot
+        real rqmix,rqrayl,rqaero,qhaa,qhar,foqhsr,foqhsa,foqhst
+        real rumix,rurayl,ruaero,uhaa,uhar
+        real srpray,srpaer,srptot
+        real srqray,srqaer,srqtot,sruray,sruaer,srutot
         real astot,asray,asaer,utotr,utota,dtotr,dtota,dgtot,tgtot
         real tgp1,tgp2,rqatm,ruatm,fouhst,fouhsr,fouhsa,coefp
         real ugtot,edifr,edifa,tdird,tdiru,tdifd,tdifu,fra
         real fae,avr,romeas1,romeas2,romeas3,alumeas,sodrayp
-        real sdppray,sdppaer,sdpptot,rop,sdpray,sdpaer,sdptot
-	real spdpray,spdpaer,spdptot
-        real ratm1,ratm2,ratm3,rsurf,rpatm1,rpatm2,rpatm3,rpsurf
+        real sdppray,sdppaer,sdpptot,sdpray,sdpaer,sdptot
+        real spdpray,spdpaer,spdptot
+        real ratm1,ratm2,ratm3,rsurf
         real sodaerp,sodtotp,tdir,tdif,etn,esn,es,ea0n,ea0,ee0n
         real ee0,tmdir,tmdif,xla0n,xla0,xltn,xlt,xlen,xle,pizera
         real fophst,pizerr,pizert,xrad,xa,xb,xc
@@ -241,11 +240,11 @@ c****************************************************************************c
         integer iwave,iinf,isup,ik,i,inhomo,idirec,ibrdf,igroun
         integer igrou1,igrou2,isort,irapp,ilut
 c variables used in the BRDF coupling correction process
-	real robarstar,robarpstar,robarbarstar,tdd,tdu,tsd,tsu
-	real coefa,coefb,coefc,discri,rogbrdf	
+        real robarstar,robarpstar,robarbarstar,tdd,tdu,tsd,tsu
+        real coefa,coefb,coefc,discri,rogbrdf
 c variables related to surface polarization
         integer irop
-	real ropq,ropu,pveg,wspd,azw,razw
+        real ropq,ropu,pveg,wspd,azw,razw
       integer open_status
       character cwd*500
 
@@ -298,7 +297,7 @@ c***********************************************************************
       real pxLt,pc,pRl,pTl,pRs
       real pws,phi_wind,xsal,pcl,paw,rfoam,rwat,rglit
       real rfoamave,rwatave,rglitave
-      
+
       real uli,eei,thmi,sli,cabi,cwi,vaii,rnci,rsl1i
       real p1,p2,p3
 c***********************************************************************
@@ -312,8 +311,8 @@ c***********************************************************************
       common /sixs_disc/ roatm(3,20),dtdir(3,20),dtdif(3,20),
      s utdir(3,20),utdif(3,20),sphal(3,20),wldis(20),trayl(20),
      s traypl(20),rqatm(3,20),ruatm(3,20)
- 
- 
+
+
 c****************************************************************************c
 c   angmu and angphi are the angles were the brdf is measured. these values  c
 c   can be changed as soon as they are well distributed over the whole space c
@@ -323,15 +322,15 @@ c****************************************************************************c
       data angmu /85.0,80.0,70.0,60.0,50.0,40.0,30.0,20.0,10.0,0.00/
       data angphi/0.00,30.0,60.0,90.0,120.0,150.0,180.0,
      s          210.0,240.0,270.0,300.0,330.0,360.0/
- 
+
 c***********************************************************************
 c                             return to 6s
 c***********************************************************************
       data wldisc /0.350,0.400,0.412,0.443,0.470,0.488,0.515,0.550,
      s             0.590,0.633,0.670,0.694,0.760,0.860,1.240,1.536,
      s             1.650,1.950,2.250,3.750/
-       
- 
+
+
       data etiq1/
      s '(1h*,22x,34h user defined conditions          ,t79,1h*)',
      s '(1h*,22x,24h meteosat observation   ,t79,1h*)          ',
@@ -341,7 +340,7 @@ c***********************************************************************
      s '(1h*,22x,30h avhrr (PM noaa) observation  ,t79,1h*)    ',
      s '(1h*,22x,24h h.r.v.   observation   ,t79,1h*)          ',
      s '(1h*,22x,24h t.m.     observation   ,t79,1h*)          '/
- 
+
        data nsat/
      s ' constant        ',' user s          ',
      s ' meteosat        ',' goes east       ',' goes west       ',
@@ -389,7 +388,7 @@ c***********************************************************************
      s ' gli     24      ',' gli     25      ',' gli     26      ',
      s ' gli     27      ',' gli     28      ',' gli     29      ',
      s ' gli     30      '/
- 
+
        data atmid /
      s 'no absorption computed                             ',
      s 'tropical            (uh2o=4.12g/cm2,uo3=.247cm-atm)',
@@ -398,7 +397,7 @@ c***********************************************************************
      s 'subarctic  summer   (uh2o=2.10g/cm2,uo3=.480cm-atm)',
      s 'subarctic  winter   (uh2o=.419g/cm2,uo3=.480cm-atm)',
      s 'us  standard 1962   (uh2o=1.42g/cm2,uo3=.344cm-atm)'/
- 
+
       data  reflec /
      & '(1h*,12x,39h user defined spectral reflectance     ,f6.3,t79
      & ,1h*) ',
@@ -461,22 +460,20 @@ c***********************************************************************
       gb(-mu)=0.
       gb(0)=0.
       gb(mu)=0.
- 
+
 c***********************************************************************
 c                             return to 6s
 c***********************************************************************
 c constantes values
       sigma=0.056032
       delta=0.0279
-CCC     pinst=0.02
-CCC     ksiinst=0.
       xacc=1.e-06
       iread=5
       step=0.0025
       do 1111 l=1,20
        wldis(l)=wldisc(l)
  1111 continue
- 
+
 c**********************************************************************c
 c                                                                      c
 c                                                *     sun             c
@@ -563,16 +560,16 @@ c                                                                      c
 c**********************************************************************c
 
       read(iread,*) igeom
- 
+
       if (igeom.lt.0) then
           if (igeom.lt.-10) then
-	     igmax=int(abs(igeom/10))
-	     igeom=igeom+igmax*10
-	  endif   
+             igmax=int(abs(igeom/10))
+             igeom=igeom+igmax*10
+          endif   
           ilut=0
-	  igeom=0
+          igeom=0
       endif
-      ilut=0	  
+      ilut=0
       goto(1001,1002,1003,1004,1005,1006,1007),igeom
 c   igeom=0.....
 
@@ -638,7 +635,7 @@ c test vermote bug
       if (xmud.lt.-1.) xmud=-1.
       adif=acos(xmud)*180./pi
 
- 
+
 c**********************************************************************c
 c       idatm      atmospheric model                                   c
 c                 --------------------                                 c
@@ -700,9 +697,8 @@ c                  -------------------------------------------         c
 c                                                                      c
 c**********************************************************************c
 
-c      read(iread,*) ipol
        ipol=1
-       
+
 c**********************************************************************c
 c                                                                      c
 c       iaer       aerosol model(type) and profile                     c
@@ -818,13 +814,13 @@ c**********************************************************************c
        nrsunph(i)=0.
       enddo
       cij(1)=1.00
-      
+
       taer=0.
       taer55=0.
       iaer_prof=0
- 
+
       read(iread,*) iaer
-      
+
 c  the user-defined aerosol profile
       if (iaer.lt.0) then
 
@@ -846,17 +842,17 @@ c  the user-defined aerosol profile
        total_height=total_height+height_z(num_z-i)
        taer55=taer55+taer55_z(num_z-i)
       enddo
-                
+
       endif
 c  the user-defined aerosol profile
-      
+
       if (iaer.ge.0.and.iaer.le.7) nquad=nqdef_p
       if (iaer.ge.8.and.iaer.le.11) nquad=nquad_p
 
       if(iaer.eq.4) read(iread,*) (c(n),n=1,4)
-      
+
       goto(49,40,41,42,49,49,49,49,43,44,45,46,47),iaer+1
- 
+
    40 c(1)=0.70
       c(2)=0.29
       c(3)=0.00
@@ -895,7 +891,6 @@ c  the user-defined aerosol profile
    46 read(5,*)irsunph
       do i=1,irsunph
        read(5,*)rsunph(i),nrsunph(i)
-C       nrsunph(i)=nrsunph(i)/(rsunph(i)**4.)/(4*3.1415/3)
       enddo
       rmin=rsunph(1)
       rmax=rsunph(irsunph)+1e-07
@@ -945,7 +940,7 @@ c**********************************************************************c
       v=exp(-log(taer55/2.7628)/0.79902)
       goto 71
    11 call oda550(iaer,v,taer55)
-  
+
    71 continue
       endif
 
@@ -960,8 +955,8 @@ c                        expressed in km and you put that value as xps c
 c                                                                      c
 c                                                                      c
 c**********************************************************************c
- 
- 771   read(iread,*) xps
+
+       read(iread,*) xps
 
        if (xps.ge.0.) then
         xps=0.
@@ -974,7 +969,7 @@ c**********************************************************************c
          call pressure(uwus,uo3us,xps)
         endif
        endif
- 
+
 c**********************************************************************c
 c                                                                      c
 c  xpp is the parameter to express the sensor altitude                 c
@@ -986,13 +981,13 @@ c                                                                      c
 c                                                                      c
 c     for aircraft simulations                                         c
 c    -100< xpp <0  means you know the altitude of the sensor expressed c
-c                  in kilometers units      			       c
+c                  in kilometers units                                 c
 c     this altitude is relative to the target altitude                 c
 c                                                                      c
 c     for aircraft simulations only, you have to give                  c
-c	puw,po3   (water vapor content,ozone content between the       c
+c       puw,po3   (water vapor content,ozone content between the       c
 c                  aircraft and the surface)                           c
-c	taerp     (the aerosol optical thickness at 550nm between the  c
+c       taerp     (the aerosol optical thickness at 550nm between the  c
 c                  aircraft and the surface)                           c
 c    if these data are not available, enter negative values for all    c
 c    of them, puw,po3 will then be interpolated from the us62 standard c
@@ -1007,47 +1002,47 @@ c**********************************************************************c
 c          ground measurement option        
            palt=0.
            pps=p(1)
-	   idatmp=0
-	   taer55p=0.
-	   puw=0.
-	   puoz=0.
+           idatmp=0
+           taer55p=0.
+           puw=0.
+           puoz=0.
+        else
+           if (xpp.ge.100.) then
+c              satellite case of equivalent   
+              palt=1000.
+              pps=0.
+              taer55p=taer55
+              ftray=1.
+              idatmp=4
            else
-	   if (xpp.ge.100.) then
-c	       satellite case of equivalent	   
-	      palt=1000.
-	      pps=0.
-	      taer55p=taer55
-	      ftray=1.
-	      idatmp=4
-	      else
-c	      "real" plane case	      
+c             "real" plane case      
               read(iread,*) puw,puo3
-	      if (puw.lt.0.) then
+              if (puw.lt.0.) then
                  call presplane(puw,puo3,xpp,ftray)
-	         idatmp=2
-	         if (idatm.eq.8) then
-	            puwus=puw
-	            puo3us=puo3
-	            puw=puw*uw/uwus
-	            puo3=puo3*uo3/uo3us
-	            idatmp=8
-	         endif
-	      else
-	         call presplane(puwus,puo3us,xpp,ftray)
-	         idatmp=8
+                 idatmp=2
+                 if (idatm.eq.8) then
+                    puwus=puw
+                    puo3us=puo3
+                    puw=puw*uw/uwus
+                    puo3=puo3*uo3/uo3us
+                    idatmp=8
+                 endif
+              else
+                 call presplane(puwus,puo3us,xpp,ftray)
+                 idatmp=8
               endif
               if(ier) stop
               palt=zpl(34)-z(1)
-	      pps=ppl(34)
+              pps=ppl(34)
               read(iread,*) taer55p
-	    if ((taer55p.lt.0.).or.((taer55-taer55p).lt.accu2)) then
+              if ((taer55p.lt.0.).or.((taer55-taer55p).lt.accu2)) then
 c a scale heigh of 2km is assumed in case no value is given for taer55p
-               taer55p=taer55*(1.-exp(-palt/2.))
-            else
+                taer55p=taer55*(1.-exp(-palt/2.))
+              else
 C compute effective scale heigh
-               sham=exp(-palt/4.)
-               sha=1.-(taer55p/taer55)
-               if (sha.ge.sham) then
+                sham=exp(-palt/4.)
+                sha=1.-(taer55p/taer55)
+                if (sha.ge.sham) then
                   taer55p=taer55*(1.-exp(-palt/4.))
                else
                   sha=-palt/log(sha)
@@ -1289,13 +1284,13 @@ c       152     GLI     band            (89,118)
    19 iinf=(wlinf-.25)/0.0025+1.5
       isup=(wlsup-.25)/0.0025+1.5
    20 continue
- 
+
 C***********************************************************************
 C LOOK UP TABLE INITIALIZATION
 C***********************************************************************
 C  initialization of look up table variable
 C     Write(6,*) "TOTO THE HERO"
-      
+
       do i=1,mu
       nfilut(i)=0
       do j=1,41
@@ -1321,12 +1316,12 @@ C Case standart LUT
          nfilut(i)=nbisca
          filut(i,1)=0.0
          filut(i,nbisca)=180.0
-	 scaa=iscama
+         scaa=iscama
          do j=2,nfilut(i)-1
           scaa=scaa-4.0
           cscaa=cos(scaa*pi/180.)
           cfi=-(cscaa+xmus*lutmuv)/(sqrt(1-xmus*xmus)
-     S	  *sqrt(1.-lutmuv*lutmuv))
+     S       *sqrt(1.-lutmuv*lutmuv))
           filut(i,j)=acos(cfi)*180.0/pi
          enddo
       enddo
@@ -1339,12 +1334,12 @@ C Case standart LUT
          nfilut(i)=nbisca
          filut(i,1)=0.0
          filut(i,nbisca)=180.0
-	 scaa=iscama
+         scaa=iscama
          do j=2,nfilut(i)-1
           scaa=scaa-4.0
           cscaa=cos(scaa*pi/180.)
           cfi=-(cscaa+xmus*lutmuv)/(sqrt(1-xmus*xmus)
-     S	  *sqrt(1.-lutmuv*lutmuv))
+     S       *sqrt(1.-lutmuv*lutmuv))
           filut(i,j)=acos(cfi)*180.0/pi
          enddo
         endif
@@ -1363,7 +1358,7 @@ C Case LUT for APS
          nfilut(i)=nbisca
          filut(i,1)=(phi0-phiv)
          endif
-C END 	Case LUT for APS
+C END Case LUT for APS
 CCCC Check initialization  (debug)     
        do i=1,mu
          lutmuv=rm(i)
@@ -1380,9 +1375,9 @@ C***********************************************************************
 C END LOOK UP TABLE INITIALIZATION
 C***********************************************************************
 
- 
- 
- 
+
+
+
 c**********************************************************************c
 c here, we first compute an equivalent wavelenght which is the input   c
 c value for monochromatic conditions or the integrated value for a     c
@@ -1429,7 +1424,7 @@ c**********************************************************************c
          tamoyp=0.
       endif
 
- 
+
 c*********************************************************************c
 c     inhomo        ground reflectance (type)                          c
 c                   ------------------                                 c
@@ -1512,8 +1507,8 @@ c            azimuth view angles from 0 to 360 degrees, you have to do c
 c            same for a sun which would be at thetav. in addition, the c
 c            spherical albedo of the surface has to be specified ,as   c
 C            well as the observed reflectance in the selected geometry c
-c           rodir(sun zenith,view zenith, relative azimuth).	       c
-c		 						       c
+c           rodir(sun zenith,view zenith, relative azimuth).           c
+c                                                                      c
 c        you also may select one of the following models               c
 c         1  hapke model                                               c
 c             the parameters are: om,af,s0,h                           c
@@ -1649,14 +1644,14 @@ c                 p1 weight for lambertian kernel                      c
 c                 p2 weight for Ross Thick kernel                      c
 c                 p3 weight for Li Sparse  kernel                      c
 c**********************************************************************c
-									
+
       fr=0.
       rad=0.
       do 1116 ik=iinf,isup
         rocl(ik)=0.
         roel(ik)=0.
  1116 continue
- 
+
 c**********************************************************************c
 c     uniform or non-uniform surface conditions                        c
 c**********************************************************************c
@@ -1668,7 +1663,7 @@ c**********************************************************************c
   30  read(iread,*) idirec
 
       if(idirec)21,21,25
- 
+
 c**********************************************************************c
 c     uniform conditions with brdf conditions                          c
 c**********************************************************************c
@@ -1724,7 +1719,7 @@ c     brdf from hapke's model                                          c
 c**********************************************************************c
   24  if(ibrdf.eq.1) then
         read(iread,*) par1,par2,par3,par4
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1733,7 +1728,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1757,7 +1752,7 @@ c**********************************************************************c
         options(2)=1
         read(iread,*) (struct(i),i=1,4)
         read(iread,*) (optics(i),i=1,3)
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1766,7 +1761,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1786,7 +1781,7 @@ c     brdf from Roujean et al's model                                  c
 c**********************************************************************c
       if(ibrdf.eq.3) then
         read(iread,*) par1,par2,par3
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1795,7 +1790,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1815,7 +1810,7 @@ c     brdf from walthall et al's model
 c**********************************************************************c
       if(ibrdf.eq.4) then
         read(iread,*) par1,par2,par3,par4
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1824,7 +1819,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1844,7 +1839,7 @@ c     brdf from minnaert's model                                       c
 c**********************************************************************c
       if(ibrdf.eq.5) then
         read(iread,*) par1,par2
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1853,7 +1848,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1868,7 +1863,7 @@ c**********************************************************************c
      s       albbrdf)
         go to 69
       endif
- 
+
 c**********************************************************************c
 c     brdf from ocean condition
 c**********************************************************************c
@@ -1876,7 +1871,7 @@ c**********************************************************************c
         read(iread,*) pws,phi_wind,xsal,pcl
         if (xsal.lt.0.001)xsal=34.3
         paw=phi0-phi_wind
-	
+
         do l=iinf,isup
            srm(-1)=phirad
            srm(1)=xmuv
@@ -1885,25 +1880,25 @@ c**********************************************************************c
            call oceabrdf(pws,paw,xsal,pcl,wl,rfoam,rwat,rglit,
      s         1,1,srm,srp,
      s           sbrdftmp)
-     
-     	   rfoaml(l)=rfoam
+
+           rfoaml(l)=rfoam
            rwatl(l)=rwat
-	   rglitl(l)=rglit
-	   sbrdf(l)=sbrdftmp(1,1)
+           rglitl(l)=rglit
+           sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
         call oceabrdf(pws,paw,xsal,pcl,wlmoy,rfoam,rwat,rglit,
-     s  	mu,np,rm,rp,
-     s           brdfints)
+     s                mu,np,rm,rp,
+     s                brdfints)
         rm(-mu)=2.*pi-phirad
         rm(mu)=xmus
         rm(0)=xmuv
         call oceabrdf(pws,paw,xsal,pcl,wlmoy,rfoam,rwat,rglit,
-     s   	mu,np,rm,rp,
-     s           brdfintv)
+     s                mu,np,rm,rp,
+     s                brdfintv)
         call oceaalbe(pws,paw,xsal,pcl,wlmoy,
      s       albbrdf)
         go to 69
@@ -1916,7 +1911,7 @@ c**********************************************************************c
         read(iread,*) pild,pihs
         read(iread,*) pxLt,pc
         read(iread,*) pRl,pTl,pRs
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1925,7 +1920,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1946,7 +1941,7 @@ c     brdf from Rahman model
 c**********************************************************************c
       if(ibrdf.eq.8) then
         read(iread,*) par1,par2,par3
-	
+
         srm(-1)=phirad
         srm(1)=xmuv
         srm(0)=xmus
@@ -1955,7 +1950,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	
+
         rm(-mu)=phirad
         rm(mu)=xmuv
         rm(0)=xmus
@@ -1977,7 +1972,7 @@ c**********************************************************************c
       if(ibrdf.eq.9) then
          read(iread,*) uli,eei,thmi,sli
          read(iread,*) cabi,cwi,vaii,rnci,rsl1i
-	 
+ 
         do l=iinf,isup
            srm(-1)=phirad
            srm(1)=xmuv
@@ -1987,7 +1982,7 @@ c**********************************************************************c
      s      ,1,1,srm,srp,sbrdftmp)
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	 
+ 
          rm(-mu)=phirad
          rm(mu)=xmuv
          rm(0)=xmus
@@ -2010,7 +2005,7 @@ c     brdf from MODIS BRDF   model                                     c
 c**********************************************************************c
       if(ibrdf.eq.10) then
          read(iread,*)p1,p2,p3
-	 
+ 
            srm(-1)=phirad
            srm(1)=xmuv
            srm(0)=xmus
@@ -2019,7 +2014,7 @@ c**********************************************************************c
         do l=iinf,isup
            sbrdf(l)=sbrdftmp(1,1)
            enddo
-	 
+ 
          rm(-mu)=phirad
          rm(mu)=xmuv
          rm(0)=xmus
@@ -2058,7 +2053,7 @@ c**********************************************************************c
         robar1=robar1+rob*gp(j)
         xnorm1=xnorm1+xnor*gp(j)
    83 continue
- 
+
 c**********************************************************************c
 c the downward irradiance was computed for a sun at thetav and         c
 c several viewing directions (mu zenith times np azimuth). then, the   c
@@ -2080,14 +2075,8 @@ c**********************************************************************c
         robar2=robar2+rob*gp(j)
         xnorm2=xnorm2+xnor*gp(j)
    85 continue
- 
+
 c  robard is assumed equal to albbrdf
-c       print 301,brdfints(mu,1),robar1,xnorm1,
-c    s       robar2,xnorm2,albbrdf
-c       print 301,robar1/xnorm1,robar2/xnorm2
-c       print 301,betal(0)/3,pizmoy
-c301  format(6(f10.4,2x))
-c501  format(5(i10,2x))
       do 335 l=iinf,isup
         rocl(l)=sbrdf(l)
         roel(l)=sbrdf(l)
@@ -2102,7 +2091,7 @@ c501  format(5(i10,2x))
         robard(l)=albbrdf
   335 continue
       go to 34
- 
+
 c**********************************************************************c
 c     uniform surface with lambertian conditions                       c
 c**********************************************************************c
@@ -2110,7 +2099,7 @@ c**********************************************************************c
   21  read(iread,*) igroun
 
       if(igroun) 29,32,33
-      
+
   29  read(iread,*) nwlinf,nwlsup
       niinf=(nwlinf-.25)/0.0025+1.5
       nisup=(nwlsup-.25)/0.0025+1.5
@@ -2131,7 +2120,7 @@ c**********************************************************************c
         roel(l)=rocl(l)
    39 continue
       go to 34
- 
+
 c**********************************************************************c
 c     non-uniform conditions with lambertian conditions                c
 c**********************************************************************c
@@ -2161,17 +2150,17 @@ c**********************************************************************c
       if(igrou2.eq.3) call sand  (roel)
       if(igrou2.eq.4) call lakew (roel)
    34 continue
- 
+
 c**********************************************************************c
 c                                                                      c
 c       irapp   that input parameter allows to activate atmospheric    c
 c               correction mode                                        c
 c                                                                      c
-c		-1: No atmospheric Correction is performed             c
-c	       0,1: Atmospheric Correction with Lambertian assumption  c
+c               -1: No atmospheric Correction is performed             c
+c              0,1: Atmospheric Correction with Lambertian assumption  c
 c                   and with the assumption that                       c
-c		    target BRDF is proportional to the input BRDF (see c
-c		    case idirec=1)                                     c
+c                   target BRDF is proportional to the input BRDF (see c
+c                   case idirec=1)                                     c
 c                                                                      c
 c        rapp   parameter that contains the reflectance/radiance       c
 c               to be corrected.                                       c
@@ -2197,8 +2186,8 @@ c**********************************************************************c
          irapp=1
          read(iread,*) rapp
          endif
-	 
-	 
+ 
+ 
 c**********************************************************************c
 c                                                                      c
 c      Some optional input for polarization                            c
@@ -2213,10 +2202,7 @@ c         polarized.                                                   c
 c                                                                      c
 c                                                                      c
 c**********************************************************************c
-	 
-C       ilut=0
-C       read(iread,*,end=37) ilut
-      
+ 
        irop=0
 
        read(iread,*,end=37) irop
@@ -2224,18 +2210,18 @@ C       read(iread,*,end=37) ilut
        if (irop.eq.1) then
        read(iread,*) ropq,ropu
        endif
-       
+
        if (irop.eq.2) then
        read(iread,*) pveg
        call polnad(asol,avis,phi,pveg,ropq,ropu)
        endif
-       
+
        if (irop.eq.3) then
        read(iread,*) wspd,azw
        razw=phi0-azw
        call polglit(asol,avis,phi,wspd,razw,ropq,ropu)
        endif
-       
+
  37    if ((irop.lt.1).or.(irop.gt.3)) then
        if (idirec.eq.0) then
        ropq=0.000
@@ -2243,24 +2229,24 @@ C       read(iread,*,end=37) ilut
        else
        if (ibrdf.eq.6) then
           irop=3
-	  wspd=pws
-	  azw=phi_wind
-	  razw=phi0-azw
-	  phi=phi0-phiv
+          wspd=pws
+          azw=phi_wind
+          razw=phi0-azw
+          phi=phi0-phiv
           call polglit(asol,avis,phi,wspd,razw,ropq,ropu)
-	  endif
+       endif
        if (ibrdf.eq.9) then
           irop=2
+c ul variable is not declared or set, so the following statement is
+c questionable.
           pveg=ul
-	  if (pveg.gt.1.) pveg=1
-	  call polnad(asol,avis,phi,pveg,ropq,ropu)
-	  endif
+         if (pveg.gt.1.) pveg=1
+         call polnad(asol,avis,phi,pveg,ropq,ropu)
+       endif
        endif  
        endif
-C      write(6,*) "Surface polarization reflectance, Q,U,rop ",
-C    s            ropq,ropu,sqrt(ropq*ropq+ropu*ropu)
-	 
-	 
+ 
+ 
 
 c**********************************************************************c
 c**********************************************************************c
@@ -2283,8 +2269,8 @@ c -0.10                        (atmospheric correction mode for a TOA  c
 c                                   reflectance equal to 0.10)         c
 c                                                                      c
 c**********************************************************************c
- 
- 
+
+
 c**********************************************************************c
 c                     print of initial conditions                      c
 c                                                                      c
@@ -2294,13 +2280,13 @@ c ---- geometrical conditions ----
       write(iwr, 98)
       write(iwr, etiq1(igeom+1))
       if(igeom.eq.0) then
-	 write(iwr, 1401)
-	 write(iwr, 103)month,jday
+         write(iwr, 1401)
+         write(iwr, 103)month,jday
       endif
       if(igeom.ne.0) write(iwr, 101)month,jday,tu,xlat,xlon
       write(iwr, 102)asol,phi0
       write(iwr, 1110)avis,phiv,adif,phi
- 
+
 c --- atmospheric model ----
       write(iwr, 1119)
       if(idatm-7)226,227,228
@@ -2312,7 +2298,7 @@ c --- atmospheric model ----
   229 continue
       goto 219
   226 write(iwr, 1261)atmid(idatm+1)
- 
+
 c --- aerosols model (type) ----
 
 219    write(iwr,5550)
@@ -2320,9 +2306,9 @@ c --- aerosols model (type) ----
         write(iwr, 5554)
         goto 1112
        endif
-       
+
        if (iaer_prof.eq.1) then                           
-       
+
        aer_model(1)="Continental"
        aer_model(2)=" Maritime"
        aer_model(3)="   Urban"
@@ -2343,11 +2329,11 @@ c --- aerosols model (type) ----
        write(6,5553)i,height_z(num_z+1-i),taer55_z(num_z+1-i),
      a aer_model(iaer)
        enddo
-       
+
        endif
-       
+
        if (iaer_prof.eq.0) then
-       
+
        aer_model(1)="Continental aerosol model"
        aer_model(2)="Maritime aerosol model"
        aer_model(3)="Urban aerosol model"
@@ -2355,13 +2341,13 @@ c --- aerosols model (type) ----
        aer_model(6)="Biomass Burning aerosol model"
        aer_model(7)="Stratospheric aerosol model"
        aer_model(11)="Sun Photometer aerosol model"
-                
+
       if (iaer.ge.1.and.iaer.lt.4) write (iwr,132) aer_model(iaer)
       if (iaer.ge.5.and.iaer.le.7) write (iwr,132) aer_model(iaer)
       if (iaer.eq.11) write(iwr,132) aer_model(iaer)
-      
+
       endif
-      
+
        if (iaer.eq.4)write(iwr,133)(c(i),i=1,4)
        if (iaer.eq.8) then
         write(6,134) icp
@@ -2373,7 +2359,7 @@ c --- aerosols model (type) ----
        if (iaer.eq.10) write(iwr,137)x1(1) 
        if (iaerp.eq.1)write(iwr,139)FILE2(1:i2)
        if (iaer.eq.12)write(iwr,138)FILE2(1:i2)
-      
+
 
 c --- aerosol model (concentration) ----
 c --- for the exponential profile ----
@@ -2392,20 +2378,20 @@ c --- spectral condition ----
 
 c ---- atmospheric polarization requested
       if (ipol.ne.0)then
-	write(iwr, 142)
-	if (irop.eq.1) write(iwr,146) ropq,ropq
-	if (irop.eq.2) write(iwr,144) pveg*100.0
-	if (irop.eq.3) write(iwr,145) wspd,azw
-	write(iwr,143) ropq,ropu,sqrt(ropq*ropq+ropu*ropu),
-     s	atan2(ropu,ropq)*180.0/3.1415927/2.0
+        write(iwr, 142)
+        if (irop.eq.1) write(iwr,146) ropq,ropq
+        if (irop.eq.2) write(iwr,144) pveg*100.0
+        if (irop.eq.3) write(iwr,145) wspd,azw
+        write(iwr,143) ropq,ropu,sqrt(ropq*ropq+ropu*ropu),
+     s                 atan2(ropu,ropq)*180.0/3.1415927/2.0
       endif
- 
+
 c --- ground reflectance (type and spectral variation) ----
       if(idirec.eq.0) then
         rocave=0.
         roeave=0.
         seb=0.
- 
+
         do 264 i=iinf,isup
           sbor=s(i)
           if(i.eq.iinf.or.i.eq.isup) sbor=sbor*0.5
@@ -2421,19 +2407,19 @@ c --- ground reflectance (type and spectral variation) ----
         roeave=roeave/seb
         isort=0
         ro=rocave
- 
+
         if(inhomo.eq.0) goto 260
         write(iwr, 169)rad
         igroun=igrou1
         ro=rocave
         write(iwr, 170)
         goto 261
- 
+
   262   igroun=igrou2
         ro=roeave
         write(iwr, 171)
         goto 261
- 
+
   260   write(iwr, 168)
   261   if (igroun.gt.0)write(iwr, reflec(igroun+3))ro
         if (igroun.gt.0)goto 158
@@ -2453,7 +2439,7 @@ c --- ground reflectance (type and spectral variation) ----
         rwatave=0.
         rglitave=0.
         seb=0.
- 
+
         do  i=iinf,isup
           sbor=s(i)
           if(i.eq.iinf.or.i.eq.isup) sbor=sbor*0.5
@@ -2468,10 +2454,10 @@ c --- ground reflectance (type and spectral variation) ----
           seb=seb+sbor*swl*step
         enddo
         rocave=rocave/seb
-	rfoamave=rfoamave/seb
-	rwatave=rwatave/seb
-	rglitave=rglitave/seb
-	
+        rfoamave=rfoamave/seb
+        rwatave=rwatave/seb
+        rglitave=rglitave/seb
+
          goto(2000,2001,2002,2003,2004,2005,2006,2007,2008,2010,2011)
      *    ,(ibrdf+1)
  2000    write(iwr, 190)
@@ -2537,14 +2523,13 @@ c --- ground reflectance (type and spectral variation) ----
          goto 2009
  2009   endif
       endif
-  50  continue
 
 c --- pressure at ground level (174) and altitude (175) ----
   999 write(iwr, 173)
       write(iwr, 174)p(1)
       write(iwr, 175)xps
       if (xps.gt.0..and.idatm.ne.0) write(iwr, 176)uw,uo3
- 
+
 c --- plane simulation output if selected ----
       if (palt.lt.1000.) then
        write(iwr, 178)
@@ -2555,7 +2540,7 @@ c --- plane simulation output if selected ----
        write(iwr, 183)puw
        write(iwr, 184)taer55p
       endif
- 
+
 c ---- atmospheric correction  ----
       if (irapp.ge.0) then
         write(iwr, 177)
@@ -2578,15 +2563,15 @@ c                                                                      c
 c**********************************************************************c
 
 c ---- initilialization
-C Start Update Look up table	
-	do i=1,mu
-	do j=1,41
-	roluti(i,j)=0.0
-	rolutiq(i,j)=0.0
-	rolutiu(i,j)=0.0
-	enddo
-	enddo
-C End Update Look up table	
+C Start Update Look up table
+      do i=1,mu
+        do j=1,41
+          roluti(i,j)=0.0
+          rolutiq(i,j)=0.0
+          rolutiu(i,j)=0.0
+        enddo
+      enddo
+C End Update Look up table
       sb=0.
       seb=0.
       refet=0.
@@ -2636,6 +2621,8 @@ C End Update Look up table
       foqhsa=0.
       fouhsr=0.
       fouhsa=0.
+      rqfet=0.
+      rufet=0.
       sroray=0.
       sroaer=0.
       srotot=0.
@@ -2717,7 +2704,7 @@ c
      s   tsca,tray,trayp,taer,taerp,dtott,utott,astot,asray,asaer,
      s   utotr,utota,dtotr,dtota,ipol,roatm_fi,romix_fi,rorayl_fi,nfi,
      s   roluts,rolut,rolutsq,rolutq,rolutsu,rolutu,nfilut)
-     
+
         dgtot=dtwava*dtozon*dtdica*dtoxyg*dtniox*dtmeth*dtmoca
         tgtot=ttwava*ttozon*ttdica*ttoxyg*ttniox*ttmeth*ttmoca
         ugtot=utwava*utozon*utdica*utoxyg*utniox*utmeth*utmoca
@@ -2737,7 +2724,7 @@ c  ---unpolarized light
           tdiru=exp(-(trayp+taerp)/xmuv)
           tdifd=dtott-tdird
           tdifu=utott-tdiru
-	  rsurf=roc*tdird*tdiru+
+          rsurf=roc*tdird*tdiru+
      s          robar(l)*tdifd*tdiru+robarp(l)*tdifu*tdird+
      s          robard(l)*tdifd*tdifu+
      s    (tdifd+tdird)*(tdifu+tdiru)*astot*robard(l)*robard(l)
@@ -2752,9 +2739,9 @@ c  ---unpolarized light
         ratm1=(romix-rorayl)*tgtot+rorayl*tgp1
         ratm3=romix*tgp1
         ratm2=(romix-rorayl)*tgp2+rorayl*tgp1
-	do i=1,nfi
-	ratm2_fi(i)=(romix_fi(i)-rorayl_fi(i))*tgp2+rorayl_fi(i)*tgp1
-	enddo
+        do i=1,nfi
+          ratm2_fi(i)=(romix_fi(i)-rorayl_fi(i))*tgp2+rorayl_fi(i)*tgp1
+        enddo
         romeas1=ratm1+rsurf*tgtot
         romeas2=ratm2+rsurf*tgtot
         romeas3=ratm3+rsurf*tgtot
@@ -2762,30 +2749,30 @@ c    computing integrated values over the spectral band
 
         alumeas=xmus*swl*romeas2/pi
         alumet=alumet+alumeas*sbor*step
-	rfoamave=rfoamave+rfoaml(i)*sbor*swl*step
-	rwatave=rwatave+rwatl(i)*sbor*swl*step
-	rglitave=rglitave+rglitl(i)*sbor*swl*step
+        rfoamave=rfoamave+rfoaml(i)*sbor*swl*step
+        rwatave=rwatave+rwatl(i)*sbor*swl*step
+        rglitave=rglitave+rglitl(i)*sbor*swl*step
         rog=rog+roc*coef
         refet=refet+romeas2*coef
         refet1=refet1+romeas1*coef
         refet2=refet2+romeas2*coef
         refet3=refet3+romeas3*coef
-	do i=1,nfi
-	refet_fi(i)=refet_fi(i)+ratm2_fi(i)*coef
-	enddo
-	
-C Start Update Look up table	
-C	do i=1,mu
-C	do j=1,41
-C	roluti(i,j)=roluti(i,j)+rolut(i,j)*coef
-C	rolutiq(i,j)=rolutiq(i,j)+rolutq(i,j)*coef
-C	rolutiu(i,j)=rolutiu(i,j)+rolutu(i,j)*coef
-C	enddo
-C	enddo
-C End Update Look up table	
-	
-	
-	
+        do i=1,nfi
+          refet_fi(i)=refet_fi(i)+ratm2_fi(i)*coef
+        enddo
+
+C Start Update Look up table
+C       do i=1,mu
+C       do j=1,41
+C       roluti(i,j)=roluti(i,j)+rolut(i,j)*coef
+C       rolutiq(i,j)=rolutiq(i,j)+rolutq(i,j)*coef
+C       rolutiu(i,j)=rolutiu(i,j)+rolutu(i,j)*coef
+C       enddo
+C       enddo
+C End Update Look up table
+
+
+
         if (iwave.eq.-2) then
           write(iwr,1501) wl,tgtot,dtott,utott,astot,ratm2,swl,roc,
      s            sbor,dsol,romeas2
@@ -2796,19 +2783,19 @@ c       -the spectral integration without the solar irradiance
 c           because the sun does not generate polarized light
 c       -we assume a Lambertian ground, then no polarized 
 c           surface reflectance (rpsurf=0.0, avr=0.0, roc=0.0)
-	if (ipol.ne.0)then
+        if (ipol.ne.0)then
           rqatm2=(rqmix-rqrayl)*tgp2+rqrayl*tgp1
           ruatm2=(rumix-rurayl)*tgp2+rurayl*tgp1
-	  
+  
           tdirqu=exp(-(trayp+taerp)*(1./xmuv+1./xmus))
-	  rqmeas2=rqatm2+ropq*tgtot*tdirqu
-	  rumeas2=ruatm2+ropu*tgtot*tdirqu
+          rqmeas2=rqatm2+ropq*tgtot*tdirqu
+          rumeas2=ruatm2+ropu*tgtot*tdirqu
 
           qlumeas=xmus*swl*rqmeas2/pi
           ulumeas=xmus*swl*rumeas2/pi
-	  qlumet=qlumet+qlumeas*coefp
-	  ulumet=ulumet+ulumeas*coefp
-	  
+          qlumet=qlumet+qlumeas*coefp
+          ulumet=ulumet+ulumeas*coefp
+
           foqhsa=foqhsa+qhaa*coef
           foqhsr=foqhsr+qhar*coef
           fouhsa=fouhsa+uhaa*coef
@@ -2822,15 +2809,15 @@ c           surface reflectance (rpsurf=0.0, avr=0.0, roc=0.0)
           rqfet=rqfet+rqmeas2*coefp
           rufet=rufet+rumeas2*coefp
 
-C Start Update Look up table	
-	do i=1,mu
-	do j=1,41
-	roluti(i,j)=roluti(i,j)+rolut(i,j)*coef
-	rolutiq(i,j)=rolutiq(i,j)+rolutq(i,j)*coef
-	rolutiu(i,j)=rolutiu(i,j)+rolutu(i,j)*coef
-	enddo
-	enddo
-C End Update Look up table	
+C Start Update Look up table
+          do i=1,mu
+            do j=1,41
+              roluti(i,j)=roluti(i,j)+rolut(i,j)*coef
+              rolutiq(i,j)=rolutiq(i,j)+rolutq(i,j)*coef
+              rolutiu(i,j)=rolutiu(i,j)+rolutu(i,j)*coef
+            enddo
+          enddo
+C End Update Look up table
 
         endif
 
@@ -2908,7 +2895,7 @@ c  ---output at the ground level.
           aini(1,j)=aini(1,j)+ani(1,j)*coef
           aini(2,j)=aini(2,j)+ani(2,j)*sbor*step
   955   continue
- 
+
 c  ---output at satellite level
 C old version is commented (new changes are immediately below 
 C Jan-15-2004
@@ -2932,7 +2919,7 @@ C        tmdir=exp(-(tray+taerp)/xmuv)
           ainr(2,j)=ainr(2,j)+anr(2,j)*sbor*step
    56   continue
    51   continue
- 
+
 cc---- integrated values of apparent reflectance, radiance          ---- 
 cc---- and gaseous transmittances (total,downward,separately gases) ----
 
@@ -2981,8 +2968,8 @@ cc---- and gaseous transmittances (total,downward,separately gases) ----
       pizerr=1.
       if(iaer.ne.0) pizera=ssdaer/sodaer/seb
       pizert=(pizerr*sodray+pizera*sodaer)/(sodray+sodaer)
-      
-      
+
+
       rfoamave=rfoamave/seb
       rwatave=rwatave/seb
       rglitave=rglitave/seb
@@ -2994,7 +2981,7 @@ cc---- and gaseous transmittances (total,downward,separately gases) ----
       fophsa=fophsa/seb
       fophsr=fophsr/seb
       fophst=(sodray*fophsr+sodaer*fophsa)/(sodray+sodaer)
- 
+
 c  ---unpolarized light
         refet=refet/seb
         refet1=refet1/seb
@@ -3005,47 +2992,45 @@ c  ---unpolarized light
 
 c  ---polarized light
       if (ipol.ne.0)then
-	rqfet=rqfet/sb
-	rufet=rufet/sb
-	
- 	srqray=srqray/seb
- 	srqaer=srqaer/seb
- 	srqtot=srqtot/seb
- 	sruray=sruray/seb
- 	sruaer=sruaer/seb
- 	srutot=srutot/seb
-	plumet=plumet/sb
- 	foqhsa=foqhsa/seb
- 	foqhsr=foqhsr/seb
+        rqfet=rqfet/sb
+        rufet=rufet/sb
+
+        srqray=srqray/seb
+        srqaer=srqaer/seb
+        srqtot=srqtot/seb
+        sruray=sruray/seb
+        sruaer=sruaer/seb
+        srutot=srutot/seb
+        plumet=plumet/sb
+        foqhsa=foqhsa/seb
+        foqhsr=foqhsr/seb
         foqhst=(sodray*foqhsr+sodaer*foqhsa)/(sodray+sodaer)
- 	fouhsa=fouhsa/seb
- 	fouhsr=fouhsr/seb
+        fouhsa=fouhsa/seb
+        fouhsr=fouhsr/seb
         fouhst=(sodray*fouhsr+sodaer*fouhsa)/(sodray+sodaer)
 c      we define the polarized reflectances
-	srpray=sqrt(srqray**2.+sruray**2.)
- 	srpaer=sqrt(srqaer**2.+sruaer**2.)
-	srptot=sqrt(srqtot**2.+srutot**2.)
+        srpray=sqrt(srqray**2.+sruray**2.)
+        srpaer=sqrt(srqaer**2.+sruaer**2.)
+        srptot=sqrt(srqtot**2.+srutot**2.)
 c      we define the primary degrees of polarization
-	spdpray=foqhsr/fophsr
-	if (iaer.ne.0) then
-	 spdpaer=foqhsa/fophsa
-	else
-	 spdpaer=0.0
-	endif
-	spdptot=foqhst/fophst
+        spdpray=foqhsr/fophsr
+        if (iaer.ne.0) then
+          spdpaer=foqhsa/fophsa
+        else
+           spdpaer=0.0
+        endif
+        spdptot=foqhst/fophst
 c      we define the degrees of polarization
-	sdpray=100.*srpray/sroray
-	if (sroaer.ne.0) then
-	 sdpaer=100.*srpaer/sroaer
-	else sdpaer=0.0
-	endif 
-	sdptot=100.*srptot/srotot
+        sdpray=100.*srpray/sroray
+        if (sroaer.ne.0) then
+          sdpaer=100.*srpaer/sroaer
+        else sdpaer=0.0
+        endif 
+        sdptot=100.*srptot/srotot
 c      and we compute the direction of the plane of polarization
-	call dirpopol(srqray*xmus,sruray*xmus,sdppray)
-	call dirpopol(srqaer*xmus,sruaer*xmus,sdppaer)
-	call dirpopol(srqtot*xmus,srutot*xmus,sdpptot)
-CC	ksirad=sdpptot*3.1415927/180.
-CC	refeti=refet+pinst*rpfet*cos(2*(ksiinst*3.1415925/180.+ksirad))
+        call dirpopol(srqray*xmus,sruray*xmus,sdppray)
+        call dirpopol(srqaer*xmus,sruaer*xmus,sdppaer)
+        call dirpopol(srqtot*xmus,srutot*xmus,sdpptot)
       endif
 
       do 57 j=1,3
@@ -3066,10 +3051,10 @@ C begining case for a lut output
 C SIMPLE LUT in azimuth
       if (ilut.eq.2) then
           do ifi=1,nfi
-	  xtphi=(ifi-1)*180.0/(nfi-1)
-	  write(6,*) "lutfi ",xtphi,ratm2_fi(ifi)
-	  enddo
-      endif	  
+            xtphi=(ifi-1)*180.0/(nfi-1)
+            write(6,*) "lutfi ",xtphi,ratm2_fi(ifi)
+          enddo
+      endif
 
 C LUT FOR Look up table data        
       if (ilut.eq.1) then
@@ -3127,8 +3112,6 @@ C LUT FOR Look up table data
       iscami=acos(cscaa)*180./pi
       write(10,333) its,avis,nfilut(mu),iscama,iscami
       write(10,'(41(F8.5,1X))')(roluti(mu,j)/seb,j=1,nfilut(mu))
-C      write(10,'(41(F8.5,1X))')(rolutiq(mu,j)/seb,j=1,nfilut(mu))
-C      write(10,'(41(F8.5,1X))')(rolutiu(mu,j)/seb,j=1,nfilut(mu))
       do i=1,mu-1
       lutmuv=rm(i)
       luttv=acos(lutmuv)*180./pi
@@ -3141,8 +3124,6 @@ C      write(10,'(41(F8.5,1X))')(rolutiu(mu,j)/seb,j=1,nfilut(mu))
       write(10,333) its,luttv,nfilut(i),iscama,iscami
  333  Format(F10.5,1X,F10.5,1X,I3,F10.5,F10.5)    
       write(10,'(41(F8.5,1X))')(roluti(i,j)/seb,j=1,nfilut(i))
-C      write(10,'(41(F8.5,1X))')(rolutiq(i,j)/seb,j=1,nfilut(i))
-C      write(10,'(41(F8.5,1X))')(rolutiu(i,j)/seb,j=1,nfilut(i))
       enddo
       close(10)
       endif
@@ -3194,14 +3175,14 @@ C Case for an aps LUT
       write(10,2223) "aerosol model ","UNDEFINED"
       endif
 
-C 
+C
       dtr=atan(1.)*4./180.
       write(10,'(A5,1X,41(F8.4,1X))') 'phi',(filut(i,1),i=16,1,-1),
      S                      filut(mu,1),(filut(i,2),i=1,16)
      
       write(10,'(A5,1X,41(F8.5,1X))') 'tv',(acos(rm(i))/dtr,i=16,1,-1)
      S  ,acos(rm(0))/dtr,(acos(rm(k))/dtr,k=1,16)
-     
+
       write(10,'(41(F8.5,1X))')(roluti(i,1)/seb,i=16,1,-1)
      S     ,roluti(mu,1)/seb ,(roluti(i,2)/seb,i=1,16)
       write(10,'(41(F8.5,1X))')(rolutiq(i,1)/seb,i=16,1,-1)
@@ -3212,19 +3193,16 @@ C
       endif
 C Case a LUT output is desired      
 
- 160  continue
- 
-        write(iwr, 430 )refet,alumet,tgasm
-        write(iwr, 431 )refet1,refet2,refet3
+      write(iwr, 430 )refet,alumet,tgasm
+      write(iwr, 431 )refet1,refet2,refet3
 
       if (ipol.eq.1)then
         rpfet=sqrt(rqfet*rqfet+rufet*rufet)
-	plumet=sqrt(qlumet*qlumet+ulumet*ulumet)
-	xpol=atan2(rufet,rqfet)*180.0/3.14159/2.
+        plumet=sqrt(qlumet*qlumet+ulumet*ulumet)
+        xpol=atan2(rufet,rqfet)*180.0/3.14159/2.
         write(iwr, 429 )rpfet,plumet,xpol,rpfet/refet
-C       write(iwr, 428 )rpfet1,rpfet2,rpfet3
       endif
- 
+
         if(inhomo.ne.0) then
           write(iwr, 432)(aini(1,j),j=1,3),'environment','target',
      s          (ainr(1,j),j=1,3)
@@ -3234,11 +3212,11 @@ C       write(iwr, 428 )rpfet1,rpfet2,rpfet3
         endif
         if(inhomo.eq.0) then
           write(iwr, 432)(aini(1,j),j=1,3),'background ','pixel ',
-     s		(ainr(1,j),j=1,3)
+     s      (ainr(1,j),j=1,3)
           write(iwr, 434)(aini(2,j),j=1,3),'background ','pixel ',
      s         (ainr(2,j),j=1,3)
         endif
-      
+
       if (iwave.eq.-1)then
         write(iwr, 436)seb
       else
@@ -3262,13 +3240,13 @@ c**********************************************************************c
       write(iwr, 931)'co      "     "    :',sdmoca,sumoca,stmoca
       write(iwr, 1401)
       write(iwr, 1401)
- 
+
       write(iwr, 931)'rayl.  sca. trans. :',sdtotr,sutotr,sutotr*sdtotr
       write(iwr, 931)'aeros. sca.   "    :',sdtota,sutota,sutota*sdtota
       write(iwr, 931)'total  sca.   "    :',sdtott,sutott,sutott*sdtott
       write(iwr, 1401)
       write(iwr, 1401)
- 
+
       write(iwr, 939)
       write(iwr, 931)'spherical albedo   :',sasr,sasa,sast
       write(iwr, 931)'optical depth total:',sodray,sodaer,sodtot
@@ -3283,7 +3261,6 @@ c**********************************************************************c
         write(iwr, 931)'polarized reflect. :',srpray,srpaer,srptot
         write(iwr, 932)'degree of polar.   :',sdpray,sdpaer,sdptot
         write(iwr, 932)'dir. plane polar.  :',sdppray,sdppaer,sdpptot
-CCC	write(iwr, 931)'instrument app ref.:',zero,zero,refeti
         write(iwr, 931)'phase function I   :',fophsr,fophsa,fophst
         write(iwr, 931)'phase function Q   :',foqhsr,foqhsa,foqhst
         write(iwr, 931)'phase function U   :',fouhsr,fouhsa,fouhst
@@ -3292,84 +3269,78 @@ CCC	write(iwr, 931)'instrument app ref.:',zero,zero,refeti
       write(iwr, 931)'sing. scat. albedo :',pizerr,pizera,pizert
       write(iwr, 1401)
       write(iwr, 1402)
- 
+
 c**********************************************************************c
 c                                                                      c
 c                    atmospheric correction                            c
 c                                                                      c
 c**********************************************************************c
        if (irapp.ge.0) then
-	 if (rapp.ge.0.) then
-	    xrad=rapp
-	    rapp=pi*xrad*sb/xmus/seb
-	 else
-	    rapp=-rapp
-	    xrad=xmus*seb*(rapp)/pi/sb
-	 endif
+         if (rapp.ge.0.) then
+            xrad=rapp
+            rapp=pi*xrad*sb/xmus/seb
+         else
+            rapp=-rapp
+            xrad=xmus*seb*(rapp)/pi/sb
+         endif
          rog=rapp/tgasm
          rog=(rog-ainr(1,1)/tgasm)/sutott/sdtott
          rog=rog/(1.+rog*sast)
-	 xa=pi*sb/xmus/seb/tgasm/sutott/sdtott
-	 xap=1./tgasm/sutott/sdtott
-	 xb=ainr(1,1)/sutott/sdtott/tgasm
-	 xb=ainr(1,1)/sutott/sdtott/tgasm
-	 xc=sast
+         xa=pi*sb/xmus/seb/tgasm/sutott/sdtott
+         xap=1./tgasm/sutott/sdtott
+         xb=ainr(1,1)/sutott/sdtott/tgasm
+         xc=sast
 c        BRDF coupling correction 
          if (idirec.eq.1) then 
 c compute the coefficient of the 2nd degree equation
-C  a*(ros^2)+b*ros+c	
+C  a*(ros^2)+b*ros+c
 C   compute ratios and transmissions
-         robarstar=(robar1/xnorm1)/brdfints(mu,1)
-	 robarpstar=(robar2/xnorm2)/brdfints(mu,1)
-	 robarbarstar=albbrdf/brdfints(mu,1)
-	 tdd=exp(-sodtot/xmus)
-	 tdu=exp(-sodtot/xmuv)
-	 tsd=sdtott-tdd
-	 tsu=sutott-tdu
-	 
+           robarstar=(robar1/xnorm1)/brdfints(mu,1)
+           robarpstar=(robar2/xnorm2)/brdfints(mu,1)
+           robarbarstar=albbrdf/brdfints(mu,1)
+           tdd=exp(-sodtot/xmus)
+           tdu=exp(-sodtot/xmuv)
+           tsd=sdtott-tdd
+           tsu=sutott-tdu
+
 c compute coefficients
-	 
-	 coefc=-(rapp/tgasm-ainr(1,1)/tgasm)
-	  
-	 coefb=tdd*tdu+tdu*tsd*robarstar+tsu*tdd*robarpstar
-	 coefb=coefb+tsu*tsd*robarbarstar
-	 
-	 coefa=sdtott*sutott*sast*robarbarstar*robarbarstar
-	 coefa=coefa/(1-sast*(rog/brdfints(mu,1)*albbrdf))
-	 
+
+           coefc=-(rapp/tgasm-ainr(1,1)/tgasm)
+  
+           coefb=tdd*tdu+tdu*tsd*robarstar+tsu*tdd*robarpstar
+           coefb=coefb+tsu*tsd*robarbarstar
+
+           coefa=sdtott*sutott*sast*robarbarstar*robarbarstar
+           coefa=coefa/(1-sast*(rog/brdfints(mu,1)*albbrdf))
+
 c solve equations, compute solutions
-         discri=sqrt(coefb*coefb-4*coefa*coefc)
-         rogbrdf=(-coefb+discri)/(2*coefa)
+           discri=sqrt(coefb*coefb-4*coefa*coefc)
+           rogbrdf=(-coefb+discri)/(2*coefa)
 
 c second pass use update value for rog
-         coefa=sdtott*sutott*sast*robarbarstar*robarbarstar  
-         coefa=coefa/(1-sast*(rogbrdf/brdfints(mu,1)*albbrdf))
-         discri=sqrt(coefb*coefb-4*coefa*coefc)
-         rogbrdf=(-coefb+discri)/(2*coefa)
-	 else
-	 rogbrdf=rog
-	 endif
-	 
+           coefa=sdtott*sutott*sast*robarbarstar*robarbarstar  
+           coefa=coefa/(1-sast*(rogbrdf/brdfints(mu,1)*albbrdf))
+           discri=sqrt(coefb*coefb-4*coefa*coefc)
+           rogbrdf=(-coefb+discri)/(2*coefa)
+         else
+           rogbrdf=rog
+         endif
+
          write(iwr, 940)
          write(iwr, 941)rapp
          write(iwr, 942)xrad
-	 if (irapp.eq.0) then  
-         write(iwr, 943)rog
+         if (irapp.eq.0) then  
+           write(iwr, 943)rog
+           write(iwr, 944)xa,xb,xc
+         else
+           write(iwr,222)rog,rogbrdf
+         endif
+ 
          write(iwr, 944)xa,xb,xc
-	 else
-	 write(iwr,222)rog,rogbrdf
-	 endif
-	 
-         write(iwr, 944)xa,xb,xc
-C         write(iwr, *) "david roy ", xap,xb,xc
          y=xa*xrad-xb
-c        write(6,'(A5,F9.5)') 'rog=', rog
-c        write(6,'(A5,F9.5,A8,F9.5)') 'y=',y, '  acr=',y/(1.+xc*y)
-c        write(6,*) 'rogbrdf=',rogbrdf,' rodir=',brdfints(mu,1),
-c    s            ' diff=',rogbrdf-brdfints(mu,1)
       endif
       stop
- 
+
 c**********************************************************************c
 c                                                                      c
 c                   output editing formats                             c
@@ -3455,19 +3426,19 @@ c**********************************************************************c
   143 format(1h*,t79,1h*,/,1h*,
      s36h Surface Polarization Q,U,Rop,Chi   ,3(F8.5,1X),
      s F8.2,1X,t79,1h*,/,1h*,t79,1h*)
-     
+
   144 format(1h*,t79,1h*,/,1h*,
      s36h Nadal and Breon with %  vegetation  ,1(F8.2,1X),
      s t79,1h*,/,1h*)
-     
+
   145 format(1h*,t79,1h*,/,1h*,
      s36h  Sunglint Model  windspeed,azimuth ,2(F8.3,1X),
      s t79,1h*,/,1h*)
-     
+
   146 format(1h*,t79,1h*,/,1h*,
      s36h  User's input roQ and roU          ,2(F8.3,1X),
      s t79,1h*,/,1h*)
-  
+
   148 format(1h*,22x,21h spectral condition  ,t79,1h*,/,1h*,
      s             22x,21h ------------------  ,t79,1h*)   
 
@@ -3574,36 +3545,7 @@ c pressure at ground level (174) and altitude (175)
   182 format(1h*,15x,26h ozone content            ,f6.3,1x,t79,1h*)
   183 format(1h*,15x,26h h2o   content            ,f6.3,1x,t79,1h*)
   184 format(1h*,15x,26haerosol opt. thick. 550nm ,f6.3,1x,t79,1h*)
- 
-  426 format(1h*,t79,1h*,/,
-     s       1h*,24x,27h coupling aerosol -wv  :   ,t79,1h*,/,
-     s       1h*,24x,27h --------------------      ,t79,1h*,/,
-     s       1h*,10x,20h wv above aerosol : ,f5.3,4x,
-     s               25h wv mixed with aerosol : ,f5.3,1x,t79,1h*,/,
-     s       1h*,22x,20h wv under aerosol : ,f5.3,t79,1h*,/,1h*,t79,
-     s 1h*,/,1h*,24x,34h coupling polarized aerosol -wv  :,t79,1h*,/,
-     s       1h*,24x,34h ------------------------------   ,t79,1h*,/,
-     s       1h*,10x,20h wv above aerosol : ,f5.3,4x,
-     s               25h wv mixed with aerosol : ,f5.3,1x,t79,1h*,/,
-     s       1h*,22x,20h wv under aerosol : ,f5.3,t79,1h*)
-  427 format(79(1h*),/,1h*,t79,1h*,/,
-     s       1h*,24x,27h integrated values of  :   ,t79,1h*,/,
-     s       1h*,24x,27h --------------------      ,t79,1h*,/,
-     s       1h*,t79,1h*,/,
-     s       1h*,6x,22h apparent reflectance ,f9.2,1x,
-     s                 26h appar. rad.(w/m2/sr/mic) ,f10.3,1x,t79,1h*,/,
-     s       1h*,6x,22h app. polarized refl. ,f7.4,3x,
-     s                 26h app. pol. rad. ( "  "  ) ,f10.3,1x,t79,1h*,/,
-     s       1h*,12x,39h direction of the plane of polarization,
-     s       f6.2,t79,1h*,/,
-     s       1h*,18x,30h total gaseous transmittance  ,f5.3,t79,1h*,/,
-     s       1h*,t79,1h*,/,79(1h*))
-  428 format(1h*,t79,1h*,/,
-     s 1h*,24x,34h coupling polarized aerosol -wv  :,t79,1h*,/,
-     s       1h*,24x,34h ------------------------------   ,t79,1h*,/,
-     s       1h*,10x,20h wv above aerosol : ,f5.3,4x,
-     s               25h wv mixed with aerosol : ,f5.3,1x,t79,1h*,/,
-     s       1h*,22x,20h wv under aerosol : ,f5.3,t79,1h*)
+
   429 format(79(1h*),/,1h*,t79,1h*,/,
      s       1h*,24x,27h integrated values of  :   ,t79,1h*,/,
      s       1h*,24x,27h --------------------      ,t79,1h*,/,
@@ -3700,7 +3642,5 @@ c pressure at ground level (174) and altitude (175)
      s  1h*,1x,42h       gas    scat   scat   spheri intr   ,t79,1h*,/,
      s  1h*,1x,42h       trans  down   up     albedo refl   ,t79,1h*)
  1501 format(1h*,6(F6.4,1X),F6.1,1X,4(F6.4,1X),t79,1h*)
- 1502 format(1h*,6(F5.3,1X),F6.1,1X,1(F6.4,1X),t79,1h*)
- 1503 format(1h*,6x,5(F5.3,1X),F6.1,1X,1(F6.4,1X),t79,1h*)
 
       end

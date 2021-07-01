@@ -84,6 +84,12 @@ int read_grib_anc
                 year,month,day,hour,minute,sec,anc->doy,anc->time[i]);
             
             grib_ret=read_grib_array(fd, tag, where, &ny, &nx, &(anc->data[i]));
+            if (grib_ret != 0)
+            {
+                fprintf(stderr, "Error %d returned from read_grib_array().\n",
+                        grib_ret);
+                return -1;
+            }
             if (anc->nbrows == -1)
                 anc->nbrows = ny;
             else if (anc->nbrows != ny) {
@@ -107,7 +113,7 @@ int read_grib_anc
     return 0;
 }
 
-int interpol_spatial_anc
+void interpol_spatial_anc
 (
     t_ncep_ancillary *anc,    /* I: ancillary structure information */
     float lat,                /* I: latitude */
@@ -127,76 +133,52 @@ int interpol_spatial_anc
 
  */
 
-    typedef struct {
-      int l;                /* line number */
-      int s;                /* sample number */
-    } Img_coord_int_t;
+    int j;
+    int p0, p1, p2, p3;
+    int row, col;
+    float dl, ds;
+    float grid_line, grid_sample;
 
-    Img_coord_int_t p[4];
-    int i, j, n;
-    float dl, ds, w;
-    float sum[10], sum_w;
+    /* Ensure the lat/long values are within the grid. */
+    if (lat > anc->latmax)
+        lat = anc->latmax;
+    else if (lat < anc->latmin)
+        lat = anc->latmin;
+    if (lon > anc->lonmax)
+        lon = anc->lonmax;
+    else if (lon < anc->lonmin)
+        lon= anc->lonmin;
 
-    p[0].l = (int)((anc->latmax - lat)/anc->deltalat);
-    p[2].l = p[0].l + 1;
-    if (p[2].l >= anc->nbrows) {
-        p[2].l = anc->nbrows - 1;
-        if (p[0].l > 0) p[0].l--;
+    /* Set the four corner point indices. */
+    grid_line = (anc->latmax - lat)/anc->deltalat;
+    grid_sample = (lon - anc->lonmin)/anc->deltalon;
+    row = (int)grid_line;
+    col = (int)grid_sample;
+    p0 = row*anc->nbcols + col;
+    p1 = p0 + 1;
+    p2 = p0 + anc->nbcols;
+    p3 = p2 + 1;
+
+    /* Compute the fractional grid cell offset of the sample point from
+       the upper-left corner of the cell. */
+    dl = grid_line - row;
+    ds = grid_sample - col;
+
+    /* Apply the bilinear interpolation for the sample point. */
+    for (j=0;j<anc->nblayers;j++)
+    {
+        float *data = anc->data[j];
+        value[j] = data[p0]
+                 + dl*(data[p2] - data[p0])
+                 + ds*(data[p1] - data[p0])
+                 + dl*ds*(data[p0] - data[p1] - data[p2] + data[p3]);
     }
-    p[1].l = p[0].l;
-    p[3].l = p[2].l;
-
-    p[0].s = (int)((lon - anc->lonmin )/anc->deltalon);
-    p[1].s = p[0].s + 1;
-
-    if (p[1].s >= anc->nbcols) {
-        p[1].s = anc->nbcols - 1;
-        if (p[0].s > 0) p[0].s--;
-    }    
-
-    p[2].s = p[0].s;
-    p[3].s = p[1].s;
-/*printf ("    DEBUG: lat/long: %f %f\n", lat, lon);
-printf ("    DEBUG: UL line/samp: %d %d\n", p[0].l, p[0].s);
-printf ("    DEBUG: UR line/samp: %d %d\n", p[1].l, p[1].s);
-printf ("    DEBUG: LL line/samp: %d %d\n", p[2].l, p[2].s);
-printf ("    DEBUG: LR line/samp: %d %d\n", p[3].l, p[3].s);
-*/
-
-    n = 0;
-    for (j=0;j<anc->nblayers;j++) 
-        sum[j] = 0.0;
-    sum_w = 0.0;
-    for (i = 0; i < 4; i++) {
-        if (p[i].l != -1  &&  p[i].s != -1) {
-            dl = (anc->latmax-p[i].l * anc->deltalat)-lat;
-            dl = fabs(dl) / anc->deltalat;
-            ds = lon - (p[i].s * anc->deltalon+anc->lonmin);
-            ds = fabs(ds) / anc->deltalon;
-            w = (1.0 - dl) * (1.0 - ds);
-
-            n++;
-            sum_w += w;
-            for (j=0;j<anc->nblayers;j++) 
-                sum[j] += (anc->data[j][p[i].l*anc->nbcols+p[i].s] * w);
-        }
-    }
-
-    if (n > 0) {
-        for (j=0;j<anc->nblayers;j++) 
-            value[j]=sum[j] / sum_w;
-    }
-
-    return 0;
 }
 
-int free_anc_data(t_ncep_ancillary *anc) {
+void free_anc_data(t_ncep_ancillary *anc) {
     int i;
     for (i=0;i<anc->nblayers;i++)
-        if (anc->data[i] !=NULL)
-            free(anc->data[i]);
-
-    return 0;
+        free(anc->data[i]);
 }
 
 void print_anc_data(t_ncep_ancillary *anc, char* ancftype)

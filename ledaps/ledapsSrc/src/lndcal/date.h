@@ -1,7 +1,7 @@
 #ifndef DATE_H
 #define DATE_H
 
-#include "bool.h"
+#include <stdbool.h>
 
 /* Date/time type definition */
 

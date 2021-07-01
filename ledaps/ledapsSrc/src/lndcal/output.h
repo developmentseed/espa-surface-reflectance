@@ -43,9 +43,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdbool.h>
 #include "lndcal.h"
 #include "input.h"
-#include "bool.h"
 #include "lut.h"
 #include "param.h"
 #include "espa_metadata.h"
@@ -61,13 +61,13 @@ typedef struct {
   Espa_internal_meta_t metadata;  /* metadata container to hold the band
                            metadata for the output bands; global metadata
                            won't be valid */
-  FILE *fp_bin[NBAND_CAL_MAX];  /* File pointer for binary files */
+  FILE *fp_bin[NBAND_REFL_MAX];  /* File pointer for binary files */
 } Output_t;
 
 /* Prototypes */
 
 Output_t *OpenOutput(Espa_internal_meta_t *metadata, Input_t *input,
-  Param_t *param, Lut_t *lut, bool thermal, int mss_flag);
+  Param_t *param, Lut_t *lut, bool thermal);
 bool PutOutputLine(Output_t *this, int iband, int iline, void *line);
 bool CloseOutput(Output_t *this);
 bool FreeOutput(Output_t *this);

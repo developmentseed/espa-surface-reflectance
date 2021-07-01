@@ -46,9 +46,9 @@ C
       do 2 j=1,mu
       mu2=rm(j)
       if (j.eq.mu)then
-	 fi=rm(-mu)
-	 else
-	 fi=rp(k)+rm(-mu)
+        fi=rm(-mu)
+      else
+        fi=rp(k)+rm(-mu)
       endif
 C Compute various trigonometric expressions:
       cospha=mu1*mu2+sqrt(1.-mu1*mu1)*sqrt(1.-mu2*mu2)*cos(fi)

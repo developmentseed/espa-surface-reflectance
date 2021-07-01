@@ -2,8 +2,8 @@
      s           brdfalbe)
 C INPUT:  pws=speed of wind (in m/s)
 C         paw=azim. of sun - azim. of wind (in deg.)
-C	  xsal=salinity (in ppt)
-C	  pcl=pigment concentration (in mg.m-3)
+C         xsal=salinity (in ppt)
+C         pcl=pigment concentration (in mg.m-3)
 C         pwl=wavelength of the computation (in micrometer)
 C OUTPUT: brdfalbe=the spherical albedo of the ocean 
 C

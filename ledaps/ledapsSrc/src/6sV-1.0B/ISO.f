@@ -21,6 +21,7 @@ c array for sos computation
       double precision tavion0,tavion1,tavion2,tavion,zi1,xpk,ypk,x,y
       double precision z,xi1,xi2,bpjk,bpjmk,f,a,b,c,d,xx,a1,d1,g1
       double precision y1,xpj,xxx,ii1,ii2
+      double precision xmusinv
       Real tamoy,trmoy,pizmoy
       Real tamoyp,trmoyp,palt
       Real delta,sigma
@@ -145,8 +146,13 @@ c     print *,it,cr,ca,h(it),zx
   14  continue
       endif
       
-      if(tr.gt.acu2.and.ta.gt.acu2.and.iaer_prof.eq.1)then     
-      call aero_prof(ta,piz,tr,hr,ntp,xmus,
+      if(tr.gt.acu2.and.ta.gt.acu2.and.iaer_prof.eq.1)then
+c         This call to aero_prof() may have problems, because xmusinv
+c         (previously xmus) is not set prior to the call.  The intent
+c         of the original authors is not known, and this code has been
+c         used in production for many years, so no corrections have
+c         been made.
+      call aero_prof(ta,piz,tr,hr,ntp,xmusinv,
      s   h,ch,ydel,xdel,altc)
       endif
       

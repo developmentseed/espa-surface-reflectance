@@ -1,4 +1,4 @@
-	subroutine meris(iwa)
+      subroutine meris(iwa)
 c
 c created: J. Nieke 19/Nov/2002
 c MERIS response function values 

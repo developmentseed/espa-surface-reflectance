@@ -5,8 +5,8 @@
 C
 C INPUT:  pws=wind speed (in m/s)
 C         paw= azim. of sun - azim. of wind (in deg.)
-C	  xsal=salinity (in ppt)
-C	  pcl=pigment concentration (in mg.m-3)
+C         xsal=salinity (in ppt)
+C         pcl=pigment concentration (in mg.m-3)
 C         pwl=wavelength of the computation (in micrometer)
 C         mu=number of zenith angle
 C         np=number of azimuth
@@ -14,9 +14,9 @@ C         rm=cosine of Gauss's angles for angles between -PI/2 and PI/2 deg
 C         rp=Gauss's angles for angles between 0 and 2*PI
 C OUTPUT: brdfint(j,k)=the total reflectance of the sea water
 C         rfoam= the effective reflectance of the foam (foam coverage x foam reflectance)
-C	  rwat= the reflectance of the water (just above the surface)
+C         rwat= the reflectance of the water (just above the surface)
 C         rglit= the reflectance of the sunglint
-	  
+
 C
       parameter (nta=24,nfa=48)
       integer np,mu,k,j,m,n,iwl
@@ -121,9 +121,9 @@ C reflectance
            Rwb=(1/(n12*n12))*tds*tdv*Rw/(1-a*Rw)
 C TOTAL REFLECTANCE OF SEA WATER
            brdfint(j,k)=Rwc+(1-W)*Rog+(1-Rwc)*Rwb
-	   rfoam=rwc
-	   rwat=(1-Rwc)*Rwb
-	   rglit=(1-W)*Rog
+           rfoam=rwc
+           rwat=(1-Rwc)*Rwb
+           rglit=(1-W)*Rog
  2      continue
  1    continue
       return

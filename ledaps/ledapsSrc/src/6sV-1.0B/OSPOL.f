@@ -37,8 +37,6 @@ c array for sos computation
 CCCC Begin Variable for Look up table generation      
 C azimuth or scattering angle variable for LUT computation (rolut)
 C azimuth table for look up table computation (filut), nb of fi in each case (nfilut)
-      real    luttv,lutmuv,iscama,iscami,its,scaa
-      integer nbisca
       real    rolut(mu,41),rolutq(mu,41),rolutu(mu,41)
       real    filut(mu,41)
       integer nfilut(mu)
@@ -49,14 +47,14 @@ CCCC End Variable for Look up table generation
       real delta,sigma
       double precision hr,ta,tr,trp
       double precision ppp2,ppp1,ca,cr,ratio
-      double precision tap,piz,acu,acu2,ha,xmus,zx,yy,dd
-      double precision taup,th,xt1,xt2,pi,phi,aaaa,ron,spl
+      double precision tap,piz,acu,acu2,ha,xmus,xmusinv,zx,yy,dd
+      double precision taup,th,xt1,xt2,pi,phi,aaaa,ron
       double precision sa1,sa2,sb1,sb2,sc1,sc2
       double precision beta0,beta2,gamma2,alpha2
-      double precision zi1,zq1,zu1,c,f,d,y
+      double precision zi1,zq1,zu1,c,f,finv,d,y
       double precision a1,d1,g1,y1,r1,delta0s
       integer snt
-      integer nt,iwr,iplane,mum1,ntp,j,it,itp,i,l,m,iborm
+      integer nt,iwr,iplane,mum1,ntp,j,it,i,l,m,iborm,trig_sign
       integer is,isp,ig,k,jj,index
       logical ier
       double precision xx,xdb,z,x,a,b
@@ -65,6 +63,8 @@ CCCC End Variable for Look up table generation
       double precision artkmj,attjk,attjmk
       double precision ii1,ii2,qq1,qq2,uu1,uu2,xi1,xi2,xq1,xq2,xu1,xu2
       double precision xpj,xrj,xtj,ypj,yrj,ytj,xpk,xrk,xtk,ypk,yrk,ytk
+      double precision step_size, step, ntp_inv, factor, factor1,
+     &                 factor2, cos1, cos2, sin1, sin2
       integer igmax,iaer_prof
 
       common/sixs_del/delta,sigma
@@ -88,12 +88,12 @@ c the optical thickness above plane are recomputed to give o.t above pla
       acu2=1.e-4
       mum1=mu-1
 c if plane observations recompute scale height for aerosol knowing:
-c the aerosol optical depth as measure from the plane 	= tamoyp
-c the rayleigh scale height = 			= hr (8km)
-c the rayleigh optical depth  at plane level 		= trmoyp
-c the altitude of the plane 				= palt
-c the rayleigh optical depth for total atmos		= trmoy
-c the aerosol optical depth for total atmos		= tamoy
+c the aerosol optical depth as measure from the plane   = tamoyp
+c the rayleigh scale height =                   = hr (8km)
+c the rayleigh optical depth  at plane level            = trmoyp
+c the altitude of the plane                             = palt
+c the rayleigh optical depth for total atmos            = trmoy
+c the aerosol optical depth for total atmos             = tamoy
 c if not plane observations then ha is equal to 2.0km
 c ntp local variable: if ntp=nt     no plane observation selected
 c                        ntp=nt-1   plane observation selected
@@ -109,8 +109,10 @@ c     it's a mixing rayleigh+aerosol
         ha=2.0
         ntp=nt
       endif
+      ntp_inv = 1.0/ntp
 c
       xmus=-rm(0)
+      xmusinv = 1.0/xmus
 c
 c compute mixing rayleigh, aerosol
 c case 1: pure rayleigh
@@ -118,31 +120,36 @@ c case 2: pure aerosol
 c case 3: mixing rayleigh-aerosol
 c
       if((ta.le.acu2).and.(tr.gt.ta)) then
+        step = 0
+        step_size = 1.0/ntp
         do j=0,ntp
-          h(j)=j*tr/ntp
-          ch(j)=exp(-h(j)/xmus)/2.
+          h(j)=step*tr
+          ch(j)=0.5*exp(-h(j)*xmusinv)
           ydel(j)=1.0
           xdel(j)=0.0
           if (j.eq.0) then
             altc(j)=300.
           else
-            altc(j)=-log(h(j)/tr)*hr
-          endif     
+            altc(j)=-log(step)*hr
+          endif
+          step = step + step_size
         enddo
       endif
 
       if((tr.le.acu2).and.(ta.gt.tr)) then
+        step = 0
+        step_size = 1.0/ntp
         do j=0,ntp
-          h(j)=j*ta/ntp
-          ch(j)=exp(-h(j)/xmus)/2.
+          h(j)=step*ta
+          ch(j)=0.5*exp(-h(j)*xmusinv)
           ydel(j)=0.0
           xdel(j)=piz
           if (j.eq.0) then
             altc(j)=300.
           else
-            altc(j)=-log(h(j)/ta)*ha
+            altc(j)=-log(step)*ha
           endif
-c        write(6,901) j,altc(j),h(j)
+          step = step + step_size
         enddo
       endif
 c
@@ -158,14 +165,13 @@ c
           if (it.eq.0) then
             yy=0.
             dd=0.
-            goto 111
+          else
+            yy=h(it-1)
+            dd=ydel(it-1)
           endif
-          yy=h(it-1)
-          dd=ydel(it-1)
- 111      ppp2=300.0
+          ppp2=300.0
           ppp1=0.0
-          itp=it
-          call discre(ta,ha,tr,hr,itp,ntp,yy,dd,ppp2,ppp1,zx)
+          call discre(ta,ha,tr,hr,it,ntp,yy,dd,ppp2,ppp1,zx)
           if(ier)return
           xx=-zx/ha
           if (xx.le.-20) then
@@ -173,23 +179,19 @@ c
           else
             ca=ta*dexp(xx)
           endif
-          xx=-zx/hr
-          cr=tr*dexp(xx)
+          cr=tr*dexp(-zx/hr)
           h(it)=cr+ca
           altc(it)=zx
-          ch(it)=exp(-h(it)/xmus)/2.
-          cr=cr/hr
-          ca=ca/ha
-          ratio=cr/(cr+ca)
+          ch(it)=0.5*exp(-h(it)*xmusinv)
+          ratio=cr/(cr+ca*(hr/ha))
           xdel(it)=(1.e+00-ratio)*piz
           ydel(it)=ratio
   14    continue
        endif
- 901    Format(i2,f10.5,f10.5,f10.5)
  
 
       if(tr.gt.acu2.and.ta.gt.acu2.and.iaer_prof.eq.1)then
-       call aero_prof(ta,piz,tr,hr,ntp,xmus,
+       call aero_prof(ta,piz,tr,hr,ntp,xmusinv,
      s   h,ch,ydel,xdel,altc)
       endif
  
@@ -222,13 +224,11 @@ c update the layer from the end to the position to update if necessary
           ca=ta*exp(-palt/ha)
           cr=tr*exp(-palt/hr)
           h(iplane)=ca+cr
-          cr=cr/hr
-          ca=ca/ha
-          ratio=cr/(cr+ca)
+          ratio=cr/(cr+ca*(hr/ha))
           xdel(iplane)=(1.e+00-ratio)*piz
           ydel(iplane)=ratio
           altc(iplane)=palt
-          ch(iplane)=exp(-h(iplane)/xmus)/2.
+          ch(iplane)=0.5*exp(-h(iplane)*xmusinv)
         endif
         if ( tr.gt.acu2.and.ta.le.acu2) then
           ydel(iplane)=1.
@@ -252,15 +252,15 @@ c
       phi=phirad
       do 716 l=1,np
         do 716 m=-mu,mu
-	  xli(m,l)=0.
-	  xlq(m,l)=0.
-	  xlu(m,l)=0.
+          xli(m,l)=0.
+          xlq(m,l)=0.
+          xlu(m,l)=0.
  716  continue
       do ifi=1,nfi
       xlphim(ifi)=0.
       enddo
-      
-CCC initialization of look up table variable
+
+CCC   initialization of look up table variable
       do i=1,mu
       do j=1,41
       rolut(i,j)=0.
@@ -318,14 +318,15 @@ c
         isp=is
         call kernelpol(isp,mu,rm,xpl,xrl,xtl,bp,gr,gt,arr,art,att)
         if(is.gt.0)beta0=0.
+        factor = beta2*xpl(0)
+        factor1 = gamma2*xpl(0)
         do 100 j=-mu,mu
           if(is-2)200,200,201
- 200      spl=xpl(0)
-          sa1=beta0+beta2*xpl(j)*spl
+ 200      sa1 = beta0 + factor*xpl(j)
           sa2=bp(0,j)
-          sb1=gamma2*xrl(j)*spl
+          sb1 = factor1*xrl(j)
           sb2=gr(0,j)
-          sc1=gamma2*xtl(j)*spl
+          sc1 = factor1*xtl(j)
           sc2=gt(0,j)
           goto 202
  201      sa2=bp(0,j)
@@ -361,23 +362,25 @@ c
            do 108 i=nt-1,0,-1
               jj=i+1
               f=h(jj)-h(i)
+              finv = 1.0/f
               c=exp(-f/yy)
               d=1.0e+00-c
               xx=h(i)-h(jj)*c
+              factor = d*yy + xx
 
-              a=(i2(jj,k)-i2(i,k))/f
+              a = (i2(jj,k) - i2(i,k))*finv
               b=i2(i,k)-a*h(i)
-              zi1=c*zi1+(d*(b+a*yy)+a*xx)*0.5e+00
+              zi1 = c*zi1 + 0.5*(d*b + a*factor)
               i1(i,k)=zi1
   
-              a=(q2(jj,k)-q2(i,k))/f
+              a = (q2(jj,k) - q2(i,k))*finv
               b=q2(i,k)-a*h(i)
-              zq1=c*zq1+(d*(b+a*yy)+a*xx)*0.5e+00
+              zq1 = c*zq1 + 0.5*(d*b + a*factor)
               q1(i,k)=zq1
 
-              a=(u2(jj,k)-u2(i,k))/f
+              a = (u2(jj,k) - u2(i,k))*finv
               b=u2(i,k)-a*h(i)
-              zu1=c*zu1+(d*(b+a*yy)+a*xx)*0.5e+00
+              zu1 = c*zu1 + 0.5*(d*b + a*factor)
               u1(i,k)=zu1
   108   continue
 c
@@ -394,23 +397,25 @@ c
           do 109 i=1,nt
             jj=i-1
             f=h(i)-h(jj)
+            finv = 1.0/f
             c=exp(f/yy)
             d=1.0e+00-c
             xx=h(i)-h(jj)*c
+            factor = d*yy + xx
  
-            a=(i2(i,k)-i2(jj,k))/f
+            a = (i2(i,k) - i2(jj,k))*finv
             b=i2(i,k)-a*h(i)
-            zi1=c*zi1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zi1 = c*zi1 + 0.5*(d*b + a*factor)
             i1(i,k)=zi1
  
-            a=(q2(i,k)-q2(jj,k))/f
+            a = (q2(i,k) - q2(jj,k))*finv
             b=q2(i,k)-a*h(i)
-            zq1=c*zq1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zq1 = c*zq1 + 0.5*(d*b + a*factor)
             q1(i,k)=zq1
  
-            a=(u2(i,k)-u2(jj,k))/f
+            a = (u2(i,k) - u2(jj,k))*finv
             b=u2(i,k)-a*h(i)
-            zu1=c*zu1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zu1 = c*zu1 + 0.5*(d*b + a*factor)
             u1(i,k)=zu1
   109   continue
 c
@@ -485,44 +490,51 @@ c
               xu1=u1(i,j)
               xu2=u1(i,-j)
 
-              bpjk=bp(j,k)*x+y*(beta0+beta2*xpj*xpk)
-              bpjmk=bp(j,-k)*x+y*(beta0+beta2*xpj*ypk)
-              gtjk=gt(j,k)*x+y*gamma2*xpj*xtk
-              gtjmk=gt(j,-k)*x+y*gamma2*xpj*ytk
-              gtkj=gt(k,j)*x+y*gamma2*xpk*xtj
-              gtkmj=gt(k,-j)*x+y*gamma2*xpk*ytj
-              grjk=gr(j,k)*x+y*gamma2*xpj*xrk
-              grjmk=gr(j,-k)*x+y*gamma2*xpj*yrk
-              grkj=gr(k,j)*x+y*gamma2*xpk*xrj
-              grkmj=gr(k,-j)*x+y*gamma2*xpk*yrj
+              factor = beta2*xpj
+              bpjk = bp(j,k)*x + y*(beta0 + factor*xpk)
+              bpjmk = bp(j,-k)*x + y*(beta0 + factor*ypk)
 
-              arrjk=arr(j,k)*x+y*alpha2*xrj*xrk
-              arrjmk=arr(j,-k)*x+y*alpha2*xrj*yrk
-              artjk=art(j,k)*x+y*alpha2*xtj*xrk
-              artjmk=art(j,-k)*x+y*alpha2*xtj*yrk
-              artkj=art(k,j)*x+y*alpha2*xtk*xrj
-              artkmj=art(k,-j)*x+y*alpha2*xtk*yrj
-              attjk=att(j,k)*x+y*alpha2*xtj*xtk
-              attjmk=att(j,-k)*x+y*alpha2*xtj*ytk
+              factor = y*gamma2*xpj
+              factor1 = y*gamma2*xpk
+              gtjk = gt(j,k)*x + factor*xtk
+              gtjmk = gt(j,-k)*x + factor*ytk
+              gtkj = gt(k,j)*x + factor1*xtj
+              gtkmj = gt(k,-j)*x + factor1*ytj
+              grjk = gr(j,k)*x + factor*xrk
+              grjmk = gr(j,-k)*x + factor*yrk
+              grkj = gr(k,j)*x + factor1*xrj
+              grkmj = gr(k,-j)*x + factor1*yrj
+
+              factor = y*alpha2*xrj
+              factor1 = y*alpha2*xtj
+              factor2 = y*alpha2*xtk
+              arrjk = arr(j,k)*x + factor*xrk
+              arrjmk = arr(j,-k)*x + factor*yrk
+              artjk = art(j,k)*x + factor1*xrk
+              artjmk = art(j,-k)*x + factor1*yrk
+              artkj = art(k,j)*x + factor2*xrj
+              artkmj = art(k,-j)*x + factor2*yrj
+              attjk = att(j,k)*x + factor1*xtk
+              attjmk = att(j,-k)*x + factor1*ytk
 
               xdb=xi1*bpjk+xi2*bpjmk+xq1*grkj+xq2*grkmj
               xdb=xdb-xu1*gtkj-xu2*gtkmj
               ii2=ii2+xdb*z
               xdb=xi1*bpjmk+xi2*bpjk+xq1*grkmj+xq2*grkj
-	      xdb=xdb+xu1*gtkmj+xu2*gtkj
+              xdb=xdb+xu1*gtkmj+xu2*gtkj
               ii1=ii1+xdb*z
               xdb=xi1*grjk+xi2*grjmk+xq1*arrjk+xq2*arrjmk
               xdb=xdb-xu1*artjk+xu2*artjmk
-	      qq2=qq2+xdb*z
-	      xdb=xi1*grjmk+xi2*grjk+xq1*arrjmk+xq2*arrjk
-	      xdb=xdb-xu1*artjmk+xu2*artjk
-	      qq1=qq1+xdb*z
+              qq2=qq2+xdb*z
+              xdb=xi1*grjmk+xi2*grjk+xq1*arrjmk+xq2*arrjk
+              xdb=xdb-xu1*artjmk+xu2*artjk
+              qq1=qq1+xdb*z
               xdb=xi1*gtjk-xi2*gtjmk+xq1*artkj+xq2*artkmj
               xdb=xdb-xu1*attjk-xu2*attjmk
-	      uu2=uu2-xdb*z
+              uu2=uu2-xdb*z
               xdb=xi1*gtjmk-xi2*gtjk-xq1*artkmj-xq2*artkj
               xdb=xdb-xu1*attjmk-xu2*attjk
-	      uu1=uu1-xdb*z
+              uu1=uu1-xdb*z
  477        continue
             if (abs(ii2).lt.1.E-30) ii2=0.
             if (abs(ii1).lt.1.E-30) ii1=0.
@@ -568,33 +580,33 @@ c
               grjmk=gr(j,-k)*x
               grkj=gr(k,j)*x
               grkmj=gr(k,-j)*x
-	      arrjk=arr(j,k)*x
-	      arrjmk=arr(j,-k)*x
-	      artjk=art(j,k)*x
-	      artjmk=art(j,-k)*x
-	      artkj=art(k,j)*x
-	      artkmj=art(k,-j)*x
-	      attjk=att(j,k)*x
-	      attjmk=att(j,-k)*x
+              arrjk=arr(j,k)*x
+              arrjmk=arr(j,-k)*x
+              artjk=art(j,k)*x
+              artjmk=art(j,-k)*x
+              artkj=art(k,j)*x
+              artkmj=art(k,-j)*x
+              attjk=att(j,k)*x
+              attjmk=att(j,-k)*x
 
               xdb=xi1*bpjk+xi2*bpjmk+xq1*grkj+xq2*grkmj
               xdb=xdb-xu1*gtkj-xu2*gtkmj
               ii2=ii2+xdb*z
               xdb=xi1*bpjmk+xi2*bpjk+xq1*grkmj+xq2*grkj
-	      xdb=xdb+xu1*gtkmj+xu2*gtkj
+              xdb=xdb+xu1*gtkmj+xu2*gtkj
               ii1=ii1+xdb*z
               xdb=xi1*grjk+xi2*grjmk+xq1*arrjk+xq2*arrjmk
               xdb=xdb-xu1*artjk+xu2*artjmk
-	      qq2=qq2+xdb*z
-	      xdb=xi1*grjmk+xi2*grjk+xq1*arrjmk+xq2*arrjk
-	      xdb=xdb-xu1*artjmk+xu2*artjk
-	      qq1=qq1+xdb*z
+              qq2=qq2+xdb*z
+              xdb=xi1*grjmk+xi2*grjk+xq1*arrjmk+xq2*arrjk
+              xdb=xdb-xu1*artjmk+xu2*artjk
+              qq1=qq1+xdb*z
               xdb=xi1*gtjk-xi2*gtjmk+xq1*artkj+xq2*artkmj
               xdb=xdb-xu1*attjk-xu2*attjmk
-	      uu2=uu2-xdb*z
+              uu2=uu2-xdb*z
               xdb=xi1*gtjmk-xi2*gtjk-xq1*artkmj-xq2*artkj
               xdb=xdb-xu1*attjmk-xu2*attjk
-	      uu1=uu1-xdb*z
+              uu1=uu1-xdb*z
    47       continue
             if (abs(ii2).lt.1.E-30) ii2=0.
             if (abs(ii1).lt.1.E-30) ii1=0.
@@ -623,25 +635,27 @@ c
           do 48 i=nt-1,0,-1
             jj=i+1
             f=h(jj)-h(i)
+            finv = 1.0/f
             c=exp(-f/yy)
             d=1.e+00-c
             xx=h(i)-h(jj)*c
+            factor = d*yy + xx
 
-            a=(i2(jj,k)-i2(i,k))/f
+            a = (i2(jj,k) - i2(i,k))*finv
             b=i2(i,k)-a*h(i)
-            zi1=c*zi1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zi1 = c*zi1 + 0.5*(d*b + a*factor)
             if (abs(zi1).le.1.E-20) zi1=0.
             i1(i,k)=zi1
 
-            a=(q2(jj,k)-q2(i,k))/f
+            a = (q2(jj,k) - q2(i,k))*finv
             b=q2(i,k)-a*h(i)
-            zq1=c*zq1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zq1 = c*zq1 + 0.5*(d*b + a*factor)
             if (abs(zq1).le.1.E-20) zq1=0.
             q1(i,k)=zq1
 
-            a=(u2(jj,k)-u2(i,k))/f
+            a = (u2(jj,k) - u2(i,k))*finv
             b=u2(i,k)-a*h(i)
-            zu1=c*zu1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zu1 = c*zu1 + 0.5*(d*b + a*factor)
             if (abs(zu1).le.1.E-20) zu1=0.
             u1(i,k)=zu1
    48   continue
@@ -659,25 +673,27 @@ c
           do 50 i=1,nt
             jj=i-1
             f=h(i)-h(jj)
+            finv = 1.0/f
             c=exp(f/yy)
             d=1.e+00-c
             xx=h(i)-h(jj)*c
+            factor = d*yy + xx
 
-            a=(i2(i,k)-i2(jj,k))/f
+            a = (i2(i,k) - i2(jj,k))*finv
             b=i2(i,k)-a*h(i)
-            zi1=c*zi1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zi1 = c*zi1 + 0.5*(d*b + a*factor)
             if (abs(zi1).le.1.E-20) zi1=0.
             i1(i,k)=zi1
 
-            a=(q2(i,k)-q2(jj,k))/f
+            a = (q2(i,k) - q2(jj,k))*finv
             b=q2(i,k)-a*h(i)
-            zq1=c*zq1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zq1 = c*zq1 + 0.5*(d*b + a*factor)
             if (abs(zq1).le.1.E-20) zq1=0.
             q1(i,k)=zq1
 
-            a=(u2(i,k)-u2(jj,k))/f
+            a = (u2(i,k) - u2(jj,k))*finv
             b=u2(i,k)-a*h(i)
-            zu1=c*zu1+(d*(b+a*yy)+a*xx)*0.5e+00
+            zu1 = c*zu1 + 0.5*(d*b + a*factor)
             if (abs(zu1).le.1.E-20) zu1=0.
             u1(i,k)=zu1
    50   continue
@@ -702,42 +718,33 @@ c   convergence test (geometrical serie)
 c
         if(ig.gt.2) then
           z=0.
-            a1=abs(roIavion(2))
-            d1=abs(roIavion(1))
-            g1=abs(roIavion(0))
-	    r1=abs(roIavion(-1))
-            if(a1.ge.acu.and.d1.ge.acu.and.r1.ge.acu) then
-              a1=roIavion(2)
-              d1=roIavion(1)
-              g1=roIavion(0)
-	      r1=roIavion(-1)
-              y=((g1/d1-d1/a1)/((1-g1/d1)**2)*(g1/r1))
+            a1=roIavion(2)
+            d1=roIavion(1)
+            g1=roIavion(0)
+            r1=roIavion(-1)
+            if(abs(a1).ge.acu.and.abs(d1).ge.acu.and.abs(r1).ge.acu)
+     &          then
+              y = (g1/d1 - d1/a1)/(1 - g1/d1)**2*(g1/r1)
               y=abs(y)
               z=dmax1(dble(y),z)
             endif
-            a1=abs(roQavion(2))
-            d1=abs(roQavion(1))
-            g1=abs(roQavion(0))
-            r1=abs(roQavion(-1))
-            if(a1.ge.acu.and.d1.ge.acu.and.r1.ge.acu) then
-              a1=roQavion(2)
-              d1=roQavion(1)
-              g1=roQavion(0)
-              r1=roQavion(-1)
-              y=((g1/d1-d1/a1)/((1-g1/d1)**2)*(g1/r1))
+            a1=roQavion(2)
+            d1=roQavion(1)
+            g1=roQavion(0)
+            r1=roQavion(-1)
+            if(abs(a1).ge.acu.and.abs(d1).ge.acu.and.abs(r1).ge.acu)
+     &          then
+              y = (g1/d1 - d1/a1)/(1 - g1/d1)**2*(g1/r1)
               y=abs(y)
               z=dmax1(dble(y),z)
             endif
-            a1=abs(roUavion(2))
-            d1=abs(roUavion(1))
-            g1=abs(roUavion(0))
-            r1=abs(roUavion(-1))
-            if(a1.ge.acu.and.d1.ge.acu.and.r1.ge.acu) then
-              a1=roUavion(2)
-              d1=roUavion(1)
-              g1=roUavion(0)
-              r1=roUavion(-1)
-              y=((g1/d1-d1/a1)/((1-g1/d1)**2)*(g1/r1))
+            a1=roUavion(2)
+            d1=roUavion(1)
+            g1=roUavion(0)
+            r1=roUavion(-1)
+            if(abs(a1).ge.acu.and.abs(d1).ge.acu.and.abs(r1).ge.acu)
+     &          then
+              y = (g1/d1 - d1/a1)/(1 - g1/d1)**2*(g1/r1)
               y=abs(y)
               z=dmax1(dble(y),z)
             endif
@@ -794,7 +801,7 @@ c     successful test (geometrical serie)
               q3(l)=q3(l)+g1
  604          y1=1.
               d1=un(1,l)
-              if(abs(d1).le.acu) go to 606	
+              if(abs(d1).le.acu) go to 606
               g1=un(0,l)
               if(abs(g1-d1).le.acu) go to 606
               y1=1-g1/d1
@@ -886,7 +893,7 @@ c     stop if order n is less than 1% of the sum
 c       if(z.lt.0.00001) go to 505   ###originally
 c       if(z.lt.0.001) go to 505     ###6sV4.0 choice
 c        if(z.lt.0.01) go to 505 
-       if(z.lt.0.00000001) go to 505 ! - like in a modified file 
+       if(z.lt.0.00000001) go to 505 ! - like in a modified file
 
 c
 c      stop if order n is greater than 20 in any case
@@ -908,37 +915,44 @@ c
 c     stop of the fourier decomposition
 c
 
+        trig_sign = (-1)**is
         do 614 l=1,np
           phi=rp(l)
+          cos1 = cos(is*phi)
+          sin1 = sin(is*phi)
+          cos2 = trig_sign*cos1
+          sin2 = trig_sign*sin1
           do 614 m=-mum1,mum1
             if(m.gt.0) then
-              xli(m,l)=xli(m,l)+delta0s*i3(m)*cos(is*(phi+pi))
-              xlq(m,l)=xlq(m,l)+delta0s*q3(m)*cos(is*(phi+pi))
-              xlu(m,l)=xlu(m,l)+delta0s*u3(m)*sin(is*(phi+pi))
+              xli(m,l)=xli(m,l)+delta0s*i3(m)*cos2
+              xlq(m,l)=xlq(m,l)+delta0s*q3(m)*cos2
+              xlu(m,l)=xlu(m,l)+delta0s*u3(m)*sin2
             else
-              xli(m,l)=xli(m,l)+delta0s*i3(m)*cos(is*phi)
-              xlq(m,l)=xlq(m,l)+delta0s*q3(m)*cos(is*phi)
-              xlu(m,l)=xlu(m,l)+delta0s*u3(m)*sin(is*phi)
+              xli(m,l)=xli(m,l)+delta0s*i3(m)*cos1
+              xlq(m,l)=xlq(m,l)+delta0s*q3(m)*cos1
+              xlu(m,l)=xlu(m,l)+delta0s*u3(m)*sin1
             endif
 
  614    continue
- 
- 
+
+
 C Look up table generation 
       do m=1,mu
       do l=1,nfilut(m)
       phimul=filut(m,l)*pi/180.
-      rolut(m,l)=rolut(m,l)+delta0s*i3(m)*cos(is*(phimul+pi))
-      rolutq(m,l)=rolutq(m,l)+delta0s*q3(m)*cos(is*(phimul+pi))
-      rolutu(m,l)=rolutu(m,l)+delta0s*u3(m)*sin(is*(phimul+pi))
+      cos1 = cos(is*(phimul+pi))
+      sin1 = sin(is*(phimul+pi))
+      rolut(m,l)=rolut(m,l)+delta0s*i3(m)*cos1
+      rolutq(m,l)=rolutq(m,l)+delta0s*q3(m)*cos1
+      rolutu(m,l)=rolutu(m,l)+delta0s*u3(m)*sin1
       enddo
       enddo
 C end of look up table generation 
- 
- 
- 
- 
- 
+
+
+
+
+
         if(is.eq.0) then
           do k=1,mum1
             xli(0,1)=xli(0,1)+rm(k)*gb(k)*i3(-k)
@@ -946,17 +960,19 @@ C end of look up table generation
             xlu(0,1)=xlu(0,1)+rm(k)*gb(k)*u3(-k)
           enddo
         endif
-        xli(mu,1)=xli(mu,1)+delta0s*i3(mu)*cos(is*(phirad+pi))
-        xlq(mu,1)=xlq(mu,1)+delta0s*q3(mu)*cos(is*(phirad+pi))
-        xlu(mu,1)=xlu(mu,1)+delta0s*u3(mu)*sin(is*(phirad+pi))
-        xli(-mu,1)=xli(-mu,1)+delta0s*roIavion(-1)*cos(is*(phirad+pi))
-        xlq(-mu,1)=xlq(-mu,1)+delta0s*roQavion(-1)*cos(is*(phirad+pi))
-        xlu(-mu,1)=xlu(-mu,1)+delta0s*roUavion(-1)*sin(is*(phirad+pi))
+        cos1 = delta0s*cos(is*(phirad+pi))
+        sin1 = delta0s*sin(is*(phirad+pi))
+        xli(mu,1) = xli(mu,1) + cos1*i3(mu)
+        xlq(mu,1) = xlq(mu,1) + cos1*q3(mu)
+        xlu(mu,1) = xlu(mu,1) + sin1*u3(mu)
+        xli(-mu,1) = xli(-mu,1) + cos1*roIavion(-1)
+        xlq(-mu,1) = xlq(-mu,1) + cos1*roQavion(-1)
+        xlu(-mu,1) = xlu(-mu,1) + sin1*roUavion(-1)
         do ifi=1,nfi
         phimul=(ifi-1)*pi/(nfi-1)
         xlphim(ifi)=xlphim(ifi)+delta0s*roIavion(-1)*cos(is*(phimul+pi))
         enddo
-	
+        
           z=0.
           do 616 l=-mu,mu
             if (abs(i4(l)).lt.acu) goto 617

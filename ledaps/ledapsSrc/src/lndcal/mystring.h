@@ -40,7 +40,7 @@
 #define MYSTRING_H
 
 #include <stdio.h>
-#include "bool.h"
+#include <stdbool.h>
 
 #define MAX_STR_LEN (256)
 #define MAX_NUM_VALUE (20)

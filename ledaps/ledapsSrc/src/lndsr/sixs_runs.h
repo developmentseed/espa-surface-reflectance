@@ -55,6 +55,5 @@ typedef struct {
 } sixs_atmos_params_t;
 
 int create_6S_tables(sixs_tables_t *sixs_tables, Input_meta_t *meta);
-int compute_atmos_params_6S(sixs_atmos_params_t *sixs_atmos_params);
 
 #endif

@@ -18,8 +18,8 @@ INC = aero_interp.h common.h date.h input.h output.h quick_select.h poly_coeff.h
 
 # Define the source code and object files
 SRC = aero_interp.c       \
-      compute_l8_refl.c   \
-      compute_s2_refl.c   \
+      compute_landsat_refl.c   \
+      compute_sentinel_refl.c   \
       compute_refl_subr.c \
       date.c              \
       get_args.c          \
@@ -29,7 +29,7 @@ SRC = aero_interp.c       \
       poly_coeff.c        \
       quick_select.c      \
       subaeroret.c        \
-      utm2deg.c           \
+      utmtodeg.c          \
       lasrc.c
 OBJ = $(SRC:.c=.o)
 

@@ -1,8 +1,8 @@
 #ifndef SR_H
 #define SR_H
 
+#include <stdbool.h>
 #include "lndsr.h"
-#include "bool.h"
 #include "lut.h"
 #include "error.h"
 
@@ -16,6 +16,7 @@ typedef struct {
 } Sr_stats_t;
 
 
-bool Sr(Lut_t *lut, int nsamp, int il, int16 **line_in, int16 **line_out,
-        Sr_stats_t *sr_stats);
+bool Sr(Lut_t *lut, int nsamp, int il, atmos_t *atmos_coef,
+        atmos_t *interpol_atmos_coef, uint16_t **line_in, uint16_t *qa_line,
+        uint16_t **line_out, Sr_stats_t *sr_stats);
 #endif

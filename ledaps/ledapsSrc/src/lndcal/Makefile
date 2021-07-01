@@ -16,8 +16,8 @@ RM    = rm
 EXTRA = -Wall $(EXTRA_OPTIONS)
 
 # Define the include files
-INC = bool.h cal.h const.h date.h error.h input.h keyvalue.h lndcal.h lut.h \
-      myproj_const.h myproj.h mystring.h names.h output.h param.h
+INC = cal.h const.h date.h error.h input.h keyvalue.h lndcal.h lut.h \
+      mystring.h output.h param.h
 
 # Define the source code and object files
 SRC = \

@@ -16,7 +16,7 @@ LIBDIR  = -L. -L$(JPEGLIB) -L$(TIFFLIB) -L$(GEOTIFF_LIB) -L$(HDFLIB) -L$(HDFEOS_
 C_EXTRA   = -Wall -O2
 NCFLAGS   = $(CFLAGS) $(C_EXTRA) $(INCDIR)
 
-F_EXTRA   = -Wall -O -ffixed-line-length-132
+F_EXTRA   = -Wall -O -ffixed-line-length-132 -cpp
 
 C_OBJECTS = qa_index_routine.o setprojinfo.o
 

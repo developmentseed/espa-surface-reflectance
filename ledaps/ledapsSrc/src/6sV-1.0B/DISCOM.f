@@ -71,22 +71,22 @@ c     computation of rayleigh optical depth at wl
 
 
 c plane case discussed here above
-      if (idatmp.eq.0.or.idatmp.eq.4) then
-	  if (idatmp.eq.4) trayp=tray
-	  if (idatmp.eq.0) trayp=0.
-	else
+        if (idatmp.eq.0.or.idatmp.eq.4) then
+          if (idatmp.eq.4) trayp=tray
+          if (idatmp.eq.0) trayp=0.
+        else
           trayp=tray*ftray
         endif
         trayl(l)=tray
         traypl(l)=trayp
- 
+
 c     computation of aerosol optical properties at wl
-        
+
         taer=taer55*ext(l)
         taerp=taer55p*ext(l)
         piza=ome(l)
-	
-	
+
+
 c - in case of the user-defined aerosol profile
         do i=1,num_z
          taer_z(i)=taer55_z(i)*ext(l)
@@ -104,30 +104,30 @@ c use integer for g95 compatible
 c          do k=1,nbmu 
         do k=1, nquad
             pha(k)=phasel(l,k)
-          enddo
-	  if (ipol.ne.0)then
+        enddo
+        if (ipol.ne.0)then
 c use integer for g95 compatible
 c            do k=1,nbmu 
               do k=1, nquad
               qha(k)=qhasel(l,k)
               uha(k)=uhasel(l,k)
             enddo
-	  endif
-	  
-	if (iaer.ne.0) call trunca(coeff,ipol) ! the routine is modified
+        endif
+          
+        if (iaer.ne.0) call trunca(coeff,ipol) ! the routine is modified
 
         tamoy=taer*(1.-piza*coeff)
         tamoyp=taerp*(1.-piza*coeff)
         pizmoy=piza*(1.-coeff)/(1.-piza*coeff)
-	
+        
 
 
         call atmref(iaer,iaer_prof,tamoy,taer,tray,pizmoy,piza,tamoyp,
-     s	  taerp,trayp,palt,phi,xmus,xmuv,phirad,nt,mu,np,rm,gb,rp,rorayl,
+     s   taerp,trayp,palt,phi,xmus,xmuv,phirad,nt,mu,np,rm,gb,rp,rorayl,
      s    roaero,romix,rqrayl,rqaero,rqmix,rurayl,ruaero,rumix,ipol,
      s    xlm1,xlm2,rorayl_fi,romix_fi,nfi,
      a      nfilut,filut,rolut,rolutq,rolutu)
-     
+
         roatm(1,l)=rorayl
         roatm(2,l)=romix
         roatm(3,l)=roaero
@@ -149,12 +149,12 @@ c       write(6,*) 'rurayl',rurayl
 c        write(6,*)'rumix',rumix
 c        write(6,*)'ruaero',ruaero
 
-	
+        
       do ifi=1,nfi
       roatm_fi(1,l,ifi)=rorayl_fi(ifi)
       roatm_fi(2,l,ifi)=romix_fi(ifi)
       enddo
-      
+
       do i=1,mu
       do j=1,41
       roluts(l,i,j)=rolut(i,j)
@@ -165,7 +165,7 @@ c        write(6,*)'ruaero',ruaero
 
 
 
- 
+
 c     computation of scattering transmitances (direct and diffuse)
 c     first time for rayleigh ,next total (rayleigh+aerosols)
        call scatra(iaer_prof,tamoy,tamoyp,tray,trayp,pizmoy,
@@ -187,7 +187,7 @@ c     first time for rayleigh ,next total (rayleigh+aerosols)
         sphal(1,l)=sphalbr
         sphal(2,l)=sphalbt
         sphal(3,l)=sphalba
-	
+        
    50 continue
 
       return

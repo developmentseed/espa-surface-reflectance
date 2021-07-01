@@ -48,7 +48,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+#include <errno.h>
+#include <unistd.h>
 
+#include "lndsr.h"
 #include "param.h"
 #include "mystring.h"
 #include "error.h"
@@ -76,6 +79,10 @@ Key_string_t Param_string[PARAM_MAX] = {
   {(int)PARAM_LEDAPSVERSION,  "LEDAPSVersion"},
   {(int)PARAM_END,       "END"}
 };
+
+static double scale_refl;    /* scale for reflective bands */
+static double offset_refl;   /* add offset for reflective bands */
+static int num_threads;      /* Number of threads for processing */
 
 /* Functions */
 
@@ -108,6 +115,7 @@ Param_t *GetParam(int argc, char *argv[])
   Param_key_t param_key;
   char *param_file_name = NULL;
   bool got_start, got_end;
+  char *end;
 
   int c;                           /* current argument index */
   int option_index;                /* index for the command-line option */
@@ -118,8 +126,18 @@ Param_t *GetParam(int argc, char *argv[])
       {"pfile", required_argument, 0, 'p'},
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, &version_flag, 1},
+      {"offset_refl", required_argument, 0, 'm'},
+      {"scale_refl", required_argument, 0, 'n'},
+      {"num_threads", required_argument, 0, 'v'},
       {0, 0, 0, 0}
   };
+
+  /* Assign defaults */
+  scale_refl = SCALE_FACTOR;
+  offset_refl = ADD_OFFSET;
+  num_threads = (int)sysconf(_SC_NPROCESSORS_ONLN);
+  if (num_threads == -1)
+      num_threads = 1;
 
   /* Loop through all the cmd-line options */
   opterr = 0;   /* turn off getopt_long error msgs as we'll print our own */
@@ -141,12 +159,38 @@ Param_t *GetParam(int argc, char *argv[])
           break;
 
       case 'h':  /* help */
-        RETURN_ERROR("Runs the surface reflectance corrections for the input "
-          "Landsat scene", "GetParam", NULL);
+        strcpy(temp,"Runs the surface reflectance corrections for the input "
+          "Landsat scene\n");
+        strcat (temp,"Usage: lndsr "
+                "--pfile=input_parm_file [--version] "
+                "[--scale_refl=<X.X>] [--offset_refl=<X.X>] \n");
+        RETURN_ERROR(temp, "GetParam", NULL);
         break;
 
       case 'p':  /* input parameter file */
         param_file_name = strdup (optarg);
+        break;
+
+      case 'm':
+        offset_refl = strtod(optarg, &end);
+        if ((errno != 0) || (*end != '\0'))
+        {
+            sprintf(temp, "Error converting string '%s' to floating-point number", optarg);
+            RETURN_ERROR(temp, "GetParam", NULL);
+        }
+        break;
+
+      case 'n':
+        scale_refl = strtod(optarg, &end);
+        if ((errno != 0) || (*end != '\0'))
+        {
+            sprintf(temp, "Error converting string '%s' to floating-point number", optarg);
+            RETURN_ERROR(temp, "GetParam", NULL);
+        }
+        break;
+
+      case 'v':  /* number of threads */
+        num_threads = atoi (optarg);
         break;
 
       case '?':
@@ -410,7 +454,7 @@ Param_t *GetParam(int argc, char *argv[])
 }
 
 
-bool FreeParam(Param_t *this)
+void FreeParam(Param_t *this)
 /* 
 !C******************************************************************************
 
@@ -418,10 +462,6 @@ bool FreeParam(Param_t *this)
  
 !Input Parameters:
  this           'param' data structure
-
-!Output Parameters:
- (returns)      status:
-                  'true' = okay (always returned)
 
 !Team Unique Header:
 
@@ -435,6 +475,22 @@ bool FreeParam(Param_t *this)
     free(this->param_file_name);
     free(this->input_xml_file_name);
     free(this);
+    this = NULL;
   }
-  return true;
+}
+
+/* Value retrieval functions. */
+double get_scale_refl(void)
+{
+    return scale_refl;
+}
+
+double get_offset_refl(void)
+{
+    return offset_refl;
+}
+
+int get_num_threads(void)
+{
+    return num_threads;
 }
