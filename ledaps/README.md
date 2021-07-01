@@ -1,4 +1,4 @@
-## Ledaps Version 5.0.0 Release Notes
+## Ledaps Version 5.0.1 Release Notes
 Release Date: July 2021
 
 ### Downloads
@@ -10,7 +10,7 @@ Ledaps auxiliary files
 
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/ledaps_auxiliary/ledaps_aux.1978-2017.tar.gz
 
-See git tag [ledaps-version_5.0.0]
+See git tag [ledaps-version_5.0.1]
 
 ### Installation
   * Install dependent projects and libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git) and ESPA python library (https://eroslab.cr.usgs.gov/lsrd/espa-python-library.git)
@@ -101,3 +101,4 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
      bands 6L and 6H for ETM+, based on high and low saturation.
   6. Modified to utilize the Level-1 RADSAT band from Collection 2 as input
      for saturated pixels in lndsr.
+  7. Official release in ESPA.
