@@ -147,30 +147,6 @@ class SurfaceReflectance():
             os.chdir (mydir)
             return ERROR
 
-<<<<<<< HEAD
-        # generate per-pixel angle bands for band 4 (representative band)
-        cmdstr = 'create_l8_angle_bands --xml {}'.format(base_xmlfile)
-        logger.debug('per-pixel angles command: {0}'.format(cmdstr))
-        (status, output) = subprocess.getstatusoutput(cmdstr)
-        logger.info(output)
-        if status != 0:
-            logger.error('Error running create_l8_angle_bands. Processing '
-                         'will terminate.')
-            os.chdir(mydir)
-            return ERROR
-
-        # Mask the angle bands to match the band quality band
-        cmdstr = ('mask_per_pixel_angles.py --xml {}'
-                  .format(base_xmlfile))
-        (status, output) = subprocess.getstatusoutput(cmdstr)
-        logger.info(output)
-        if status != 0:
-            logger.error('Error masking angle bands with the band '
-                         'quality band. Processing will terminate.')
-            return ERROR
-
-=======
->>>>>>> dev_c2
         # run surface reflectance algorithm, checking the return status.  exit
         # if any errors occur.
         process_sr_opt_str = '--process_sr=true '
@@ -188,11 +164,7 @@ class SurfaceReflectance():
         logger.debug (msg)
         (exit_code, output) = subprocess.getstatusoutput (cmdstr)
         logger.info (output)
-<<<<<<< HEAD
-        if status != 0:
-=======
         if exit_code != 0:
->>>>>>> dev_c2
             msg = 'Error running lasrc.  Processing will terminate.'
             logger.error (msg)
             os.chdir (mydir)

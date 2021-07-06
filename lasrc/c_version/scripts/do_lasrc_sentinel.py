@@ -142,11 +142,7 @@ class SurfaceReflectance():
         logger.debug (msg)
         (exit_code, output) = subprocess.getstatusoutput (cmdstr)
         logger.info (output)
-<<<<<<< HEAD
-        if status != 0:
-=======
         if exit_code != 0:
->>>>>>> dev_c2
             msg = 'Error running lasrc.  Processing will terminate.'
             logger.error (msg)
             os.chdir (mydir)
