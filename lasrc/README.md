@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-## LaSRC Version 2.1.0 Release Notes
-Release Date: October 2020
-=======
-## LaSRC Version 3.1.1 Release Notes
-Release Date: July 2021
->>>>>>> dev_c2
+## LaSRC Version 3.2.0 Release Notes
+Release Date: TBD 2021
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
@@ -16,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.1.1]
+See git tag [version_3.2.0]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -92,6 +87,4 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Changed Level-1 filenames to upper-case.
-7. Modified the LAADS download script to use wget, since it is available as an
-   interface again, vs. curl.
+1. Modified to support L9

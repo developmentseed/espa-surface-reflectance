@@ -14,7 +14,7 @@ typedef char byte;
 #endif
 
 /* Surface reflectance version */
-#define SR_VERSION "3.1.1 (Collection 2)"
+#define SR_VERSION "3.2.0 (Collection 2)"
 
 /* Define the default aerosol and EPS value */
 #define DEFAULT_AERO 0.05
@@ -77,7 +77,7 @@ typedef char byte;
 //#define PROC_ALL_BANDS 1
 
 /* Number of bands corrected to surface reflectance
-   * Landsat 8 (bands 1-7).  The atmospheric correction variables store
+   * Landsat (bands 1-7).  The atmospheric correction variables store
    information for 8 bands, so we will go with that for the array size.
    * Sentinel-2 (bands 1-13, possibly skipping band 9 and 10).  The
    atmospheric correction variables store information for 11/13 bands, so we
@@ -94,7 +94,7 @@ typedef char byte;
 /* Get the larger number of bands between the two instruments */
 #define NSR_BANDS MAX(NSRL_BANDS, NSRS_BANDS)
 
-/* Landsat-8/9 Level-1 products have 8 reflectance bands (bands 1-7, and 9),
+/* Landsat Level-1 products have 8 reflectance bands (bands 1-7, and 9),
    2 thermal bands (band 10 and 11), 1 pan band (band 8), and 1 QA band
    (band 12)
    Sentinel-2 Level-1 products have 13 reflectance bands, but we might not
@@ -117,7 +117,7 @@ typedef char byte;
 /* Get the larger number of bands between the two instruments */
 #define NBAND_REFL_MAX MAX(NBANDL_REFL_MAX, NBANDS_REFL_MAX)
 
-/* Landsat-8/9 surface reflectance products have 8 reflectance bands, 2 thermal
+/* Landsat surface reflectance products have 8 reflectance bands, 2 thermal
    bands, 0 pan bands, and 1 QA band.
    Sentinel-2 surface reflectance products have 13 reflectance bands, and
    1 QA band. Bands 9 (water vapor) and 10 (cirrus) might not be processed. */

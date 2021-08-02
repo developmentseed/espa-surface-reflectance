@@ -1,4 +1,4 @@
-The surface reflectance project contains application source code for producing surface reflectance products.  It currently consists of LEDAPS for Landsats 4-7 and LaSRC for Landsat 8 and Sentinel-2.
+The surface reflectance project contains application source code for producing surface reflectance products.  It currently consists of LEDAPS for Landsats 4-7 and LaSRC for Landsat 8-9 and Sentinel-2.
 
 ### Support Information
 This project is unsupported software provided by the U.S. Geological Survey (USGS) Earth Resources Observation and Science (EROS) Land Satellite Data Systems (LSDS) Project.  For questions regarding products produced by this source code, please contact us at custserv@usgs.gov.
