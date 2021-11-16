@@ -559,10 +559,10 @@ def main ():
     # if processing today then process the current year.  if the current
     # DOY is within the first month, then process the previous year as well
     # to make sure we have all the recently available data processed.
+    now = datetime.datetime.now()
     if today:
         msg = 'Processing LAADS data up to the most recent year and DOY.'
         logger.info(msg)
-        now = datetime.datetime.now()
         day_of_year = now.timetuple().tm_yday
         eyear = now.year
         if day_of_year <= 31:
