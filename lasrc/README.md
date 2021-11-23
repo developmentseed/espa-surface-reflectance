@@ -88,3 +88,5 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 
 ## Release Notes
 1. Modified to support L9
+2. Modified to support new Sentinel-2 products for scale and offset.
+   https://sentinels.copernicus.eu/web/sentinel/-/copernicus-sentinel-2-major-products-upgrade-upcoming
