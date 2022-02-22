@@ -71,6 +71,7 @@ def geturl(url, token=None, out=None):
     if token:
         headers['Authorization'] = 'Bearer ' + token
         CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        CTX.check_hostname = False
         CTX.verify_mode = ssl.CERT_NONE
         try:
             fh = urlopen(Request(url, headers=headers), context=CTX)
@@ -204,8 +205,9 @@ def downloadLads(year, doy, destination, token=None):
             # should only be files in this path
             filesize = int(f['size'])
             path = os.path.join(destination, f['name'])
-            url = url + '/' + f['name']
             if filesize != 0:
+                url = url.replace('..', '')
+                url = url + '/' + f['name']
                 try:
                     if not os.path.exists(path):
                         logger.debug('downloading: {}'.format(path))
