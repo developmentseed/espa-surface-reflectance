@@ -70,7 +70,8 @@ def geturl(url, token=None, out=None):
     headers = {'user-agent': USERAGENT}
     if token:
         headers['Authorization'] = 'Bearer ' + token
-        CTX = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        CTX.verify_mode = ssl.CERT_NONE
         try:
             fh = urlopen(Request(url, headers=headers), context=CTX)
             if out is None:
