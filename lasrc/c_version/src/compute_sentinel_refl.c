@@ -228,8 +228,8 @@ int read_sentinel_toa_refl
             if (tmp_band[i] == bmeta[ib].fill_value)
                 toaband[ib][i] = tmp_band[i];
             else
-                toaband[ib][i] = tmp_band[i] * bmeta[ib].scale_factor +
-                    bmeta[ib].add_offset;
+                toaband[ib][i] = (tmp_band[i] + bmeta[ib].add_offset) *
+                    bmeta[ib].scale_factor;
         }
     }  /* for ib */
 
