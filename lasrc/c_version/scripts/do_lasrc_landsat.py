@@ -159,7 +159,7 @@ class SurfaceReflectance():
 
         # run surface reflectance algorithm, checking the return status.  exit
         # if any errors occur.
-        process_sr_opt_str = '--process_sr=true '
+        process_sr_opt_str = ''
         write_toa_opt_str = ''
         use_orig_aero_alg_str = ''
 
@@ -170,11 +170,11 @@ class SurfaceReflectance():
         if use_orig_aero_alg:
             use_orig_aero_alg_str = '--use_orig_aero_alg '
 
-        cmd = ['lasrc', f'--xml={xml_infile}', f'--aux={aux_file}',
-               f'{process_sr_opt_str}{write_toa_opt_str}{use_orig_aero_alg_str}--verbose']
+        cmd = ['lasrc', f'--xml={xml_infile}', f'--aux={aux_file}', f'{process_sr_opt_str}',
+                f'{write_toa_opt_str}', f'{use_orig_aero_alg_str}', '--verbose']
 
         msg = 'Executing lasrc command: {}'.format(" ".join(cmd))
-        logger.debug(msg)
+        logger.info(msg)
         result = subprocess.run(cmd)
         logger.info(result.stdout)
         if result.returncode != 0:
