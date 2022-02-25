@@ -86,6 +86,9 @@ class SurfaceReflectance():
                 parser.error ('missing input XML file command-line argument');
                 return ERROR
 
+            write_toa = options.write_toa
+            use_orig_aero_alg = options.use_orig_aero_alg
+
         # get the logger
         logger = logging.getLogger(__name__)
         msg = ('Surface reflectance processing of Sentinel-2 file: {}'
@@ -151,13 +154,13 @@ class SurfaceReflectance():
         use_orig_aero_alg_str = ''
 
         if write_toa:
-            write_toa_opt_str = '--write_toa '
+            write_toa_opt_str = '--write_toa'
         if use_orig_aero_alg:
-            use_orig_aero_alg_str = '--use_orig_aero_alg '
+            use_orig_aero_alg_str = '--use_orig_aero_alg'
         cmd = ['lasrc', f'--xml={xml_infile}', f'--aux={aux_file}',
-               f'{write_toa_opt_str}{use_orig_aero_alg_str}--verbose']
+               f'{write_toa_opt_str}', f'{use_orig_aero_alg_str}', '--verbose']
         msg = 'Executing lasrc command: {}'.format(" ".join(cmd))
-        logger.debug(msg)
+        logger.info(msg)
         result = subprocess.run(cmd)
         logger.info(result.stdout)
         if result.returncode != 0:

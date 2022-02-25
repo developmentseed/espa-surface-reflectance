@@ -97,6 +97,7 @@ class SurfaceReflectance():
             # surface reflectance options
             process_sr = options.process_sr
             write_toa = options.write_toa
+            use_orig_aero_alg = options.use_orig_aero_alg
 
         # get the logger
         logger = logging.getLogger(__name__)
@@ -164,11 +165,11 @@ class SurfaceReflectance():
         use_orig_aero_alg_str = ''
 
         if process_sr == 'False':
-            process_sr_opt_str = '--process_sr=false '
+            process_sr_opt_str = '--process_sr=false'
         if write_toa:
-            write_toa_opt_str = '--write_toa '
+            write_toa_opt_str = '--write_toa'
         if use_orig_aero_alg:
-            use_orig_aero_alg_str = '--use_orig_aero_alg '
+            use_orig_aero_alg_str = '--use_orig_aero_alg'
 
         cmd = ['lasrc', f'--xml={xml_infile}', f'--aux={aux_file}', f'{process_sr_opt_str}',
                 f'{write_toa_opt_str}', f'{use_orig_aero_alg_str}', '--verbose']
