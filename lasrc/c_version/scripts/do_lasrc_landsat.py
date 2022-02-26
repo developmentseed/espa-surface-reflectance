@@ -90,7 +90,7 @@ class SurfaceReflectance():
 
         # get the logger
         logger = logging.getLogger(__name__)
-        msg = ('Surface reflectance processing of Landsat-8 file: {}'
+        msg = ('Surface reflectance processing of Landsat file: {}'
                .format(xml_infile))
         logger.info (msg)
         
@@ -128,8 +128,8 @@ class SurfaceReflectance():
         # file should be used for input.
         # Example: LC08_L1TP_041027_20130630_20140312_01_T1.xml uses the
         # L8ANC2013181.hdf_fused HDF file.
-        l8_prefixes_collection = ['LC08', 'LO08']
-        if base_xmlfile[0:4] in l8_prefixes_collection:
+        l89_prefixes_collection = ['LC08', 'LO08', 'LC09', 'LO09']
+        if base_xmlfile[0:4] in l89_prefixes_collection:
             # Collection naming convention. Pull the year, month, day from the
             # XML filename. It should be the 4th group, separated by
             # underscores. Then convert month, day to DOY.

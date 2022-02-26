@@ -98,10 +98,10 @@ def get_science_application_name(satellite_sensor_code):
     '''Returns name of executable that needs to be called'''
 
     s2_prefixes_collection = ['S2A_', 'S2B_']
-    l8_prefixes_collection = ['LC08', 'LO08', 'LT08']
+    l89_prefixes_collection = ['LC08', 'LO08', 'LT08', 'LC09', 'LO09', 'LT09']
     other_prefixes_collection = ['LT04', 'LT05', 'LE07']
 
-    if satellite_sensor_code in l8_prefixes_collection:
+    if satellite_sensor_code in l89_prefixes_collection:
         return 'do_lasrc_landsat.py'
     elif satellite_sensor_code in s2_prefixes_collection:
         return 'do_lasrc_sentinel.py'
