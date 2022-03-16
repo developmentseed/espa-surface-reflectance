@@ -93,3 +93,5 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
    vapor, excluding the full-length gaps in the polar regions.  Those polar
    gaps are left as-is.
 3. Modified the LaSRC code to use these new VIIRS products.
+4. Changed L8_AUX_DIR environment variable for storing the LAADS aux products
+   to LASRC_AUX_DIR. This matches the environment variable used by LaSRC.
