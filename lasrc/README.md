@@ -1,5 +1,5 @@
-## LaSRC Version 3.2.0 Release Notes
-Release Date: February 2022
+## LaSRC Version 3.3.0 Release Notes
+Release Date: TBD 2022
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.2.0]
+See git tag [version_3.3.0]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -87,6 +87,9 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Modified to support L9
-2. Modified to support new Sentinel-2 products for scale and offset.
-   https://sentinels.copernicus.eu/web/sentinel/-/copernicus-sentinel-2-major-products-upgrade-upcoming
+1. Modified the auxiliary file download scripts to download the VIIRS VJ104ANC
+   products with the VNP04ANC products as backup.
+2. Added a gapfilling algorithm to fill in the gaps in the ozone and water
+   vapor, excluding the full-length gaps in the polar regions.  Those polar
+   gaps are left as-is.
+3. Modified the LaSRC code to use these new VIIRS products.

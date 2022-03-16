@@ -20,9 +20,11 @@ from io import StringIO
 # Global static variables
 ERROR = 1
 SUCCESS = 0
-START_YEAR = 2013      # quarterly processing will reprocess back to the
-                       # start year to make sure all data is up to date
-                       # Landsat 8 was launched on Feb. 11, 2013
+NPP_START_YEAR = 2017
+JPSS1_START_YEAR = 2021 # quarterly processing will reprocess back to the
+                        # start year to make sure all data is up to date
+                        # Landsat 8 was launched on Feb. 11, 2013
+                        # Landsat 9 was launched on Sept. 27, 2021
 
 ##NOTE: For non-ESPA environments, the TOKEN needs to be defined.  This is
 ##the application token that is required for accessing the LAADS data
@@ -30,15 +32,12 @@ START_YEAR = 2013      # quarterly processing will reprocess back to the
 TOKEN = None
 USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + sys.version.replace('\n','').replace('\r','')
 
-# Specify the base location for the LAADS data as well as the
-# correct subdirectories for each of the instrument-specific ozone
+# Specify the base location for the LAADS VIIRS data as well as the correct
+# subdirectories for each of the instrument-specific ozone and water vapor
 # products
-# These are version 006 products
 SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
-TERRA_CMA = '/archive/allData/6/MOD09CMA/'
-TERRA_CMG = '/archive/allData/6/MOD09CMG/'
-AQUA_CMA = '/archive/allData/6/MYD09CMA/'
-AQUA_CMG = '/archive/allData/6/MYD09CMG/'
+VIIRS_JPSS1 = '/archive/allData/3194/VJ104ANC/'
+VIIRS_NPP = '/archive/allData/5000/VNP04ANC/'
 
 def isLeapYear (year):
     """
@@ -125,8 +124,8 @@ def geturl(url, token=None, out=None):
 
 def buildURLs(year, doy):
     """
-    Builds the URLs for the Terra and Aqua CMG and CMA products for the
-    current year and DOY, and put that URL on the list.
+    Builds the URLs for the VIIRS JPSS1 and NPP products for the current year
+    and DOY, and put that URL on the list.
 
     Args:
       year: year of desired LAADS data
@@ -140,20 +139,14 @@ def buildURLs(year, doy):
     """
     urlList = []     # create empty URL list
 
-    # append TERRA CMA data (MOD09CMA)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, TERRA_CMA, year, doy))
-    urlList.append(url)
+    # append JPSS1 as the first/priority file (VJ104ANC) as long as it's
+    # within the JPSS1 range
+    if year >= JPSS1_START_YEAR:
+        url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_JPSS1, year, doy))
+        urlList.append(url)
 
-    # append TERRA CMG data (MOD09CMG)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, TERRA_CMG, year, doy))
-    urlList.append(url)
-
-    # append AQUA CMA data (MYD09CMA)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, AQUA_CMA, year, doy))
-    urlList.append(url)
-
-    # append AQUA CMG data (MYD09CMG)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, AQUA_CMG, year, doy))
+    # append NPP as the secondary file (VNP04ANC)
+    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_NPP, year, doy))
     urlList.append(url)
 
     return urlList
@@ -165,7 +158,8 @@ def downloadLads (year, doy, destination, token=None):
     interface and download to the desired destination.  If the destination
     directory does not exist, then it is made before downloading.  Existing
     files in the download directory are removed/cleaned.  This will download
-    the Aqua/Terra CMG and CMA files for the current year, DOY.
+    the JPSS1 file as the priority and the NPP as the backup, for the current
+    year, DOY.
 
     Args:
       year: year of data to download (integer)
@@ -197,8 +191,7 @@ def downloadLads (year, doy, destination, token=None):
             if not os.path.isdir(name):
                 os.remove(name)
 
-    # obtain the list of URL(s) for our particular date.  this includes the
-    # locations for the Aqua and Terra CMG/CMA files.
+    # obtain the list of URL(s) for our particular date
     urlList = buildURLs(year, doy)
     if urlList is None:
         msg = ('LAADS URLs could not be resolved for year {} and DOY {}'
@@ -206,18 +199,21 @@ def downloadLads (year, doy, destination, token=None):
         logger.error(msg)
         return ERROR
 
-    # download all the files from the list of URLs.
+    # download the files from the list of URLs. The list should be the priority
+    # JPSS1 file first (if it falls within the correct date range), followed by
+    # the backup NPP file.
     msg = 'Downloading data for {}/{} to {}'.format(year, doy, destination)
     logger.info(msg)
     for url in urlList:
         msg = 'Retrieving {} to {}'.format(url, destination)
-        cmd = ('wget -e robots=off -m -np -R .html,.tmp --no-directories '
+        logger.info(msg)
+        cmd = ('wget -e robots=off -m -np -R .html,.tmp -nH --no-directories '
                '--header \"Authorization: Bearer {}\" -P {} \"{}\"'
                .format(token, destination, url))
         retval = subprocess.call(cmd, shell=True, cwd=destination)
     
         # make sure the wget was successful or retry up to 5 more times and
-        # sleep in between
+        # sleep in between. if successful then break out of the for loop.
         if retval:
             retry_count = 1
             while ((retry_count <= 5) and (retval)):
@@ -230,20 +226,23 @@ def downloadLads (year, doy, destination, token=None):
             if retval:
                 logger.info('unsuccessful download of {0} (retried 5 times)'
                             .format(url))
+            else:
+                break
+        else:
+            break
 
-        # make sure the index.html file was removed if it was downloaded
-        index_file = '{}/index.html'.format(destination)
-        del index_file
+    # make sure the index.html file was removed if it was downloaded
+    index_file = '{}/index.html'.format(destination)
+    del index_file
     
     return SUCCESS
 
 
 def getLadsData (auxdir, year, today, token):
     """
-    Description: getLadsData downloads the daily MODIS Aqua/Terra CMG and CMA
-    data files for the desired year, then combines those files into one daily
-    product containing the various ozone, water vapor, temperature, etc. SDSs.
-    
+    Description: getLadsData downloads the daily VIIRS atmosphere data files
+    for the desired year.
+
     Args:
       auxdir: name of the base L8_SR auxiliary directory which contains the
               LAADS directory
@@ -293,14 +292,17 @@ def getLadsData (auxdir, year, today, token):
         # get the year + DOY string
         datestr = '{}{:03d}'.format(year, doy)
 
-        # if the data for the current year and doy exists already, then we are
-        # going to skip that file if processing for the --today.  For
-        # --quarterly, we will completely reprocess.
+        # if the JPSS1 data for the current year and doy exists already, then
+        # we are going to skip that file if processing for the --today.  For
+        # --quarterly, we will completely reprocess.  If the backup NPP
+        # product exists without the JPSS1, then we will still reprocess in
+        # hopes that the JPSS1 product becomes available.
         skip_date = False
         for myfile in os.listdir(outputDir):
-            if fnmatch.fnmatch (myfile, 'L8ANC' + datestr + '.hdf_fused') \
-                and today:
-                msg = 'L8ANC{}.hdf_fused already exists. Skip.'.format(datestr)
+            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.hdf'.format(datestr)) \
+                    and today:
+                msg = ('JPSS1 product for VJ104ANC.A{} already exists. Skip.'
+                       .format(datestr))
                 logger.info(msg)
                 skip_date = True
                 break
@@ -308,161 +310,89 @@ def getLadsData (auxdir, year, today, token):
         if skip_date:
             continue
 
-        # download the daily LAADS files for the specified year and DOY
-        found_mod09cma = True
-        found_mod09cmg = True
-        found_myd09cma = True
-        found_myd09cmg = True
+        # download the daily LAADS files for the specified year and DOY. The
+        # JPSS1 file is the priority, but if that isn't found then the NPP
+        # file will be downloaded.
+        found_vj104anc = False
+        found_vnp04anc = False
         status = downloadLads (year, doy, dloaddir, token)
         if status == ERROR:
             # warning message already printed
             return ERROR
 
-        # get the Terra CMA file for the current DOY (should only be one)
+        # get the JPSS1 file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MOD09CMA.A' + datestr + '*.hdf'):
+            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.hdf'.format(datestr)):
                 fileList.append (myfile)
 
-        # make sure files were found or print a warning
+        # make sure files were found or search for the NPP file
         nfiles = len(fileList)
         if nfiles == 0:
-            found_mod09cma = False
+            # get the NPP file for the current DOY (should only be one)
+            for myfile in os.listdir(dloaddir):
+                if fnmatch.fnmatch (myfile, 'VNP04ANC.A{}*.hdf'
+                                    .format(datestr)):
+                    fileList.append (myfile)
+
+            # make sure files were found
+            nfiles = len(fileList)
+            if nfiles != 0:
+                # if only one file was found which matched our date, then that
+                # is the file we'll process.  if more than one was found, then
+                # we have a problem as only one file is expected.
+                if nfiles == 1:
+                    found_vnp04anc = True
+                    viirs_anc = dloaddir + '/' + fileList[0]
+                else:
+                    msg = ('Multiple LAADS VNP04ANC files found for doy {} '
+                           'year {}'.format(doy, year))
+                    logger.error(msg)
+                    return ERROR
+
         else:
             # if only one file was found which matched our date, then that's
             # the file we'll process.  if more than one was found, then we
             # have a problem as only one file is expected.
             if nfiles == 1:
-                terra_cma = dloaddir + '/' + fileList[0]
+                found_vj104anc = True
+                viirs_anc = dloaddir + '/' + fileList[0]
             else:
-                msg = ('Multiple LAADS MOD09CMA files found for doy {} year {}'
+                msg = ('Multiple LAADS VJ104ANC files found for doy {} year {}'
                        .format(doy, year))
                 logger.error(msg)
                 return ERROR
 
-        # get the Terra CMG file for the current DOY (should only be one)
-        fileList = []    # create empty list to store files matching date
-        for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MOD09CMG.A' + datestr + '*.hdf'):
-                fileList.append(myfile)
-
-        # make sure files were found or print a warning
-        nfiles = len(fileList)
-        if nfiles == 0:
-            found_mod09cmg = False
-        else:
-            # if only one file was found which matched our date, then that's
-            # the file we'll process.  if more than one was found, then we
-            # have a problem as only one file is expected.
-            if nfiles == 1:
-                terra_cmg = dloaddir + '/' + fileList[0]
-            else:
-                msg = ('Multiple LAADS MOD09CMG files found for doy {} year {}'
-                       .format(doy, year))
-                logger.error(msg)
-                return ERROR
-
-        # get the Aqua CMA file for the current DOY (should only be one)
-        fileList = []    # create empty list to store files matching date
-        for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MYD09CMA.A' + datestr + '*.hdf'):
-                fileList.append(myfile)
-
-        # make sure files were found or print a warning
-        nfiles = len(fileList)
-        if nfiles == 0:
-            found_myd09cma = False
-        else:
-            # if only one file was found which matched our date, then that's
-            # the file we'll process.  if more than one was found, then we
-            # have a problem as only one file is expected.
-            if nfiles == 1:
-                aqua_cma = dloaddir + '/' + fileList[0]
-            else:
-                msg = ('Multiple LAADS MOD09CMA files found for doy {} year {}'
-                       .format(doy, year))
-                logger.error(msg)
-                return ERROR
-
-        # get the Aqua CMG file for the current DOY (should only be one)
-        fileList = []    # create empty list to store files matching date
-        for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'MYD09CMG.A' + datestr + '*.hdf'):
-                fileList.append(myfile)
-
-        # make sure files were found or print a warning
-        nfiles = len(fileList)
-        if nfiles == 0:
-            found_myd09cmg = False
-        else:
-            # if only one file was found which matched our date, then that's
-            # the file we'll process.  if more than one was found, then we
-            # have a problem as only one file is expected.
-            if nfiles == 1:
-                aqua_cmg = dloaddir + '/' + fileList[0]
-            else:
-                msg = ('Multiple LAADS MYD09CMA files found for doy {} year {}'
-                       .format(doy, year))
-                logger.error(msg)
-                return ERROR
-
-        # make sure at least one of the Aqua or Terra CMG files is present
-        if not found_myd09cmg and not found_mod09cmg:
-            msg = ('No Aqua or Terra LAADS CMG data available for doy {} year '
-                   '{}. Skipping this date.'
-                   .format(doy, year))
+        # make sure at least one of the JPSS1 or NPP files is present
+        if not found_vj104anc and not found_vnp04anc:
+            msg = ('Neither the JPSS1 nor NPP data is available for doy {} '
+                   'year {}. Skipping this date.'.format(doy, year))
             logger.warning(msg)
             continue
 
-        # make sure at least one of the Aqua or Terra CMA files is present
-        if not found_myd09cma and not found_mod09cma:
-            msg = ('No Aqua or Terra LAADS CMA data available for doy {} year '
-                   '{}. Skipping this date.'
-                   .format(doy, year))
-            logger.warning(msg)
-            continue
-
-        # generate the command-line arguments and executable for combining
-        # the CMG and CMA products
-        terra_cmg_cmdline = ''
-        if found_mod09cmg:
-            terra_cmg_cmdline = '--terra_cmg {}'.format(terra_cmg)
-
-        terra_cma_cmdline = ''
-        if found_mod09cma:
-            terra_cma_cmdline = '--terra_cma {}'.format(terra_cma)
-
-        aqua_cmg_cmdline = ''
-        if found_myd09cmg:
-            aqua_cmg_cmdline = '--aqua_cmg {}'.format(aqua_cmg)
-
-        aqua_cma_cmdline = ''
-        if found_myd09cma:
-            aqua_cma_cmdline = '--aqua_cma {}'.format(aqua_cma)
-
-        cmdstr = ('combine_l8_aux_data {} {} {} {} --output_dir {} --verbose'
-                  .format(terra_cmg_cmdline, terra_cma_cmdline,
-                          aqua_cmg_cmdline, aqua_cma_cmdline, outputDir))
+        # generate the command-line arguments and executable for gap-filling
+        # the VIIRS product (works the same for either VJ104ANC or VNP04ANC)
+        cmdstr = ('viirs_gap_fill {}'.format(viirs_anc))
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
 
-        (status, output) = subprocess.getstatusoutput (cmdstr)
-        logger.info(output)
-        exit_code = status >> 8
-        if exit_code != 0:
-            msg = ('Error running combine_l8_aux_data for year {}, DOY {}'
-                   .format(year, doy))
-            logger.error(msg)
-            return ERROR
-    # end for doy
+# GAIL HERE -- find the correct gap_fill
+###        (status, output) = subprocess.getstatusoutput (cmdstr)
+###        logger.info(output)
+###        exit_code = status >> 8
+###        if exit_code != 0:
+###            msg = ('Error running gap_fill for year {}, DOY {}: {}'
+###                   .format(year, doy, cmdstr))
+###            logger.error(msg)
+###            return ERROR
 
-    # remove the files downloaded to the temporary directory
-    msg = 'Removing downloaded files from {}'.format(dloaddir)
-    logger.info(msg)
-    if os.path.exists(dloaddir):
-        for myfile in os.listdir(dloaddir):
-            name = os.path.join(dloaddir, myfile)
-            os.remove(name)
+        # move the gap-filled file to the output directory
+        msg = ('Moving downloaded files from {} to {}'
+               .format(viirs_anc, outputDir))
+        logger.debug(msg)
+        shutil.move(viirs_anc, outputDir)
+
+    # end for doy
 
     return SUCCESS
 
@@ -507,7 +437,7 @@ def main ():
         action='store_true',
         help='process LAADS data up through the most recent year and DOY')
     msg = ('process or reprocess all LAADS data from today back to {}'
-           .format(START_YEAR))
+           .format(JPSS1_START_YEAR))
     parser.add_option ('--quarterly', dest='quarterly', default=False,
         action='store_true', help=msg)
 
@@ -571,10 +501,10 @@ def main ():
             syear = eyear
 
     elif quarterly:
-        msg = 'Processing LAADS data back to {}'.format(START_YEAR)
+        msg = 'Processing LAADS data back to {}'.format(JPSS1_START_YEAR)
         logger.info(msg)
         eyear = now.year
-        syear = START_YEAR
+        syear = JPSS1_START_YEAR
 
     msg = 'Processing LAADS data for {} - {}'.format(syear, eyear)
     logger.info(msg)
@@ -599,5 +529,5 @@ if __name__ == "__main__":
                                 ' %(filename)s:%(lineno)d:'
                                 '%(funcName)s -- %(message)s'),
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        level=logging.INFO)
+                        level=logging.DEBUG)
     sys.exit (main())

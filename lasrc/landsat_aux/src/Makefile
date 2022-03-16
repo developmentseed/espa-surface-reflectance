@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Makefile for combine L8 auxiliary code
+# Makefile for gapfilling the VIIRS auxiliary data
 #-----------------------------------------------------------------------------
 .PHONY: all install clean
 
@@ -14,11 +14,11 @@ RM    = rm
 EXTRA = -Wall $(EXTRA_OPTIONS)
 
 # Define the include files
-INC = combine_l8_aux_data.h
+INC = gapfill_viirs_aux.h
 
 # Define the source code and object files
 SRC = get_args.c            \
-      combine_l8_aux_data.c
+      gapfill_viirs_aux.c
 OBJ = $(SRC:.c=.o)
 
 # Define include paths
@@ -40,7 +40,7 @@ MATHLIB = -lm
 LOADLIB = $(HDF_EXLIB) $(EXLIB) $(MATHLIB)
 
 # Define C executable s
-EXE = combine_l8_aux_data
+EXE = gapfill_viirs_aux
 
 #-----------------------------------------------------------------------------
 all: $(EXE)

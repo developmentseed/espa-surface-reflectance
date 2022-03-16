@@ -186,9 +186,10 @@ int init_sr_refl
 
     /* Getting parameters for atmospheric correction */
     /* Update to get the parameter of the scene center */
+/* GAIL UPDATES HERE FOR VIIRS */
     *pres = ATMOS_PRES_0;
     *uoz = 0.30;
-    *uwv = 0.5;
+    *uwv = 2.5;
 
     /* Use scene center (and center of the pixel) to compute atmospheric
        parameters */
@@ -233,11 +234,12 @@ int init_sr_refl
     else if (scmg >= CMG_NBLON)
         scmg = CMG_NBLON;
 
+/* GAIL UPDATES HERE FOR VIIRS */
     cmg_pix = lcmg * CMG_NBLON + scmg;
     if (wv[cmg_pix] != 0)
-        *uwv = wv[cmg_pix] / 200.0;
+        *uwv = wv[cmg_pix] / 100.0;
     else
-        *uwv = 0.5;
+        *uwv = 2.5;
 
     if (oz[cmg_pix] != 0)
         *uoz = oz[cmg_pix] / 400.0;

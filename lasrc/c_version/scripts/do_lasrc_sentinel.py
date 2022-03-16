@@ -6,6 +6,7 @@ import subprocess
 import datetime
 from optparse import OptionParser
 import logging
+import glob     # list and manipulate filenames
 
 ERROR = 1
 SUCCESS = 0
@@ -111,10 +112,16 @@ class SurfaceReflectance():
         logger.info (msg)
         os.chdir (xmldir)
 
+        # determine the auxiliary directory for the data
+        auxdir = os.environ.get('LASRC_AUX_DIR')
+        if auxdir is None:
+            logger.error('LASRC_AUX_DIR environment variable not set. Exiting.')
+            return ERROR
+
         # pull the date from the XML filename to determine which auxiliary
         # file should be used for input.
         # Example: S2A_MSI_L1C_T10TFR_20180816_20180903.xml uses the
-        # L8ANC2018228.hdf_fused HDF file.
+        # VJ104ANC.A2018228.001.*.hdf HDF file or VNP04ANC.A2018228.001.*.hdf.
         s2_prefixes_collection = ['S2A', 'S2B']
         if base_xmlfile[0:3] in s2_prefixes_collection:
             # Collection naming convention. Pull the year, month, day from the
@@ -126,7 +133,18 @@ class SurfaceReflectance():
             aux_day = aux_date[6:8]
             myday = datetime.date(int(aux_year), int(aux_month), int(aux_day))
             aux_doy = myday.strftime("%j")
-            aux_file = 'L8ANC{}{}.hdf_fused'.format(aux_year, aux_doy)
+            full_aux_dir = ('{}/LADS/{}'.format(auxdir, aux_year))
+
+            # The auxiliary file could be VJ104ANC or VNP04ANC, however there
+            # should only be one, with VJ104ANC being the priority. And LaSRC
+            # only wants the base filename and not the entire path.
+            aux_files = glob.glob('{}/*04ANC.A{}{}.*.hdf'
+                                  .format(full_aux_dir, aux_year, aux_doy))
+            if len(aux_files) == 0:
+                logger.error('No auxiliary files were found to match '
+                             '*04ANC.A{}{}.*.hdf'.format(aux_year, aux_doy))
+                return ERROR
+            aux_file = os.path.basename(aux_files[0])
         else:
             msg = ('Base XML filename is not recognized as a valid Sentinel-2 '
                    'scene name'.format(base_xmlfile))
