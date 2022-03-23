@@ -22,6 +22,10 @@ NOTES:
 #include "utmtodeg.h"
 #endif
 
+/* Water vapor and ozone fill values (for VIIRS aux) */
+#define WV_FILL 0
+#define OZ_FILL 0
+
 /******************************************************************************
 MODULE:  init_sr_refl
 
@@ -186,7 +190,6 @@ int init_sr_refl
 
     /* Getting parameters for atmospheric correction */
     /* Update to get the parameter of the scene center */
-/* GAIL UPDATES HERE FOR VIIRS */
     *pres = ATMOS_PRES_0;
     *uoz = 0.30;
     *uwv = 2.5;
@@ -234,14 +237,14 @@ int init_sr_refl
     else if (scmg >= CMG_NBLON)
         scmg = CMG_NBLON;
 
-/* GAIL UPDATES HERE FOR VIIRS */
     cmg_pix = lcmg * CMG_NBLON + scmg;
-    if (wv[cmg_pix] != 0)
+
+    if (wv[cmg_pix] != WV_FILL)
         *uwv = wv[cmg_pix] / 100.0;
     else
         *uwv = 2.5;
 
-    if (oz[cmg_pix] != 0)
+    if (oz[cmg_pix] != OZ_FILL)
         *uoz = oz[cmg_pix] / 400.0;
     else
         *uoz = 0.3;
@@ -252,7 +255,6 @@ int init_sr_refl
     else
         *pres = ATMOS_PRES_0;
     *raot550nm = 0.05;
-printf ("   uwv, uoz, pres: %f, %f, %f\n", *uwv, *uoz, *pres);
 
     /* Successful completion */
     return (SUCCESS);

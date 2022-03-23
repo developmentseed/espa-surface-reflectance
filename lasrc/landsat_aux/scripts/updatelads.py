@@ -372,19 +372,17 @@ def getLadsData (auxdir, year, today, token):
 
         # generate the command-line arguments and executable for gap-filling
         # the VIIRS product (works the same for either VJ104ANC or VNP04ANC)
-        cmdstr = ('viirs_gap_fill {}'.format(viirs_anc))
+        cmdstr = ('gapfill_viirs_aux --viirs_aux {}'.format(viirs_anc))
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
-
-# GAIL HERE -- find the correct gap_fill
-###        (status, output) = subprocess.getstatusoutput (cmdstr)
-###        logger.info(output)
-###        exit_code = status >> 8
-###        if exit_code != 0:
-###            msg = ('Error running gap_fill for year {}, DOY {}: {}'
-###                   .format(year, doy, cmdstr))
-###            logger.error(msg)
-###            return ERROR
+        (status, output) = subprocess.getstatusoutput (cmdstr)
+        logger.info(output)
+        exit_code = status >> 8
+        if exit_code != 0:
+            msg = ('Error running gap_fill for year {}, DOY {}: {}'
+                   .format(year, doy, cmdstr))
+            logger.error(msg)
+            return ERROR
 
         # move the gap-filled file to the output directory
         msg = ('Moving downloaded files from {} to {}'
