@@ -70,7 +70,9 @@ See git tag [version_3.3.0]
     3. Various input files and model information provided with the LaSRC auxiliary .tar.gz file
 
 ### Auxiliary Data Updates
-The baseline auxiliary files provided don't include the daily climate data.  In order to generate or update the auxiliary files to the most recent day of year (actually the most current auxiliary files available will be 2-3 days prior to the current day of year do to the latency of the underlying LAADS products) the user will want to run the updatelads.py script available in $PREFIX/bin.  This script can be run with the "--help" argument to print the usage information.  In general the --quarterly argument will reprocess/update all the LAADS data back to 2013.  This is good to do every once in a while to make sure any updates to the LAADS data products are captured.  The --today command-line argument will process the LAADS data for the most recent year.  In general, it is suggested to run the script with --quarterly once a quarter.  Then run the script with --today on a nightly basis.  This should provide an up-to-date version of the auxiliary input data for LaSRC.  The easiest way to accomplish this is to set up a nightly and quarterly cron job.
+The baseline auxiliary files provided don't include the daily climate data.  In order to generate or update the auxiliary files to the most recent day of year (actually the most current auxiliary files available will be 2-3 days prior to the current day of year do to the latency of the underlying LAADS products) the user will want to run the updatelads.py script available in $PREFIX/bin.  This script can be run with the "--help" argument to print the usage information.  In general the --quarterly argument will reprocess/update all the LAADS data back to 2021.  This is good to do every once in a while to make sure any updates to the LAADS data products are captured.  The --today command-line argument will process the LAADS data for the most recent year.  In general, it is suggested to run the script with --quarterly once a quarter.  Then run the script with --today on a nightly basis.  This should provide an up-to-date version of the auxiliary input data for LaSRC.  The easiest way to accomplish this is to set up a nightly and quarterly cron job.  
+
+The generate_monthly_climatology script will generate the monthly climatology that is used for filling the gaps in the daily LAADS VIIRS products.  This script should be run nightly starting on the first of every month and going through the fifth of the month.  This will allow the monthly averages for the previous month to be generated and available, even if the previous month isn't complete with all the auxiliary products due to time lags.  By the fifth of the month, all the auxiliary products from the previous month should be availble (under most conditions) and therefore the final monthly average generated should contain data for the entire month.
 
 NASA GSFC has deprecated the use of ftp access to their data.  The updatelads script uses a public https interface.  Scripted downloads need to use LAADS app keys in order to be properly authorized.  Non-ESPA environments will need to obtain an app key for the LAADS DAAC and add that key to the 'TOKEN' variable at the top of the updatelads.py script.  ESPA environments will be able to run the updatelads.py script as-is.
 
@@ -90,8 +92,13 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 1. Modified the auxiliary file download scripts to download the VIIRS VJ104ANC
    products with the VNP04ANC products as backup.
 2. Added a gapfilling algorithm to fill in the gaps in the ozone and water
-   vapor, excluding the full-length gaps in the polar regions.  Those polar
-   gaps are left as-is.
-3. Modified the LaSRC code to use these new VIIRS products.
-4. Changed L8_AUX_DIR environment variable for storing the LAADS aux products
+   vapor, using weighted averages of monthly averages.
+3. Created a script to generate the monthly averages.  This script should be
+   run nightly from the 1st through the 5th of each month in order to create
+   and update the monthly average for the previous month.  This time range
+   will allow for time lags in the products from the previous month, but also
+   make sure a monthly average is available immediately on the first of each
+   month (even if it isn't quite complete).
+4. Modified the LaSRC code to use these new VIIRS products.
+5. Changed L8_AUX_DIR environment variable for storing the LAADS aux products
    to LASRC_AUX_DIR. This matches the environment variable used by LaSRC.
