@@ -10,7 +10,7 @@ TOP = ../../..
 include $(TOP)/make.config
 
 # Define scripts
-SCRIPTS = updatelads.py
+SCRIPTS = updatelads.py generate_monthly_climatology.py
 
 # Installed but only imported by scripts
 SCRIPT_IMPORTS = \

@@ -18,5 +18,5 @@ ledaps/ledapsAncSrc/convert_ozone
 ledaps/ledapsAncSrc/ncep_repackage
 lasrc/c_version/src/lasrc
 lasrc/c_version/src_pre_collection/lasrc_pre_collection
-lasrc/landsat_aux/src/combine_l8_aux_data
+lasrc/landsat_aux/src/gapfill_viirs_aux
 

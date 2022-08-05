@@ -8,6 +8,7 @@
 #include <libgen.h>
 #include <math.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "mfhdf.h"
 #include "error_handler.h"
 
@@ -32,9 +33,12 @@ typedef struct{
 /* Prototypes */
 int get_args
 (
-    int argc,               /* I: number of cmd-line args */
-    char *argv[],           /* I: string of cmd-line args */
-    char **viirs_aux_file   /* O: address of input VIIRS auxiliary file */
+    int argc,              /* I: number of cmd-line args */
+    char *argv[],          /* I: string of cmd-line args */
+    int *month,            /* O: month (1-12) of auxiliary file to be proc'd */
+    int *day,              /* O: day (1-31) of auxiliary file to be proc'd */
+    int *year,             /* O: year of auxiliary file to be processed */
+    char **viirs_aux_file  /* O: address of input VIIRS auxiliary file */
 );
 
 void usage();

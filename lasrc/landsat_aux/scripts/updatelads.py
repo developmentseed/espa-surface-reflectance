@@ -6,15 +6,18 @@ import os
 import shutil
 import fnmatch
 import datetime
+import calendar
 import subprocess
 import re
 import time
 import subprocess
+
 from optparse import OptionParser
 import requests
 import logging
 from config_utils import retrieve_cfg
 from api_interface import api_connect
+from download_lads import downloadLads
 from io import StringIO
 
 # Global static variables
@@ -32,34 +35,13 @@ JPSS1_START_YEAR = 2021 # quarterly processing will reprocess back to the
 TOKEN = None
 USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + sys.version.replace('\n','').replace('\r','')
 
-# Specify the base location for the LAADS VIIRS data as well as the correct
-# subdirectories for each of the instrument-specific ozone and water vapor
-# products
-SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
-VIIRS_JPSS1 = '/archive/allData/3194/VJ104ANC/'
-VIIRS_NPP = '/archive/allData/5000/VNP04ANC/'
+# leap day start/end of month
+ldaySOM = [ 1, 32, 61,  92, 122, 153, 183, 214, 245, 275, 306, 336]
+ldayEOM = [31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
 
-def isLeapYear (year):
-    """
-    Determines if the specified year is a leap year.
-
-    Args:
-      year: year to determine if it is a leap year (integer)
-
-    Returns:
-      True: yes, this is a leap year
-      False: no, this is not a leap year
-    """
-    if (year % 4) == 0:
-        if (year % 100) == 0:
-            if (year % 400) == 0:
-                return True
-            else:
-                return False
-        else:
-            return True
-    else:
-        return False
+# regular day start/end of month
+rdaySOM = [ 1, 32, 60,  91, 121, 152, 182, 213, 244, 274, 305, 335]
+rdayEOM = [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
 
 
 def geturl(url, token=None, out=None):
@@ -122,122 +104,6 @@ def geturl(url, token=None, out=None):
     return None
 
 
-def buildURLs(year, doy):
-    """
-    Builds the URLs for the VIIRS JPSS1 and NPP products for the current year
-    and DOY, and put that URL on the list.
-
-    Args:
-      year: year of desired LAADS data
-      doy: day of year of desired LAADS data
-
-    Returns:
-      None: error resolving the instrument and associated URL for the
-            specified year and DOY
-      urlList: list of URLs to pull the LAADS data from for the specified
-               year and DOY.
-    """
-    urlList = []     # create empty URL list
-
-    # append JPSS1 as the first/priority file (VJ104ANC) as long as it's
-    # within the JPSS1 range
-    if year >= JPSS1_START_YEAR:
-        url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_JPSS1, year, doy))
-        urlList.append(url)
-
-    # append NPP as the secondary file (VNP04ANC)
-    url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_NPP, year, doy))
-    urlList.append(url)
-
-    return urlList
-
-
-def downloadLads (year, doy, destination, token=None):
-    """
-    Retrieves the files for the specified year and DOY from the LAADS https
-    interface and download to the desired destination.  If the destination
-    directory does not exist, then it is made before downloading.  Existing
-    files in the download directory are removed/cleaned.  This will download
-    the JPSS1 file as the priority and the NPP as the backup, for the current
-    year, DOY.
-
-    Args:
-      year: year of data to download (integer)
-      doy: day of year of data to download (integer)
-      destination: name of the directory on the local system to download the
-          LAADS files
-      token: application token for the desired website
-
-    Returns:
-      ERROR: error occurred while processing
-      SUCCESS: processing completed successfully
-    """
-    # get the logger
-    logger = logging.getLogger(__name__)
-
-    # make sure the download directory exists (and is cleaned up) or create
-    # it recursively
-    if not os.path.exists(destination):
-        msg = '{} does not exist... creating'.format(destination)
-        logger.info(msg)
-        os.makedirs(destination, 0o777)
-    else:
-        # directory already exists and possibly has files in it.  any old
-        # files need to be cleaned up
-        msg = 'Cleaning download directory: {}'.format(destination)
-        logger.info(msg)
-        for myfile in os.listdir(destination):
-            name = os.path.join(destination, myfile)
-            if not os.path.isdir(name):
-                os.remove(name)
-
-    # obtain the list of URL(s) for our particular date
-    urlList = buildURLs(year, doy)
-    if urlList is None:
-        msg = ('LAADS URLs could not be resolved for year {} and DOY {}'
-               .format(year, doy))
-        logger.error(msg)
-        return ERROR
-
-    # download the files from the list of URLs. The list should be the priority
-    # JPSS1 file first (if it falls within the correct date range), followed by
-    # the backup NPP file.
-    msg = 'Downloading data for {}/{} to {}'.format(year, doy, destination)
-    logger.info(msg)
-    for url in urlList:
-        msg = 'Retrieving {} to {}'.format(url, destination)
-        logger.info(msg)
-        cmd = ('wget -e robots=off -m -np -R .html,.tmp -nH --no-directories '
-               '--header \"Authorization: Bearer {}\" -P {} \"{}\"'
-               .format(token, destination, url))
-        retval = subprocess.call(cmd, shell=True, cwd=destination)
-    
-        # make sure the wget was successful or retry up to 5 more times and
-        # sleep in between. if successful then break out of the for loop.
-        if retval:
-            retry_count = 1
-            while ((retry_count <= 5) and (retval)):
-                time.sleep(60)
-                logger.info('Retry {0} of wget for {1}'
-                            .format(retry_count, url))
-                retval = subprocess.call(cmd, shell=True, cwd=destination)
-                retry_count += 1
-    
-            if retval:
-                logger.info('unsuccessful download of {0} (retried 5 times)'
-                            .format(url))
-            else:
-                break
-        else:
-            break
-
-    # make sure the index.html file was removed if it was downloaded
-    index_file = '{}/index.html'.format(destination)
-    del index_file
-    
-    return SUCCESS
-
-
 def getLadsData (auxdir, year, today, token):
     """
     Description: getLadsData downloads the daily VIIRS atmosphere data files
@@ -277,13 +143,29 @@ def getLadsData (auxdir, year, today, token):
         if day_of_year <= 0:
             return SUCCESS
     else:
-        if isLeapYear (year) == True:
+        if calendar.isleap(year):
             day_of_year = 366   
         else:
             day_of_year = 365
 
     # set the download directory in /tmp/lads
     dloaddir = '/tmp/lads/{}'.format(year)
+
+    # make sure the download directory exists or create it and all necessary
+    # parent directories
+    if not os.path.exists(dloaddir):
+        msg = '{} does not exist... creating'.format(dloaddir)
+        logger.info(msg)
+        os.makedirs(dloaddir, 0o777)
+    else:
+        # directory already exists and possibly has files in it.  any old
+        # files need to be cleaned up
+        msg = 'Cleaning download directory: {}'.format(dloaddir)
+        logger.info(msg)
+        for myfile in os.listdir(dloaddir):
+            name = os.path.join(dloaddir, myfile)
+            if not os.path.isdir(name):
+                os.remove(name)
 
     # loop through each day in the year and process the LAADS data.  process
     # in the reverse order so that if we are handling data for "today", then
@@ -370,9 +252,25 @@ def getLadsData (auxdir, year, today, token):
             logger.warning(msg)
             continue
 
+        # determine the month and day (both 1-based) for this year/doy date
+        # indx will be 0-based for the array
+        if calendar.isleap(year):
+            for indx in range(0, len(ldayEOM)):
+                if doy <= ldayEOM[indx]:
+                    break;
+            month = indx+1
+            day = doy - ldaySOM[indx] + 1
+        else:
+            for indx in range(0, len(rdayEOM)):
+                if doy <= rdayEOM[indx]:
+                    break;
+            month = indx+1
+            day = doy - rdaySOM[indx] + 1
+
         # generate the command-line arguments and executable for gap-filling
         # the VIIRS product (works the same for either VJ104ANC or VNP04ANC)
-        cmdstr = ('gapfill_viirs_aux --viirs_aux {}'.format(viirs_anc))
+        cmdstr = ('gapfill_viirs_aux --viirs_aux {} --month {} --day {} '
+                  '--year {}'.format(viirs_anc, month, day, year))
         msg = 'Executing {}'.format(cmdstr)
         logger.info(msg)
         (status, output) = subprocess.getstatusoutput (cmdstr)
@@ -385,7 +283,7 @@ def getLadsData (auxdir, year, today, token):
             return ERROR
 
         # move the gap-filled file to the output directory
-        msg = ('Moving downloaded files from {} to {}'
+        msg = ('Moving downloaded file {} to {}'
                .format(viirs_anc, outputDir))
         logger.debug(msg)
         shutil.move(viirs_anc, outputDir)
@@ -527,5 +425,5 @@ if __name__ == "__main__":
                                 ' %(filename)s:%(lineno)d:'
                                 '%(funcName)s -- %(message)s'),
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     sys.exit (main())

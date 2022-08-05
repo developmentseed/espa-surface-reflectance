@@ -21,6 +21,505 @@ char list_of_sds[N_SDS][50] = {
 #define OZONE 0
 #define WV 1
 
+/******************************************************************************
+MODULE:  file_exists
+
+PURPOSE:  Determines if the specified file exists.
+
+RETURN VALUE:
+Type = bool
+Value          Description
+-----          -----------
+false          File does not exist
+true           File exists
+
+NOTES:
+******************************************************************************/
+bool file_exists
+(
+    char *filename   /* I: file to check for existence */
+)
+{
+    if (access (filename, F_OK) == 0)
+        return true;
+    else
+        return false;
+}
+
+
+/* DAYSTEP is 50/15 . Weight the monthly data by 50% at day 1, another 50%
+ * in 15 days (from day 1 to day 15) and then down to just 50% at day 30
+ */
+#define DAYSTEP 3.3333333
+
+/******************************************************************************
+MODULE:  determine_weights
+
+PURPOSE:  Based on the day of month, the weighting for filling the gaps using
+the monthly averages is set up to use the target/current month, the previous
+month, and the next month.
+
+RETURN VALUE:
+Type = None
+
+NOTES:
+ 1. Weight the monthly data by 50% at day 1, another 50% in 15 days (from
+    day 1 to day 15) and then down to just 50% at day 30.
+******************************************************************************/
+void determine_weights
+(
+    int aux_day,             /* I: day of the auxiliary file (1-31) */
+    float *prev_weight,      /* O: weight for the previous month */
+    float *target_weight,    /* O: weight for the current/target month */
+    float *next_weight       /* O: weight for the next month */
+)
+{
+    int i;    /* looping variable for the day within the month */
+
+    /* Determine the weighting for this day (a very crude sawtooth function).
+       Start with a 50/50 weight between the current month and the previous
+       month. */
+    *target_weight = 50.0;
+    *prev_weight = 50.0;
+    *next_weight = 0.0;
+
+    /* Weighting for the first half of the month (day = 1-15) */
+    for (i = 1; i <= 15; i++)
+    {
+        if (i >= aux_day)
+            break;
+
+        *target_weight += DAYSTEP;
+        *prev_weight -= DAYSTEP;
+    }
+
+    /* Weighting for the second half of the month (day = 16-31) */
+    if (aux_day >= 15)
+    {
+        for(i = 16; i <= 31; i++)
+        {
+            if (i == aux_day)
+                break;
+
+            *target_weight -= DAYSTEP;
+            *next_weight += DAYSTEP;
+        }
+    }
+
+    /* Adjust the weights to zero if they are below 3.0 */
+    if (*prev_weight < 3.0)
+        *prev_weight = 0.0;
+    if (*next_weight < 3.0)
+        *next_weight = 0.0;
+}
+
+
+/******************************************************************************
+MODULE:  read_monthly_avgs
+
+PURPOSE:  Determines the previous, target, and next monthly averages, and
+based on the weights, reads those monthly averages to be used for gapfilling.
+
+RETURN VALUE:
+Type = int
+Value          Description
+-----          -----------
+ERROR          Error occurred reading the monthly averages or the monthly
+               averages are not available
+SUCCESS        Successful completion
+
+NOTES:
+******************************************************************************/
+int read_monthly_avgs
+(
+    int aux_month,        /* I: month of the auxiliary file (1-12) */
+    int aux_year,         /* I: year of the auxiliary file */
+    int n_pixels,         /* I: number of pixels in the monthly avg 1D array */
+    float prev_weight,    /* I: weight for the previous month */
+    float target_weight,  /* I: weight for the current/target month */
+    float next_weight,    /* I: weight for the next month */
+    uint8* monthly_avg_oz_data[3],  /* O: array of the ozone data for
+                                previous month, target month, next month. If
+                                the weight is 0, then the data will be NULL. */
+    uint16* monthly_avg_wv_data[3]  /* O: array of the water vapor data
+                                for previous month, target month, next month. If
+                                the weight is 0, then the data will be NULL. */
+)
+{
+    char FUNC_NAME[] = "read_monthly_avgs"; /* function name */
+    char errmsg[STR_SIZE];   /* error message */
+    char envvar[STR_SIZE];   /* LASRC_AUX_DIR environment variable contents */
+    char aux_dir[STR_SIZE];  /* location of monthly averages aux files */
+    char oz_monthly_file[3][STR_SIZE]; /* input ozone monthly files (previous
+                                month, current month, next month) */
+    char wv_monthly_file[3][STR_SIZE]; /* input water vapor monthly files
+                                (previous month, current month, next month)*/
+    int prev_month;          /* previous month for filling gaps */
+    int next_month;          /* next month for filling gaps */
+    FILE *mavg_fp = NULL;    /* file pointer for monthly averages */
+
+    /* Determine which months will be used for gapfilling */
+    prev_month = aux_month - 1;
+    if (prev_month <= 0)
+        prev_month = 12;
+
+    next_month = aux_month + 1;
+    if (next_month > 12)
+        next_month = 1;
+
+    /* Get the LASRC auxiliary environment variable */
+    if (!getenv ("LASRC_AUX_DIR"))
+    {
+        sprintf (errmsg, "LASRC_AUX_DIR environment variable is not defined.");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+    snprintf (envvar, STR_SIZE, "%s", getenv("LASRC_AUX_DIR"));
+    sprintf (aux_dir, "%s/monthly_avgs", envvar);
+
+    /* Determine the name of the monthly average files to be opened - previous
+       month, current/target month, next month. For the previous month, start
+       with the current year.  If that isn't available, then we will have to
+       pull the previous year.  For the target and next month, we will have to
+       pull the previous year because the monthly averages for those months
+       aren't available in the current year. */
+    sprintf (oz_monthly_file[0], "%s/%d/monthly_avg_oz_%4d_%02d.img", aux_dir,
+        aux_year, aux_year, prev_month);
+    sprintf (wv_monthly_file[0], "%s/%d/monthly_avg_wv_%4d_%02d.img", aux_dir,
+        aux_year, aux_year, prev_month);
+    sprintf (oz_monthly_file[1], "%s/%d/monthly_avg_oz_%4d_%02d.img", aux_dir,
+        aux_year-1, aux_year-1, aux_month);
+    sprintf (wv_monthly_file[1], "%s/%d/monthly_avg_wv_%4d_%02d.img", aux_dir,
+        aux_year-1, aux_year-1, aux_month);
+    sprintf (oz_monthly_file[2], "%s/%d/monthly_avg_oz_%4d_%02d.img", aux_dir,
+        aux_year-1, aux_year-1, next_month);
+    sprintf (wv_monthly_file[2], "%s/%d/monthly_avg_wv_%4d_%02d.img", aux_dir,
+        aux_year-1, aux_year-1, next_month);
+
+    /* Initialize the monthly average ozone and water vapor pointers to NULL
+       for the previous, target, and next month datasets */
+    monthly_avg_oz_data[0] = NULL;
+    monthly_avg_oz_data[1] = NULL;
+    monthly_avg_oz_data[2] = NULL;
+    monthly_avg_wv_data[0] = NULL;
+    monthly_avg_wv_data[1] = NULL;
+    monthly_avg_wv_data[2] = NULL;
+
+    /* Check for the existence and open the previous month's averages, but
+       only if they will be used */
+    if (prev_weight > 0.0)
+    {
+        /* If the file doesn't exist for the current year, then check last
+           year */
+        /* ozone */
+        if (!file_exists (oz_monthly_file[0]))
+        {
+            sprintf (oz_monthly_file[0], "%s/%d/monthly_avg_oz_%4d_%02d.img",
+                aux_dir, aux_year-1, aux_year-1, prev_month);
+            if (!file_exists (oz_monthly_file[0]))
+            {
+                sprintf (errmsg, "Monthly ozone averages for the previous "
+                    "month (%d) do not exist for the current year (%d) or the "
+                    "previous year (%d). %s", prev_month, aux_year, aux_year-1,
+                    oz_monthly_file[0]);
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
+        }
+
+        /* Allocate data for the previous monthly avg array */
+        monthly_avg_oz_data[0] = calloc (n_pixels, sizeof(uint8));
+        if (monthly_avg_oz_data[0] == NULL)
+        {
+            sprintf (errmsg, "Error allocating memory for the previous monthly "
+                "ozone average");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Read the data for return */
+        printf ("Previous monthly averages OZ file: %s\n", oz_monthly_file[0]); 
+        mavg_fp = fopen (oz_monthly_file[0], "r");
+        if (!mavg_fp)
+        {
+            sprintf (errmsg, "Not able to open the monthly ozone average: %s",
+                oz_monthly_file[0]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (fread (&monthly_avg_oz_data[0][0], sizeof(uint8), n_pixels,
+            mavg_fp) != n_pixels)
+        {
+            sprintf (errmsg, "Error reading the monthly ozone average: %s",
+                oz_monthly_file[0]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        fclose (mavg_fp);
+
+        /* water vapor */
+        if (!file_exists (wv_monthly_file[0]))
+        {
+            sprintf (wv_monthly_file[0], "%s/%d/monthly_avg_wv_%4d_%02d.img",
+                aux_dir, aux_year-1, aux_year-1, prev_month);
+            if (!file_exists (wv_monthly_file[0]))
+            {
+                sprintf (errmsg, "Monthly water vapor averages for the "
+                    "previous month (%d) do not exist for the current year "
+                    "(%d) or the previous year (%d). %s", prev_month, aux_year,
+                    aux_year-1, wv_monthly_file[0]);
+                error_handler (true, FUNC_NAME, errmsg);
+                return (ERROR);
+            }
+        }
+
+        /* Allocate data for the previous monthly avg array */
+        monthly_avg_wv_data[0] = calloc (n_pixels, sizeof(uint16));
+        if (monthly_avg_wv_data[0] == NULL)
+        {
+            sprintf (errmsg, "Error allocating memory for the previous monthly "
+                "water vapor average");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Read the data for return */
+        printf ("Previous monthly averages WV file: %s\n", wv_monthly_file[0]); 
+        mavg_fp = fopen (wv_monthly_file[0], "r");
+        if (!mavg_fp)
+        {
+            sprintf (errmsg, "Not able to open the monthly WV average: %s",
+                wv_monthly_file[0]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (fread (&monthly_avg_wv_data[0][0], sizeof(uint16), n_pixels,
+            mavg_fp) != n_pixels)
+        {
+            sprintf (errmsg, "Error reading the monthly WV average: %s",
+                wv_monthly_file[0]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        fclose (mavg_fp);
+    }
+
+    /* Check for the existence and open the target month's averages */
+    /* ozone */
+    if (!file_exists (oz_monthly_file[1]))
+    {
+        sprintf (errmsg, "Monthly ozone averages for the target month (%d) "
+            "do not exist for the previous year (%d). %s", aux_month,
+            aux_year-1, oz_monthly_file[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Allocate data for the target monthly avg array */
+    monthly_avg_oz_data[1] = calloc (n_pixels, sizeof(uint8));
+    if (monthly_avg_oz_data[1] == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for the target monthly "
+            "ozone average");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Read the data for return */
+    printf ("Target monthly averages OZ file: %s\n", oz_monthly_file[1]); 
+    mavg_fp = fopen (oz_monthly_file[1], "r");
+    if (!mavg_fp)
+    {
+        sprintf (errmsg, "Not able to open the monthly ozone average: %s",
+            oz_monthly_file[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+ 
+    if (fread (&monthly_avg_oz_data[1][0], sizeof(uint8), n_pixels,
+        mavg_fp) != n_pixels)
+    {
+        sprintf (errmsg, "Error reading the monthly ozone average: %s",
+            oz_monthly_file[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+ 
+    fclose (mavg_fp);
+
+    /* water vapor */
+    if (!file_exists (wv_monthly_file[1]))
+    {
+        sprintf (errmsg, "Monthly water vapor averages for the target month "
+            "(%d) do not exist for the previous year (%d). %s", aux_month,
+            aux_year-1, wv_monthly_file[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Allocate data for the target monthly avg array */
+    monthly_avg_wv_data[1] = calloc (n_pixels, sizeof(uint16));
+    if (monthly_avg_wv_data[1] == NULL)
+    {
+        sprintf (errmsg, "Error allocating memory for the target monthly "
+            "water vapor average");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Read the data for return */
+    printf ("Target monthly averages WV file: %s\n", wv_monthly_file[1]); 
+    mavg_fp = fopen (wv_monthly_file[1], "r");
+    if (!mavg_fp)
+    {
+        sprintf (errmsg, "Not able to open the monthly WV average: %s",
+            wv_monthly_file[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    if (fread (&monthly_avg_wv_data[1][0], sizeof(uint16), n_pixels,
+        mavg_fp) != n_pixels)
+    {
+        sprintf (errmsg, "Error reading the monthly WV average: %s",
+            wv_monthly_file[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    fclose (mavg_fp);
+
+    /* Check for the existence and open the next month's averages, but only
+       if they will be used */
+    if (next_weight > 0.0)
+    {
+        /* ozone */
+        if (!file_exists (oz_monthly_file[2]))
+        {
+            sprintf (errmsg, "Monthly ozone averages for the next month (%d) "
+                "do not exist for the previous year (%d). %s", next_month,
+                aux_year-1, oz_monthly_file[2]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Allocate data for the next monthly avg array */
+        monthly_avg_oz_data[2] = calloc (n_pixels, sizeof(uint8));
+        if (monthly_avg_oz_data[2] == NULL)
+        {
+            sprintf (errmsg, "Error allocating memory for the next monthly "
+                "ozone average");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Read the data for return */
+        printf ("Next monthly averages OZ file: %s\n", oz_monthly_file[2]); 
+        mavg_fp = fopen (oz_monthly_file[2], "r");
+        if (!mavg_fp)
+        {
+            sprintf (errmsg, "Not able to open the monthly ozone average: %s",
+                oz_monthly_file[2]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (fread (&monthly_avg_oz_data[2][0], sizeof(uint8), n_pixels,
+            mavg_fp) != n_pixels)
+        {
+            sprintf (errmsg, "Error reading the monthly ozone average: %s",
+                oz_monthly_file[2]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        fclose (mavg_fp);
+
+        /* water vapor */
+        if (!file_exists (wv_monthly_file[2]))
+        {
+            sprintf (errmsg, "Monthly water vapor averages for the next month "
+                "(%d) do not exist for the previous year (%d). %s", next_month,
+                aux_year-1, wv_monthly_file[2]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Allocate data for the next monthly avg array */
+        monthly_avg_wv_data[2] = calloc (n_pixels, sizeof(uint16));
+        if (monthly_avg_wv_data[2] == NULL)
+        {
+            sprintf (errmsg, "Error allocating memory for the next monthly "
+                "water vapor average");
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        /* Read the data for return */
+        printf ("Next monthly averages WV file: %s\n", wv_monthly_file[2]);
+        mavg_fp = fopen (wv_monthly_file[2], "r");
+        if (!mavg_fp)
+        {
+            sprintf (errmsg, "Not able to open the monthly WV average: %s",
+                wv_monthly_file[2]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        if (fread (&monthly_avg_wv_data[2][0], sizeof(uint16), n_pixels,
+            mavg_fp) != n_pixels)
+        {
+            sprintf (errmsg, "Error reading the monthly WV average: %s",
+                wv_monthly_file[2]);
+            error_handler (true, FUNC_NAME, errmsg);
+            return (ERROR);
+        }
+
+        fclose (mavg_fp);
+    }
+
+    return (SUCCESS);
+}
+
+
+/******************************************************************************
+MODULE:  get_fill_value
+
+PURPOSE:  Determines the weighted average to be used for filling the gaps.
+
+RETURN VALUE:
+Type = float
+Value          Description
+-----          -----------
+float          Weighted average
+
+NOTES:
+******************************************************************************/
+float get_fill_value
+(
+    float prev_weight,    /* I: weight for the previous month */
+    float target_weight,  /* I: weight for the current/target month */
+    float next_weight,    /* I: weight for the next month */
+    float prev_avg,       /* I: previous month average for this pixel */
+    float target_avg,     /* I: current/target month average for this pixel */
+    float next_avg        /* I: next month average for this pixel */
+)
+{
+    float wgt_avg;   /* weighted average for this pixel */
+
+    wgt_avg = target_avg * (target_weight * 0.01);
+    if (prev_weight > 0.0)
+        wgt_avg += prev_avg * (prev_weight * 0.01);
+    if (next_weight > 0.0)
+        wgt_avg += next_avg * (next_weight * 0.01);
+
+    return (wgt_avg);
+}
+
 
 /******************************************************************************
 MODULE:  gapfill_viirs_aux
@@ -46,25 +545,40 @@ int main (int argc, char **argv)
     char FUNC_NAME[] = "main"; /* function name */
     char errmsg[STR_SIZE];     /* error message */
     char *viirs_aux_file = NULL;  /* input VIIRS auxiliary file */
-    char sdsname[STR_SIZE];       /* ozone and water vapor SDS name */
+    char sdsname[STR_SIZE];  /* ozone and water vapor SDS name */
     bool found;              /* was the SDS found */
     iparam viirs_params[TOTAL_N_SDS]; /* array of VIIRS SDS parameters */
     long pix;                /* current pixel location in the 1D array */
     int i, j;                /* looping variables */
     int nbits;               /* number of bits per pixel for this data array */
-    int line;                /* current line in the CMG data array */
-    int samp;                /* current sample in the line */
-    int left, right;         /* pixel locations for interpolation */ 
     int n_pixels;            /* number of pixels in this 1D array */
     int retval;              /* return status */
-    uint8 *ozone = NULL;     /* pointer to the ozone data */
-    int32 dims[2] = {IFILL, IFILL}; /* dimensions of desired CMG/CMA SDSs */
+    int aux_month;           /* month of the auxiliary file (1-12) */
+    int aux_day;             /* day of the auxiliary file (1-31) */
+    int aux_year;            /* year of the auxiliary file */
+    int32 dims[2] = {IFILL, IFILL}; /* dimensions of desired SDSs */
     int32 sds_id[N_SDS+1];   /* SDS IDs for the output file */
     int32 start[2];          /* starting location in each dimension */
-    int32 dtype;             /* Terra/Aqua data type */
+    int32 dtype;             /* VIIRS data type */
+    float target_weight;     /* weight for the current/target month */
+    float prev_weight;       /* weight for the previous month */
+    float next_weight;       /* weight for the next month */
+    float prev_oz;           /* previous ozone value for the monthly avg */
+    float target_oz;         /* target ozone value for the monthly avg */
+    float next_oz;           /* next ozone value for the monthly avg */
+    float prev_wv;           /* previous water vapor value for monthly avg */
+    float target_wv;         /* target water vapor value for the monthly avg */
+    float next_wv;           /* next water vapor value for the monthly avg */
+    uint8 *ozone = NULL;     /* pointer to the ozone data */
+    uint8 *monthly_avg_oz_data[3];  /* array of the ozone data for previous
+                                       month, target month, next month */
+    uint16 *wv = NULL;       /* pointer to the water vapor data */
+    uint16 *monthly_avg_wv_data[3]; /* array of the water vapor data for prev
+                                       month, target month, next month */
 
     /* Read the command-line arguments */
-    retval = get_args (argc, argv, &viirs_aux_file);
+    retval = get_args (argc, argv, &aux_month, &aux_day, &aux_year,
+        &viirs_aux_file);
     if (retval != SUCCESS)
     {   /* get_args already printed the error message */
         exit (ERROR);
@@ -178,51 +692,71 @@ int main (int argc, char **argv)
         }
     }
 
-    /* Interpolate water vapor and ozone data, but only for the gaps which
-       don't span the entire globe.  Those are more likely gaps in the polar
-       regions.  Use the ozone data to identify the fill pixels, which are the
-       same for both ozone and water vapor. */
-    printf ("Interpolating VIIRS products for WV and OZ ...\n");
+    /* Determine the gapfill weighting for this day */
+    determine_weights (aux_day, &prev_weight, &target_weight, &next_weight);
+    printf ("Gapfill weights: Target: %.02f  Previous: %.02f  Next: %.02f\n",
+        target_weight, prev_weight, next_weight);
+
+    /* Read the data for each of the previous, target, and next monthly avgs
+       for ozone and water vapor. Allocates memory for the arrays. Returns a
+       NULL pointer in the array if the previous or next weight is zero. */
+    retval = read_monthly_avgs (aux_month, aux_year, n_pixels, prev_weight,
+        target_weight, next_weight, monthly_avg_oz_data, monthly_avg_wv_data);
+    if (retval == ERROR)
+    {
+        sprintf (errmsg, "Unable to read the monthly averages needed for "
+            "gapfilling the VIIRS file.");
+        error_handler (true, FUNC_NAME, errmsg);
+        exit (ERROR);
+    }
+
+    /* Fill in the gaps using a weighted value from the monthly averages.  Use
+       the ozone data to identify the fill/gap pixels, which are the same for
+       both ozone and water vapor. */
+    printf ("Gapfilling VIIRS products for WV and OZ ...\n");
     ozone = (uint8 *) viirs_params[OZONE].data;
+    wv = (uint16 *) viirs_params[WV].data;
     if (dims[0] == 3600)
     {  /* then, yeah, we have a CMG */
-        for (line = 0; line < dims[0]; line++)
+        for (pix = 0; pix < dims[0] * dims[1]; pix++)
         {
-            /* Get the current pixel location in the 1D array for this line */
-            pix = (long) line * dims[1];
+            /* If the pixel is not fill then continue */
+            if (ozone[pix] != VIIRS_FILL)
+                continue;
 
-            /* Loop through the pixels in this line */
-            left = right = -1;
-            for (samp = 0; samp < dims[1]; samp++)
+            /* Fill this pixel */
+            target_oz = (float) monthly_avg_oz_data[1][pix];
+            target_wv = (float) monthly_avg_wv_data[1][pix];
+
+            prev_oz = 0.0;
+            prev_wv = 0.0;
+            if (prev_weight > 0.0)
             {
-                /* If the pixel is not fill then continue */
-                if (ozone[pix+samp] != VIIRS_FILL)
-                    continue;
-
-                /* Find the left and right pixels in the line to use for
-                   interpolation.  Basically need the non-fill pixels
-                   surrounding the current pixel. */
-                left = right = samp;
-                while (ozone[pix+right] == VIIRS_FILL)
-                    right++;
-                samp = right;
-                left--;
-
-                /* Interpolate the fill area, but skip large gaps which are
-                   likely in the arctic regions. We will use the interpolation
-                   for filling the "smaller" gaps that are more reasonable. */
-                if (abs (right - left) <= 900)
-                {
-                    /* Interpolate all fill pixels between the left and right
-                       non-fill pixels for the ozone and water vapor data */
-                    interpolate (DFNT_UINT8, viirs_params[OZONE].data, pix,
-                        left, right);
-                    interpolate (DFNT_UINT16, viirs_params[WV].data, pix, left,
-                        right);
-                }
+                prev_oz = (float) monthly_avg_oz_data[0][pix];
+                prev_wv = (float) monthly_avg_wv_data[0][pix];
             }
-        }
+
+            next_oz = 0.0;
+            next_wv = 0.0;
+            if (next_weight > 0.0)
+            {
+                next_oz = (float) monthly_avg_oz_data[2][pix];
+                next_wv = (float) monthly_avg_wv_data[2][pix];
+            }
+
+            ozone[pix] = (uint8) get_fill_value (prev_weight, target_weight,
+                next_weight, prev_oz, target_oz, next_oz);
+            wv[pix] = (uint16) get_fill_value (prev_weight, target_weight,
+                next_weight, prev_wv, target_wv, next_wv);
+        }  /* for pix */
     }  /* if dims[0] */
+    else
+    {
+        sprintf (errmsg, "Unexpected dimensions (%d lines x %d samps). Should "
+            "be 3600 x 7200.", dims[0], dims[1]);
+        error_handler (true, FUNC_NAME, errmsg);
+        exit (ERROR);
+    }
 
     /* Write each SDS to the output file */
     start[0] = 0;
@@ -259,91 +793,16 @@ int main (int argc, char **argv)
     SDendaccess (sds_id[i]);
     free (viirs_aux_file);
 
+    /* Free the ozone and water vapor monthly average data */
+    free (monthly_avg_oz_data[0]);
+    free (monthly_avg_oz_data[1]);
+    free (monthly_avg_oz_data[2]);
+    free (monthly_avg_wv_data[0]);
+    free (monthly_avg_wv_data[1]);
+    free (monthly_avg_wv_data[2]);
+
     /* Successful completion */
     exit (SUCCESS);
-}
-
-
-/******************************************************************************
-MODULE:  interpolate
-
-PURPOSE:  Interpolates all fill pixels between the left and right pixels.
-
-RETURN VALUE:
-Type = None
-
-NOTES:
-  1. Only supports uint8 and uint16.
-******************************************************************************/
-void interpolate
-(
-    int32 data_type,     /* I: data type of the data array */
-    void *data,          /* I: data array */
-    long lineoffset,     /* I: pixel location for the start of this line */
-    int left,            /* I: location in the line of the left pixel */
-    int right            /* I: location in the line of the right pixel */
-)
-{
-    uint8 *ui8x = NULL;     /* uint8 pointer */
-    uint16 *ui16x = NULL;   /* uint16 pointer */
-    int i;                  /* looping variable */
-    int diff;               /* distance between the left and right pixels */
-    float slope;            /* slope for this pixel */
-
-    /* Determine the distance between the left and right pixels */
-    diff = right - left;
-
-    /* Handle the interpolation between the pixels based on the data type */
-    if (data_type == DFNT_UINT8)
-    {
-        ui8x = (uint8 *)data;
-        if (ui8x[lineoffset+right] > ui8x[lineoffset+left])
-        {
-            slope = ((float) ui8x[lineoffset+right] -
-                     (float) ui8x[lineoffset+left]) / (float) (diff);
-            for (i = 0; i < diff; i++)
-            {
-                ui8x[lineoffset+i+left] = (uint8)
-                    ((float) ui8x[lineoffset+left] + (slope * i));
-            }
-        }
-        else
-        {
-            slope = ((float) ui8x[lineoffset+left] - 
-                     (float) ui8x[lineoffset+right]) / (float) (diff);
-            for (i = 0; i < diff; i++)
-            {
-                ui8x[lineoffset+i+left] = (uint8)
-                    ((float) ui8x[lineoffset+left] - (slope * i));
-            }
-        }
-    }
-    else if (data_type == DFNT_UINT16)
-    {
-        ui16x = (uint16 *)data;
-        if (ui16x[lineoffset+right] > ui16x[lineoffset+left])
-        {
-            slope = ((float) ui16x[lineoffset+right] - 
-                     (float) ui16x[lineoffset+left]) / (float) (diff);
-            for (i = 0; i < diff; i++)
-            {
-                ui16x[lineoffset+i+left] = (uint16)
-                    ((float) ui16x[lineoffset+left] + (slope * i));
-            }
-        }
-        else
-        {
-            slope = ((float) ui16x[lineoffset+left] -
-                     (float) ui16x[lineoffset+right]) / (float)(diff);
-            for (i = 0; i < diff; i++)
-            {
-                ui16x[lineoffset+i+left] = (uint16)
-                    ((float) ui16x[lineoffset+left] - (slope * i));
-            }
-        }
-    }
-
-    return;
 }
 
 
@@ -504,15 +963,20 @@ NOTES:
 void usage ()
 {
     printf ("gapfill_viirs_aux reads the ozone and water vapor SDSs from "
-            "the VIIRS auxiliary data, fills the gaps, and writes the new "
-            "data back out to the HDF file.\n\n");
-    printf ("usage: gapfill_viirs_aux "
-            "--viirs_aux=input_viirs_aux_filename\n");
+            "the VIIRS auxiliary data, fills the gaps using monthly "
+            "climatology averages, and writes the new data back out to the "
+            "HDF file.\n\n");
+    printf ("usage: gapfill_viirs_aux --viirs_aux=input_viirs_aux_filename "
+            "--month=month_of_aux_file --day=day_of_month_of_aux_file "
+            "--year=year_of_aux_file\n");
 
     printf ("\nwhere the following parameters are required:\n");
     printf ("    -viirs_aux: name of the input VIIRS auxiliary file (VNP04ANC "
             "or VJ104ANC) to be processed. The ozone and water vapor SDSs "
-            "will be modified with the gapfilled data.\n");
+            "will be modified with the gapfilled data.\n"
+            "    -month: month (1-12) of the auxiliary file\n"
+            "    -day: day of month (1-31) of the auxiliary file\n"
+            "    -year: year of the auxiliary file\n\n");
 
     printf ("\ngapfill_viirs_aux --help will print the usage statement\n");
 }
