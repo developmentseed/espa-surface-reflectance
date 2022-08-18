@@ -23,8 +23,8 @@ OBJ = $(SRC:.c=.o)
 
 # Define include paths
 INCDIR = -I. -I$(ESPAINC) -I$(XML2INC)
-HDF_INCDIR = -I$(HDFINC) -I$(HDFEOS_INC) -I$(HDFEOS_GCTPINC)
-NCFLAGS  = $(EXTRA) $(INCDIR) $(HDF_INCDIR)
+HDF5_INCDIR = -I$(HDF5INC) -I$(HDFEOS5_INC)
+NCFLAGS  = $(EXTRA) $(INCDIR) $(HDF5_INCDIR)
 
 # Define the object libraries
 EXLIB = -L$(ESPALIB) -l_espa_common \
@@ -32,12 +32,10 @@ EXLIB = -L$(ESPALIB) -l_espa_common \
         -L$(LZMALIB) -llzma \
         -L$(SZIPLIB) -lsz \
         -L$(ZLIBLIB) -lz
-HDF_EXLIB = -L$(HDFEOS_LIB) -lhdfeos \
-            -L$(HDFLIB) -lmfhdf -ldf \
-            -L$(JPEGLIB) -ljpeg \
-            -L$(HDFEOS_GCTPLIB) -lGctp
+HDF5_EXLIB = -L$(HDF5LIB) -lhdf5_hl -lhdf5 \
+             -L$(JPEGLIB) -ljpeg
 MATHLIB = -lm
-LOADLIB = $(HDF_EXLIB) $(EXLIB) $(MATHLIB)
+LOADLIB = $(HDF5_EXLIB) $(EXLIB) $(MATHLIB)
 
 # Define C executable s
 EXE = gapfill_viirs_aux

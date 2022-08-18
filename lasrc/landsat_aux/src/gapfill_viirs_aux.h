@@ -3,13 +3,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <ctype.h>
 #include <libgen.h>
 #include <math.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include "mfhdf.h"
+#include "hdf5.h"
 #include "error_handler.h"
 
 #define MAXLENGTH 128
@@ -18,17 +18,6 @@
 /* Define the input fill value */
 #define VIIRS_FILL 0
 #define IFILL -1
-
-typedef struct{
-   int32 sd_id;
-   int32 sds_id;
-   bool process;
-   int32 data_type;
-   int sds_dims[2];
-   void *data;
-   char sdsname[100];
-} iparam;
-
 
 /* Prototypes */
 int get_args
@@ -43,19 +32,12 @@ int get_args
 
 void usage();
 
-int parse_sds_info
+int open_oz_wv_datasets
 (
-    char *filename,          /* I: VIIRS file to be read */
-    iparam viirs_params[]    /* O: array of structs for VIIRS params */
-);
-
-void interpolate
-(
-    int32 data_type,     /* I: data type of the data array */
-    void *data,          /* I: data array */
-    long lineoffset,     /* I: pixel location for the start of this line */
-    int left,            /* I: location in the line of the left pixel */
-    int right            /* I: location in the line of the right pixel */
+    char *filename,       /* I: VIIRS file to be read */
+    hid_t *file_id,       /* O: VIIRS file id */
+    hid_t *ozone_dsid,    /* O: ozone dataset ID */
+    hid_t *wv_dsid        /* O: water vapor dataset ID */
 );
 
 #endif

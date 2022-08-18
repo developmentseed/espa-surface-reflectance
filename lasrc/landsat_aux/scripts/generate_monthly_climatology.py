@@ -237,7 +237,7 @@ def downloadFiles(dloaddir, year, start_doy, end_doy, token):
         # get the JPSS1 file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.hdf'.format(datestr)):
+            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.h5'.format(datestr)):
                 fileList.append (myfile)
 
         # make sure files were found or search for the NPP file
@@ -245,7 +245,7 @@ def downloadFiles(dloaddir, year, start_doy, end_doy, token):
         if nfiles == 0:
             # get the NPP file for the current DOY (should only be one)
             for myfile in os.listdir(dloaddir):
-                if fnmatch.fnmatch (myfile, 'VNP04ANC.A{}*.hdf'
+                if fnmatch.fnmatch (myfile, 'VNP04ANC.A{}*.h5'
                                     .format(datestr)):
                     fileList.append (myfile)
 
@@ -424,7 +424,7 @@ def main ():
     count = 0
     for doy in range(min_doy, max_doy+1):
         logger.info('Processing DOY {}'.format(doy))
-        glob_pattern = ('{}/*4ANC.A{:04d}{:03d}.*.hdf'
+        glob_pattern = ('{}/*4ANC.A{:04d}{:03d}.*.h5'
                         .format(auxdir_in, aux_year, doy))
         doy_file = glob.glob(glob_pattern)
 
@@ -444,10 +444,10 @@ def main ():
                      .format(len(doy_file), doy_file[0]))
 
         # generate the SDS names for the ozone and water vapor bands
-        oz_sds = ('HDF4_EOS:EOS_GRID:\"{}\":VIIRS_CMG:'
-                  '\"Coarse Resolution Ozone\"'.format(doy_file[0]))
-        wv_sds = ('HDF4_EOS:EOS_GRID:\"{}\":VIIRS_CMG:'
-                  '\"Coarse Resolution Water Vapor\"'.format(doy_file[0]))
+        oz_sds = ('HDF5:\"{}\"://HDFEOS/GRIDS/VIIRS_CMG/Data_Fields/'
+                  'Coarse_Resolution_Ozone'.format(doy_file[0]))
+        wv_sds = ('HDF5:\"{}\"://HDFEOS/GRIDS/VIIRS_CMG/Data_Fields/'
+                  'Coarse_Resolution_Water_Vapor'.format(doy_file[0]))
 
         # process the current file and add the SDS data to the overall total
         # for ozone and water vapor

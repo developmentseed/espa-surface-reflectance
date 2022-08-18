@@ -181,7 +181,7 @@ def getLadsData (auxdir, year, today, token):
         # hopes that the JPSS1 product becomes available.
         skip_date = False
         for myfile in os.listdir(outputDir):
-            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.hdf'.format(datestr)) \
+            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.h5'.format(datestr)) \
                     and today:
                 msg = ('JPSS1 product for VJ104ANC.A{} already exists. Skip.'
                        .format(datestr))
@@ -205,7 +205,7 @@ def getLadsData (auxdir, year, today, token):
         # get the JPSS1 file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.hdf'.format(datestr)):
+            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.h5'.format(datestr)):
                 fileList.append (myfile)
 
         # make sure files were found or search for the NPP file
@@ -213,7 +213,7 @@ def getLadsData (auxdir, year, today, token):
         if nfiles == 0:
             # get the NPP file for the current DOY (should only be one)
             for myfile in os.listdir(dloaddir):
-                if fnmatch.fnmatch (myfile, 'VNP04ANC.A{}*.hdf'
+                if fnmatch.fnmatch (myfile, 'VNP04ANC.A{}*.h5'
                                     .format(datestr)):
                     fileList.append (myfile)
 
@@ -311,8 +311,9 @@ def getLadsData (auxdir, year, today, token):
 #    --start_year / --end_year.
 # 2. --today will process the data for the most recent year (including the
 #    previous year if the DOY is within the first month of the year).  Thus
-#    this option is used for nightly updates.  If the hdf fused data products
-#    already exist for a particular year/doy, they will not be reprocessed.
+#    this option is used for nightly updates.  If the gapfilled VJ104 data
+#    products already exist for a particular year/doy, they will not be
+#    reprocessed.
 # 3. --quarterly will process the data for today all the way back to the
 #    earliest year so that any updated LAADS files are picked up and
 #    processed.  Thus this option is used for quarterly updates.
