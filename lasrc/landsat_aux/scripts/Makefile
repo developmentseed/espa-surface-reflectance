@@ -15,7 +15,8 @@ SCRIPTS = updatelads.py generate_monthly_climatology.py
 # Installed but only imported by scripts
 SCRIPT_IMPORTS = \
     api_interface.py \
-    config_utils.py
+    config_utils.py \
+    download_lads.py
 
 #-----------------------------------------------------------------------------
 all:

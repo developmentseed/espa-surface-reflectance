@@ -22,8 +22,15 @@ JPSS1_START_YEAR = 2021 # quarterly processing will reprocess back to the
 # subdirectories for each of the instrument-specific ozone and water vapor
 # products
 SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
-VIIRS_JPSS1 = '/archive/allData/3194/VJ104ANC/'
-VIIRS_NPP = '/archive/allData/5000/VNP04ANC/'
+###Original provisional VIIRS products (HDF4)
+#VIIRS_JPSS1 = '/archive/allData/3194/VJ104ANC/'
+#VIIRS_NPP = '/archive/allData/5000/VNP04ANC/'
+###Temporary "operational" VIIRS products (HDF5)
+VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
+VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
+###Final operational VIIRS products (HDF5) -- links aren't active currently
+#VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
+#VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
 
 
 def buildURLs(year, doy):
