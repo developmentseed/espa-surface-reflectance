@@ -148,6 +148,9 @@ typedef char byte;
 #define RATIO_NBLON 7200
 
 /* Ozone and water vapor information */
+/* Expected size of the CMG dataset (VIIRS auxiliary) is
+   3600 lines x 7200 samples */
+#define CMG_NDIMS 2
 #define CMG_NBLAT 3600
 #define CMG_NBLON 7200
 

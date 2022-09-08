@@ -701,41 +701,46 @@ void usage ()
     printf ("\nlasrc --help will print the usage statement\n");
     printf ("\nExample: lasrc "
             "--xml=LC08_L1TP_041027_20130630_20140312_02_T1.xml "
-            "--aux=L8ANC2013181.hdf_fused --verbose\n");
+            "--aux=VJ104ANC.A2013181.002.2022179071944.h5 --verbose\n");
     printf ("   ==> Writes bands 9-11 as TOA reflectance and brightness "
             "temperature.  Writes bands 1-7 as surface reflectance.\n\n");
 
     printf ("\nExample: lasrc "
             "--xml=LC08_L1TP_041027_20130630_20140312_02_T1.xml "
-            "--aux=L8ANC2013181.hdf_fused --write_toa --verbose\n");
+            "--aux=VJ104ANC.A2013181.002.2022179071944.h5 --write_toa "
+            "--verbose\n");
     printf ("   ==> Writes bands 1-11 as TOA reflectance and brightness "
             "temperature.  Writes bands 1-7 as surface reflectance.\n");
 
     printf ("\nExample: lasrc "
             "--xml=LC08_L1TP_041027_20130630_20140312_02_T1.xml "
-            "--aux=L8ANC2013181.hdf_fused --process_sr=false --verbose\n");
+            "--aux=VJ104ANC.A2013181.002.2022179071944.h5 --process_sr=false "
+            "--verbose\n");
     printf ("   ==> Writes bands 1-11 as TOA reflectance and brightness "
             "temperature.  Surface reflectance corrections are not applied.\n");
 
     printf ("\nExample: lasrc "
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
-            "--aux=L8ANC2018228.hdf_fused --verbose\n");
+            "--aux=VJ104ANC.A2018228.002.2022179071944.h5 --verbose\n");
     printf ("   ==> Writes bands 1-12 as surface reflectance.\n\n");
 
     printf ("\nExample: lasrc "
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
-            "--aux=L8ANC2018228.hdf_fused --use_orig_aero_alg --verbose\n");
+            "--aux=VJ104ANC.A2018228.002.2022179071944.h5 --use_orig_aero_alg "
+            "--verbose\n");
     printf ("   ==> Writes bands 1-12 as surface reflectance but uses the "
             "original FORTRAN aerosol inversion algorithm.\n\n");
 
     printf ("\nExample: lasrc "
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
-            "--aux=L8ANC2018228.hdf_fused --write_toa --verbose\n");
+            "--aux=VJ104ANC.A2018228.002.2022179071944.h5 --write_toa "
+            "--verbose\n");
     printf ("   ==> Writes bands 1-12 as surface reflectance.\n\n");
 
     printf ("\nExample: lasrc "
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
-            "--aux=L8ANC2018228.hdf_fused --process_sr=false --verbose\n");
+            "--aux=VJ104ANC.A2018228.002.2022179071944.h5 --process_sr=false "
+            "--verbose\n");
     printf ("   ==> Does nothing.\n\n");
 }
 

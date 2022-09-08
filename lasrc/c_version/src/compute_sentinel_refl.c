@@ -12,7 +12,7 @@ LICENSE TYPE:  NASA Open Source Agreement Version 1.3
 NOTES:
 ******************************************************************************/
 //#define USE_GCTP 1
-/* GAIL uncomment to use the GCTP library */
+/* TODO uncomment to use the GCTP library */
 
 #include "lasrc.h"
 #include "time.h"
@@ -925,7 +925,6 @@ int compute_sentinel_sr_refl
 
                 /* Get the water vapor pixels. If the water vapor value is
                    fill (=0), then use a default value of 250. */
-/** GAIL HERE VIIRS UPDATES */
                 wv11 = wv[cmg_pix11];
                 if (wv11 == WV_FILL)
                     wv11 = WV_DEFAULT;
@@ -941,7 +940,6 @@ int compute_sentinel_sr_refl
 
                 /* Get the ozone pixels. If the ozone value is fill (=0), then
                    use a default value of 110. */
-/** GAIL HERE VIIRS UPDATES */
                 uoz11 = oz[cmg_pix11];
                 if (uoz11 == OZ_FILL)
                     uoz11 = OZ_DEFAULT;

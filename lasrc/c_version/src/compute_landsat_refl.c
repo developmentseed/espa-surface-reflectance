@@ -872,7 +872,6 @@ int compute_landsat_sr_refl
     
                 /* Get the water vapor pixels. If the water vapor value is
                    fill (=0), then use a default value of 250. */
-/** GAIL HERE VIIRS UPDATES */
                 wv11 = wv[cmg_pix11];
                 if (wv11 == WV_FILL)
                     wv11 = WV_DEFAULT;
@@ -888,7 +887,6 @@ int compute_landsat_sr_refl
 
                 /* Get the ozone pixels. If the ozone value is fill (=0), then
                    use a default value of 110. */
-/** GAIL HERE VIIRS UPDATES */
                 uoz11 = oz[cmg_pix11];
                 if (uoz11 == OZ_FILL)
                     uoz11 = OZ_DEFAULT;

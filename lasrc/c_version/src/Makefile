@@ -35,13 +35,14 @@ OBJ = $(SRC:.c=.o)
 
 # Define include paths
 INCDIR = -I. -I$(ESPAINC) -I$(XML2INC)
-HDF_INCDIR = -I$(HDFINC) -I$(HDFEOS_INC) -I$(HDFEOS_GCTPINC)
+HDF_INCDIR = -I$(HDFINC) -I$(HDFEOS_INC) -I$(HDFEOS_GCTPINC) -I$(HDF5INC) -I$(HDFEOS5_INC)
 NCFLAGS  = $(EXTRA) $(INCDIR) $(HDF_INCDIR)
 
 # Define the object libraries and paths
 EXLIB = -L$(ESPALIB) -l_espa_raw_binary -l_espa_common -l_espa_format_conversion \
         -L$(HDFEOS_LIB) -lhdfeos \
         -L$(HDFLIB) -lmfhdf -ldf \
+        -L$(HDF5LIB) -lhdf5_hl -lhdf5 \
         -L$(HDFEOS_GCTPLIB) -lGctp \
         -L$(XML2LIB) -lxml2 \
         -L$(JPEGLIB) -ljpeg \

@@ -12,7 +12,7 @@ LICENSE TYPE:  NASA Open Source Agreement Version 1.3
 NOTES:
 ******************************************************************************/
 //#define USE_GCTP 1
-/* GAIL uncomment to use the GCTP library */
+/* TODO uncomment to use the GCTP library */
 
 #include "time.h"
 #include "aero_interp.h"
@@ -255,6 +255,7 @@ int init_sr_refl
     else
         *pres = ATMOS_PRES_0;
     *raot550nm = 0.05;
+printf ("DEBUG: CMG pixel line,sample: %d, %d\n", lcmg, scmg);
 printf ("   uwv, uoz, pres: %f, %f, %f\n", *uwv, *uoz, *pres);
 
     /* Successful completion */

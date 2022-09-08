@@ -847,7 +847,7 @@ int open_oz_wv_datasets
 
     dataspace = H5Dget_space (*ozone_dsid);    /* dataspace handle */
     ndims = H5Sget_simple_extent_dims (dataspace, dims, NULL);
-    if (ndims != 2)
+    if (ndims != CMG_NDIMS)
     {
         sprintf (errmsg, "Unexpected number of dimensions for the ozone "
             "dataset: %d (should be %d)", ndims, CMG_NDIMS);
@@ -899,7 +899,7 @@ int open_oz_wv_datasets
 
     dataspace = H5Dget_space (*wv_dsid);    /* dataspace handle */
     ndims = H5Sget_simple_extent_dims (dataspace, dims, NULL);
-    if (ndims != 2)
+    if (ndims != CMG_NDIMS)
     {
         sprintf (errmsg, "Unexpected number of dimensions for the water vapor "
             "dataset: %d (should be %d)", ndims, CMG_NDIMS);

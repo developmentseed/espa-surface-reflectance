@@ -90,7 +90,8 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 
 ## Release Notes
 1. Modified the auxiliary file download scripts to download the VIIRS VJ104ANC
-   products with the VNP04ANC products as backup.
+   products with the VNP04ANC products as backup. The operational VIIRS
+   products are HDF5 vs. HDF4 for the MODIS products.
 2. Added a gapfilling algorithm to fill in the gaps in the ozone and water
    vapor, using weighted averages of monthly averages.
 3. Created a script to generate the monthly averages.  This script should be

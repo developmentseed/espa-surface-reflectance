@@ -121,7 +121,7 @@ class SurfaceReflectance():
         # pull the date from the XML filename to determine which auxiliary
         # file should be used for input.
         # Example: S2A_MSI_L1C_T10TFR_20180816_20180903.xml uses the
-        # VJ104ANC.A2018228.001.*.hdf HDF file or VNP04ANC.A2018228.001.*.hdf.
+        # VJ104ANC.A2018228.001.*.h5 HDF5 file or VNP04ANC.A2018228.001.*.h5.
         s2_prefixes_collection = ['S2A', 'S2B']
         if base_xmlfile[0:3] in s2_prefixes_collection:
             # Collection naming convention. Pull the year, month, day from the
@@ -138,11 +138,11 @@ class SurfaceReflectance():
             # The auxiliary file could be VJ104ANC or VNP04ANC, however there
             # should only be one, with VJ104ANC being the priority. And LaSRC
             # only wants the base filename and not the entire path.
-            aux_files = glob.glob('{}/*04ANC.A{}{}.*.hdf'
+            aux_files = glob.glob('{}/*04ANC.A{}{}.*.h5'
                                   .format(full_aux_dir, aux_year, aux_doy))
             if len(aux_files) == 0:
                 logger.error('No auxiliary files were found to match '
-                             '*04ANC.A{}{}.*.hdf'.format(aux_year, aux_doy))
+                             '*04ANC.A{}{}.*.h5'.format(aux_year, aux_doy))
                 return ERROR
             aux_file = os.path.basename(aux_files[0])
         else:

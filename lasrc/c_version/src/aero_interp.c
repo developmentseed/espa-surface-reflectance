@@ -699,7 +699,7 @@ void ipflag_expand_failed_sentinel
                     /* Set non-fill pixels to failed. Note: this will set
                        non-representative pixels to failed. */
                     /* NOTE: FORTRAN code does not fail water pixels */
-/** GAIL HERE Remove the water check **/
+/** C3 TODO Remove the water check **/
                     curr_win_pix = win_line * nsamps + win_samp;
                     if (!btest (ipflag[curr_win_pix], IPFLAG_FILL) &&
                         !btest (ipflag[curr_win_pix], IPFLAG_WATER) &&

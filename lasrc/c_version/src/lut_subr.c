@@ -14,6 +14,7 @@ NOTES:
 #include "lut_subr.h"
 #include "hdf.h"
 #include "mfhdf.h"
+#include "hdf5.h"
 
 /* Define the full list of band names for Sentinel-2 for the input files */
 char SENTINEL_FULL_BANDNAME[SENTINEL_TTL][3] =
@@ -35,6 +36,18 @@ float sentinel_lambda[NREFLS_BANDS] =
 #endif
 
 #define FOUR_PTS 4
+
+/* Program will look for these datasets in the VIIRS inputs */
+/* Ozone - uint8
+   Water vapor - uint16 */
+#define N_DATASETS 2
+char dataset_path[50] = "/HDFEOS/GRIDS/VIIRS_CMG/Data Fields/";
+char list_of_datasets[N_DATASETS][50] = {
+    "Coarse Resolution Ozone",
+    "Coarse Resolution Water Vapor"};
+#define OZONE 0
+#define WV 1
+
 
 /******************************************************************************
 MODULE:  atmcorlamb2_new
@@ -327,7 +340,6 @@ int atmcorlamb2
     local_chand (xfi, xmuv, xmus, xtaur, xrorayp);
 
     /* Perform atmospheric correction */
-
     *tgo = tgog * tgoz;
     *roatm = (*roatm - *xrorayp)*tgwvhalf + *xrorayp;
     *ttatmg = ttatm * tgwv;
@@ -2520,6 +2532,158 @@ int sentinel_memory_allocation_sr
 
 
 /******************************************************************************
+MODULE:  open_oz_wv_datasets
+
+PURPOSE:  Opens the daily, global VIIRS CMG file obtaining the ozone and
+water vapor dataset IDs
+
+RETURN VALUE:
+Type = int
+Value          Description
+-----          -----------
+ERROR          Error occurred opening the input
+SUCCESS        Successful completion
+
+NOTES:
+******************************************************************************/
+int open_oz_wv_datasets
+(
+    char *filename,       /* I: VIIRS file to be read */
+    hid_t *file_id,       /* O: VIIRS file id */
+    hid_t *ozone_dsid,    /* O: ozone dataset ID */
+    hid_t *wv_dsid        /* O: water vapor dataset ID */
+)
+{
+    char FUNC_NAME[] = "open_oz_wv_datasets"; /* function name */
+    char errmsg[STR_SIZE];  /* error message */
+    char dataset_name[STR_SIZE];  /* full path name of the dataset */
+    int ndims;              /* number of dimensions in this dataset */
+    hid_t datatype;         /* datatype id */
+    hid_t dataspace;        /* dataspace id */
+    H5T_class_t class;      /* datatype class */
+    size_t size;            /* size of the data element stored in the file */
+    hsize_t dims[CMG_NDIMS]; /* dimension of desired 2D datasets */
+
+    /* Open the input file for reading and writing */
+    *file_id = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT);
+    if (*file_id < 0)
+    {
+        sprintf (errmsg, "Error opening file: %s", filename);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Open the ozone dataset */
+    sprintf (dataset_name, "%s%s", dataset_path, list_of_datasets[OZONE]);
+    *ozone_dsid = H5Dopen (*file_id, dataset_name, H5P_DEFAULT);
+    if (*ozone_dsid < 0)
+    {
+        sprintf (errmsg, "Error opening the ozone dataset: %s", dataset_name);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Get datatype and dataspace handles and then query dataset class, order,
+       size, and dimensions. Data type should be a U8-bit integer. */
+    datatype = H5Dget_type (*ozone_dsid);     /* datatype handle */
+    class = H5Tget_class (datatype);
+    if (class != H5T_INTEGER)
+    {
+        sprintf (errmsg, "Unexpected data type of ozone dataset: %d (should be "
+            "H5T_INTEGER)", class);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+    size = H5Tget_size (datatype);
+    if ((int)size != 1)
+    {
+        sprintf (errmsg, "Unexpected data type of ozone dataset: %d (should be "
+            "1 byte)", (int)size);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+    H5Tclose (datatype);
+
+    dataspace = H5Dget_space (*ozone_dsid);    /* dataspace handle */
+    ndims = H5Sget_simple_extent_dims (dataspace, dims, NULL);
+    if (ndims != CMG_NDIMS)
+    {
+        sprintf (errmsg, "Unexpected number of dimensions for the ozone "
+            "dataset: %d (should be %d)", ndims, CMG_NDIMS);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+    H5Sclose (dataspace);
+
+
+    /* Verify the dimensions are as expected for the CMG grid */
+    if (dims[0] != CMG_NBLAT || dims[1] != CMG_NBLON)
+    {
+        sprintf (errmsg, "Unexpected size of ozone dataset: %d x %d (should be "
+            "%d x %d)", (int)dims[0], (int)dims[1], CMG_NBLAT, CMG_NBLON);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Open the water vapor dataset */
+    sprintf (dataset_name, "%s%s", dataset_path, list_of_datasets[WV]);
+    *wv_dsid = H5Dopen (*file_id, dataset_name, H5P_DEFAULT);
+    if (*wv_dsid < 0)
+    {
+        sprintf (errmsg, "Error opening water vapor dataset: %s", dataset_name);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Get datatype and dataspace handles and then query dataset class, order,
+       size, and dimensions. Date type should be a U16-bit integer. */
+    datatype = H5Dget_type (*wv_dsid);     /* datatype handle */
+    class = H5Tget_class (datatype);
+    if (class != H5T_INTEGER)
+    {
+        sprintf (errmsg, "Unexpected data type of water vapor dataset: %d "
+            "(should be H5T_INTEGER)", class);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    size = H5Tget_size (datatype);
+    if ((int)size != 2)
+    {
+        sprintf (errmsg, "Unexpected data type of ozone dataset: %d (should be "
+            "2 bytes)", (int)size);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+    H5Tclose (datatype);
+
+    dataspace = H5Dget_space (*wv_dsid);    /* dataspace handle */
+    ndims = H5Sget_simple_extent_dims (dataspace, dims, NULL);
+    if (ndims != CMG_NDIMS)
+    {
+        sprintf (errmsg, "Unexpected number of dimensions for the water vapor "
+            "dataset: %d (should be %d)", ndims, CMG_NDIMS);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+    H5Sclose (dataspace);
+
+    /* Verify the dimensions are as expected for the CMG grid */
+    if (dims[0] != CMG_NBLAT || dims[1] != CMG_NBLON)
+    {
+        sprintf (errmsg, "Unexpected size of water vapor dataset: %d x %d "
+            "(should be %d x %d)", (int)dims[0], (int)dims[1], CMG_NBLAT,
+            CMG_NBLON);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Successful completion */
+    return (SUCCESS);
+}
+
+
+/******************************************************************************
 MODULE:  read_auxiliary_files
 
 PURPOSE:  Reads the auxiliary files required for this application.
@@ -2568,6 +2732,9 @@ int read_auxiliary_files
     int sd_id;           /* file ID for the HDF file */
     int sds_id;          /* ID for the current SDS */
     int sds_index;       /* index for the current SDS */
+    hid_t file_id;           /* VIIRS file id */
+    hid_t ozone_dsid;        /* ozone dataset ID */
+    hid_t wv_dsid;           /* water vapor dataset ID */
 
     /*** Read the DEM ***/
     sd_id = SDstart (cmgdemnm, DFACC_RDONLY);
@@ -3146,111 +3313,43 @@ int read_auxiliary_files
     }
 
     /* Read ozone and water vapor from the user-specified auxiliary file */
-    sd_id = SDstart (auxnm, DFACC_RDONLY);
-    if (sd_id < 0)
+    /* Open the input VIIRS file and get the dataset IDs along with the
+       dimensions.  This routine already confirms the existence of the
+       ozone and water vapor datasets, confirms the data types are as expected,
+       and confirms the size of the dataset matches our CMG grid size. */
+    status = open_oz_wv_datasets (auxnm, &file_id, &ozone_dsid, &wv_dsid);
+    if (status != SUCCESS)
     {
-        sprintf (errmsg, "Unable to open %s for reading as SDS", auxnm);
+        sprintf (errmsg, "Error parsing file: %s", auxnm);
         error_handler (true, FUNC_NAME, errmsg);
         return (ERROR);
     }
 
-    /* Find the SDS name */
-    strcpy (sds_name, "Coarse Resolution Ozone");
-    sds_index = SDnametoindex (sd_id, sds_name);
-    if (sds_index == -1)
+    /* Read the entire VIIRS ozone dataset */
+    status = H5Dread (ozone_dsid, H5T_NATIVE_UCHAR, H5S_ALL, H5S_ALL,
+        H5P_DEFAULT, oz);
+    if (status < 0)
     {
-        sprintf (errmsg, "Unable to find %s in the AUX file %s", sds_name,
+        sprintf (errmsg, "Error reading ozone dataset from file: %s", auxnm);
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Read the entire VIIRS water vapor dataset */
+    status = H5Dread (wv_dsid, H5T_NATIVE_USHORT, H5S_ALL, H5S_ALL,
+        H5P_DEFAULT, wv);
+    if (status < 0)
+    {
+        sprintf (errmsg, "Error reading water vapor dataset from file: %s",
             auxnm);
         error_handler (true, FUNC_NAME, errmsg);
         return (ERROR);
     }
 
-    /* Open the current band as an SDS */
-    sds_id = SDselect (sd_id, sds_index);
-    if (sds_id < 0)
-    {
-        sprintf (errmsg, "Unable to access %s for reading", sds_name);
-        error_handler (true, FUNC_NAME, errmsg);
-        return (ERROR);
-    }
-
-    /* Read the data one line at a time */
-    for (i = 0; i < CMG_NBLAT; i++)
-    {
-        start[0] = i;  /* line */
-        start[1] = 0;  /* sample */
-        edges[0] = 1;
-        edges[1] = CMG_NBLON;
-        status = SDreaddata (sds_id, start, NULL, edges, &oz[i * CMG_NBLON]);
-        if (status == -1)
-        {
-            sprintf (errmsg, "Reading data from the SDS: %s", sds_name);
-            error_handler (true, FUNC_NAME, errmsg);
-            return (ERROR);
-        }
-    }
-
-    /* Close the SDS */
-    status = SDendaccess (sds_id);
-    if (status < 0)
-    {
-        sprintf (errmsg, "Ending access to %s", sds_name);
-        error_handler (true, FUNC_NAME, errmsg);
-        return (ERROR);
-    }
-
-    /* Find the SDS name */
-    strcpy (sds_name, "Coarse Resolution Water Vapor");
-    sds_index = SDnametoindex (sd_id, sds_name);
-    if (sds_index == -1)
-    {
-        sprintf (errmsg, "Unable to find %s in the AUX file", sds_name);
-        error_handler (true, FUNC_NAME, errmsg);
-        return (ERROR);
-    }
-
-    /* Open the current band as an SDS */
-    sds_id = SDselect (sd_id, sds_index);
-    if (sds_id < 0)
-    {
-        sprintf (errmsg, "Unable to access %s for reading", sds_name);
-        error_handler (true, FUNC_NAME, errmsg);
-        return (ERROR);
-    }
-
-    /* Read the data one line at a time */
-    for (i = 0; i < CMG_NBLAT; i++)
-    {
-        start[0] = i;  /* line */
-        start[1] = 0;  /* sample */
-        edges[0] = 1;
-        edges[1] = CMG_NBLON;
-        status = SDreaddata (sds_id, start, NULL, edges, &wv[i * CMG_NBLON]);
-        if (status == -1)
-        {
-            sprintf (errmsg, "Reading data from the SDS: %s", sds_name);
-            error_handler (true, FUNC_NAME, errmsg);
-            return (ERROR);
-        }
-    }
-
-    /* Close the SDS */
-    status = SDendaccess (sds_id);
-    if (status < 0)
-    {
-        sprintf (errmsg, "Ending access to %s", sds_name);
-        error_handler (true, FUNC_NAME, errmsg);
-        return (ERROR);
-    }
-
-    /* Close the AUX file */
-    status = SDend (sd_id);
-    if (status != 0)
-    {
-        sprintf (errmsg, "Closing AUX file.");
-        error_handler (true, FUNC_NAME, errmsg);
-        return (ERROR);
-    }
+    /* Close and clean up */
+    H5Fclose (file_id);
+    H5Dclose (wv_dsid);
+    H5Dclose (ozone_dsid);
 
     /* Successful completion */
     return (SUCCESS);
