@@ -497,7 +497,8 @@ int read_monthly_avgs
 /******************************************************************************
 MODULE:  get_fill_value
 
-PURPOSE:  Determines the weighted average to be used for filling the gaps.
+PURPOSE:  Determines the weighted average to be used for filling the gaps. If
+the monthly average is fill, then it won't be used.
 
 RETURN VALUE:
 Type = float
@@ -517,8 +518,70 @@ float get_fill_value
     float next_avg        /* I: next month average for this pixel */
 )
 {
-    float wgt_avg;   /* weighted average for this pixel */
+    float wgt_avg;     /* weighted average for this pixel */
 
+    /* If any of the monthly averages are fill, then skip their use but
+       transfer (for this pixel only) their weight to the other non-fill weight
+       so the weights always total 100. If all averages are fill, then the
+       transfer of weight doesn't matter because the result will be zero.
+       The goal is to add the fill weight to the highest weight, if there are
+       more than one non-zero weights. Otherwise, the previous weight will be
+       the highest priority to transfer weights to because it's within the
+       current year. The next priority will be the target weight, followed by
+       the next month's weight.
+       Given that the averages are floating point values, we will round them
+       to the nearest integer and compare to the VIIRS_FILL value which is
+       zero. */
+    if (round (prev_avg) == VIIRS_FILL)
+    {
+        /* Add to the highest weight if both are not fill */
+        if (target_avg != VIIRS_FILL && next_avg != VIIRS_FILL)
+        {
+            if (target_weight >= next_weight)
+                target_weight += prev_weight;
+            else
+                next_weight += prev_weight;
+
+        }
+        else if (target_avg != VIIRS_FILL)
+            target_weight = 100.0;
+        else if (next_avg != VIIRS_FILL)
+            next_weight = 100.0;
+    }
+
+    if (round (target_avg) == VIIRS_FILL)
+    {
+        /* Add to the highest weight if both are not fill */
+        if (prev_avg != VIIRS_FILL && next_avg != VIIRS_FILL)
+        {
+            if (prev_weight >= next_weight)
+                prev_weight += target_weight;
+            else
+                next_weight += target_weight;
+        }
+        else if (prev_avg != VIIRS_FILL)
+            prev_weight = 100.0;
+        else if (next_avg != VIIRS_FILL)
+            next_weight = 100.0;
+    }
+
+    if (round (next_avg) == VIIRS_FILL)
+    {
+        /* Add to the highest weight if both are not fill */
+        if (prev_avg != VIIRS_FILL && target_avg != VIIRS_FILL)
+        {
+            if (prev_weight >= target_weight)
+                prev_weight += next_weight;
+            else
+                target_weight += next_weight;
+        }
+        else if (prev_avg != VIIRS_FILL)
+            prev_weight = 100.0;
+        else if (target_avg != VIIRS_FILL)
+            target_weight = 100.0;
+    }
+
+    /* Determine the sum of the weighted monthly averages */
     wgt_avg = target_avg * (target_weight * 0.01);
     if (prev_weight > 0.0)
         wgt_avg += prev_avg * (prev_weight * 0.01);
