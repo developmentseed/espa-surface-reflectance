@@ -28,6 +28,34 @@ char list_of_datasets[N_DATASETS][50] = {
 #define CMG_NLINES 3600
 #define CMG_NSAMPS 7200
 
+/******************************************************************************
+MODULE:  cmp_vals
+
+PURPOSE:  Compares the absolute difference of the two floating point values to
+determine if they are essentially equivalent (close enough due to rounding
+issues).
+
+RETURN VALUE:
+Type = bool
+Value          Description
+-----          -----------
+false          Values are not the same
+true           Values are the same
+
+NOTES:
+******************************************************************************/
+bool cmp_vals
+(
+    float val1,   /* I: float value 1 */
+    float val2    /* I: float value 2 */
+)
+{
+    if (fabs (val1 - val2) <= 0.0001)
+        return true;
+    else
+        return false;
+}
+
 
 /******************************************************************************
 MODULE:  file_exists
@@ -92,19 +120,29 @@ void determine_weights
     *next_weight = 0.0;
 
     /* Weighting for the first half of the month (day = 1-15) */
-    for (i = 1; i <= 15; i++)
+    if (aux_day <= 15)
     {
-        if (i >= aux_day)
-            break;
+        for (i = 1; i <= 15; i++)
+        {
+            if (i >= aux_day)
+                break;
 
-        *target_weight += DAYSTEP;
-        *prev_weight -= DAYSTEP;
+            *target_weight += DAYSTEP;
+            *prev_weight -= DAYSTEP;
+        }
+    }
+    else
+    {
+        /* These are the values that come out of the above for loop for days
+           that are above 15 */
+        *target_weight = 100.0;
+        *prev_weight = 0.0;
     }
 
     /* Weighting for the second half of the month (day = 16-31) */
     if (aux_day >= 15)
     {
-        for(i = 16; i <= 31; i++)
+        for (i = 16; i <= 31; i++)
         {
             if (i == aux_day)
                 break;
@@ -532,52 +570,54 @@ float get_fill_value
        Given that the averages are floating point values, we will round them
        to the nearest integer and compare to the VIIRS_FILL value which is
        zero. */
-    if (round (prev_avg) == VIIRS_FILL)
+    if (cmp_vals (prev_avg, VIIRS_FILL))
     {
         /* Add to the highest weight if both are not fill */
-        if (target_avg != VIIRS_FILL && next_avg != VIIRS_FILL)
+        if (!cmp_vals (target_avg, VIIRS_FILL) &&
+            !cmp_vals (next_avg, VIIRS_FILL))
         {
             if (target_weight >= next_weight)
                 target_weight += prev_weight;
             else
                 next_weight += prev_weight;
-
         }
-        else if (target_avg != VIIRS_FILL)
+        else if (!cmp_vals (target_avg, VIIRS_FILL))
             target_weight = 100.0;
-        else if (next_avg != VIIRS_FILL)
+        else if (!cmp_vals (next_avg, VIIRS_FILL))
             next_weight = 100.0;
     }
 
-    if (round (target_avg) == VIIRS_FILL)
+    if (cmp_vals (target_avg, VIIRS_FILL))
     {
         /* Add to the highest weight if both are not fill */
-        if (prev_avg != VIIRS_FILL && next_avg != VIIRS_FILL)
+        if (!cmp_vals (prev_avg, VIIRS_FILL) &&
+            !cmp_vals (next_avg, VIIRS_FILL))
         {
             if (prev_weight >= next_weight)
                 prev_weight += target_weight;
             else
                 next_weight += target_weight;
         }
-        else if (prev_avg != VIIRS_FILL)
+        else if (!cmp_vals (prev_avg, VIIRS_FILL))
             prev_weight = 100.0;
-        else if (next_avg != VIIRS_FILL)
+        else if (!cmp_vals (next_avg, VIIRS_FILL))
             next_weight = 100.0;
     }
 
-    if (round (next_avg) == VIIRS_FILL)
+    if (cmp_vals (next_avg, VIIRS_FILL))
     {
         /* Add to the highest weight if both are not fill */
-        if (prev_avg != VIIRS_FILL && target_avg != VIIRS_FILL)
+        if (!cmp_vals (prev_avg, VIIRS_FILL) &&
+            !cmp_vals (target_avg, VIIRS_FILL))
         {
             if (prev_weight >= target_weight)
                 prev_weight += next_weight;
             else
                 target_weight += next_weight;
         }
-        else if (prev_avg != VIIRS_FILL)
+        else if (!cmp_vals (prev_avg, VIIRS_FILL))
             prev_weight = 100.0;
-        else if (target_avg != VIIRS_FILL)
+        else if (!cmp_vals (target_avg, VIIRS_FILL))
             target_weight = 100.0;
     }
 

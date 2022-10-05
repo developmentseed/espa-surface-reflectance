@@ -26,11 +26,11 @@ SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
 #VIIRS_JPSS1 = '/archive/allData/3194/VJ104ANC/'
 #VIIRS_NPP = '/archive/allData/5000/VNP04ANC/'
 ###Temporary "operational" VIIRS products (HDF5)
-VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
-VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
-###Final operational VIIRS products (HDF5) -- links aren't active currently
-#VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
-#VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
+##VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
+##VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
+###Final operational VIIRS products (HDF5)
+VIIRS_JPSS1 = '/archive/lads/allData/5200/VJ104ANC/'
+VIIRS_NPP = '/archive/lads/allData/5200/VNP04ANC/'
 
 
 def buildURLs(year, doy):
@@ -102,7 +102,8 @@ def downloadLads (year, doy, destination, token=None):
     for url in urlList:
         msg = 'Retrieving {} to {}'.format(url, destination)
         logger.info(msg)
-        cmd = ('wget -e robots=off -m -np -R .html,.tmp -nH --no-directories '
+        cmd = ('wget --no-verbose -e robots=off -m -np -R .html,.tmp -nH '
+               '--no-directories '
                '--header \"Authorization: Bearer {}\" -P {} \"{}\"'
                .format(token, destination, url))
         retval = subprocess.call(cmd, shell=True, cwd=destination)
