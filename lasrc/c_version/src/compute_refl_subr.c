@@ -255,7 +255,7 @@ int init_sr_refl
     else
         *pres = ATMOS_PRES_0;
     *raot550nm = 0.05;
-printf ("DEBUG: CMG pixel line,sample: %d, %d\n", lcmg, scmg);
+//printf ("DEBUG: CMG pixel line,sample: %d, %d\n", lcmg, scmg);
 printf ("   uwv, uoz, pres: %f, %f, %f\n", *uwv, *uoz, *pres);
 
     /* Successful completion */

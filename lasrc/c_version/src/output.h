@@ -7,24 +7,31 @@
 /* Define some of the constants to use in the output data products */
 #define FILL_VALUE 0
 #define CLOUD_FILL_VALUE 0
+#define FILL_VALUE_AERO -9999
 
 /* written to XML file for users of the SR data */
 #define SCALE_FACTOR_REFL 0.0000275
 #define OFFSET_REFL -0.20
 #define SCALE_FACTOR_TH 0.00341802
 #define OFFSET_TH 149.0
+#define SCALE_FACTOR_AERO 0.001
+#define OFFSET_AERO 0.0
 
 /* applied to the SR data before writing to the output file */
 #define MULT_FACTOR_REFL (1.0 / SCALE_FACTOR_REFL)
 #define BAND_OFFSET_REFL (-OFFSET_REFL)
 #define MULT_FACTOR_TH (1.0 / SCALE_FACTOR_TH)
 #define BAND_OFFSET_TH (-OFFSET_TH)
+#define MULT_FACTOR_AERO (1.0 / SCALE_FACTOR_AERO)
+#define BAND_OFFSET_AERO (-OFFSET_AERO)
 
 /* min/max valid values (unscaled) */
 #define MIN_VALID_REFL -0.2
 #define MAX_VALID_REFL 1.60
 #define MIN_VALID_TH 150.0
 #define MAX_VALID_TH 350.0
+#define MIN_VALID_AERO 0.0
+#define MAX_VALID_AERO 5.0
 
 /* Define the output product types */
 typedef enum {OUTPUT_TOA=0, OUTPUT_SR=1} Myoutput_t;
@@ -97,9 +104,18 @@ void convert_output
     int band,           /* I: band number to convert */
     int nlines,         /* I: number of lines */
     int nsamps,         /* I: number of samples */
-    bool thermal,       /* I: flag to specifiy if processing a thermal band,
+    bool thermal,       /* I: flag to specify if processing a thermal band,
                               for correct scale/offset */
     uint16 *out_band    /* O: scaled output for the processed band */
+);
+
+void convert_aerosol_output
+(
+    float *aero,        /* I: unscaled aerosol band */
+    uint16 *qaband,     /* I: QA band for the input image, nlines x nsamps */
+    int nlines,         /* I: number of lines */
+    int nsamps,         /* I: number of samples */
+    int16 *out_band     /* O: scaled output for the aerosol band */
 );
 
 #endif

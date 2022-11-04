@@ -14,7 +14,7 @@ typedef char byte;
 #endif
 
 /* Surface reflectance version */
-#define SR_VERSION "3.3.0 (Collection 2)"
+#define SR_VERSION "3.4.0 (Collection 2)"
 
 /* Define the default aerosol and EPS value */
 #define DEFAULT_AERO 0.05
@@ -118,14 +118,16 @@ typedef char byte;
 #define NBAND_REFL_MAX MAX(NBANDL_REFL_MAX, NBANDS_REFL_MAX)
 
 /* Landsat surface reflectance products have 8 reflectance bands, 2 thermal
-   bands, 0 pan bands, and 1 QA band.
-   Sentinel-2 surface reflectance products have 13 reflectance bands, and
-   1 QA band. Bands 9 (water vapor) and 10 (cirrus) might not be processed. */
+   bands, 0 pan bands, 1 aerosol band, and 1 QA band.
+   Sentinel-2 surface reflectance products have 13 reflectance bands,
+   1 aerosol band, and 1 QA band. Bands 9 (water vapor) and 10 (cirrus) might
+   not be processed. */
 #define NBANDL_REFL_OUT 8
 #define NBANDL_THM_OUT 2
 #define NBANDL_PAN_OUT 0
+#define NBANDL_AEROSOL_OUT 1
 #define NBANDL_QA_OUT 1
-#define NBANDL_TTL_OUT (NBANDL_REFL_OUT + NBANDL_THM_OUT + NBANDL_PAN_OUT + NBANDL_QA_OUT)
+#define NBANDL_TTL_OUT (NBANDL_REFL_OUT + NBANDL_THM_OUT + NBANDL_PAN_OUT + NBANDL_AEROSOL_OUT + NBANDL_QA_OUT)
 
 #ifdef PROC_ALL_BANDS
 /* Process all bands if turned on */
@@ -134,8 +136,9 @@ typedef char byte;
 /* Skip bands 9 and 10 as default for ESPA */
 #define NBANDS_REFL_OUT 11
 #endif
+#define NBANDS_AEROSOL_OUT 1
 #define NBANDS_QA_OUT 1
-#define NBANDS_TTL_OUT (NBANDS_REFL_OUT + NBANDS_QA_OUT)
+#define NBANDS_TTL_OUT (NBANDS_REFL_OUT + NBANDS_AEROSOL_OUT + NBANDS_QA_OUT)
 
 /* CMG and DEM files are lat/long images where each pixel represents 0.05 deg x
    0.05 deg */
@@ -205,17 +208,17 @@ typedef enum {DNS_BAND1=0, DNS_BAND2, DNS_BAND3, DNS_BAND4,
 /* Define the output products to be processed */
 typedef enum {SRL_BAND1=0, SRL_BAND2, SRL_BAND3, SRL_BAND4, SRL_BAND5,
     SRL_BAND6, SRL_BAND7, SRL_BAND9, SRL_BAND10, SRL_BAND11, SRL_AEROSOL,
-    SRL_TTL} Mysrl_band_t;
+    SRL_AEROSOL_QA, SRL_TTL} Mysrl_band_t;
 #ifdef PROC_ALL_BANDS
 /* Process all bands if turned on */
 typedef enum {SRS_BAND1=0, SRS_BAND2, SRS_BAND3, SRS_BAND4, SRS_BAND5,
     SRS_BAND6, SRS_BAND7, SRS_BAND8, SRS_BAND8A, SRS_BAND9, SRS_BAND10,
-    SRS_BAND11, SRS_BAND12, SRS_AEROSOL, SRS_TTL} Mysrs_band_t;
+    SRS_BAND11, SRS_BAND12, SRS_AEROSOL, SRS_AEROSOL_QA, SRS_TTL} Mysrs_band_t;
 #else
 /* Skip bands 9 and 10 as default for ESPA */
 typedef enum {SRS_BAND1=0, SRS_BAND2, SRS_BAND3, SRS_BAND4, SRS_BAND5,
     SRS_BAND6, SRS_BAND7, SRS_BAND8, SRS_BAND8A, SRS_BAND11,
-    SRS_BAND12, SRS_AEROSOL, SRS_TTL} Mysrs_band_t;
+    SRS_BAND12, SRS_AEROSOL, SRS_AEROSOL_QA, SRS_TTL} Mysrs_band_t;
 #endif
 extern char SENTINEL_BANDNAME[NREFLS_BANDS][3];  /* defined in output.c */
 

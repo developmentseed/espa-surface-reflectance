@@ -16,6 +16,7 @@ NOTES:
 #include <ctype.h>
 #include <math.h>
 #include "output.h"
+#include "read_level1_qa.h"
 
 #ifdef PROC_ALL_BANDS
 /* Process all bands if turned on */
@@ -197,10 +198,11 @@ Output_t *open_output
             SR_VERSION);
         strcpy (bmeta[ib].production_date, production_date);
 
-        /* Handle the aerosol band differently.  If this is only TOA then we
-           don't need to process the aerosol mask.  If this is SR, then we
-           don't need to process the cirrus or thermal bands. */
-        if ((output_type == OUTPUT_TOA) && (ib == SRL_AEROSOL))
+        /* Handle the aerosol and QA bands differently.  If this is only TOA
+           then we don't need to process the aerosol or QA mask.  If this
+           is SR, then we don't need to process the cirrus or thermal bands. */
+        if ((output_type == OUTPUT_TOA) &&
+            ((ib == SRL_AEROSOL_QA) || (ib == SRL_AEROSOL)))
             continue;
         else if ((output_type == OUTPUT_SR) &&
                   (input->meta.sat == SAT_LANDSAT_8 ||
@@ -208,17 +210,52 @@ Output_t *open_output
                  ((ib == SRL_BAND9) || (ib == SRL_BAND10) ||
                   (ib == SRL_BAND11)))
             continue;
-        else if ((output_type == OUTPUT_SR) && 
+        else if ((output_type == OUTPUT_SR) &&
                  (((input->meta.sat == SAT_LANDSAT_8 ||
                     input->meta.sat == SAT_LANDSAT_9) &&
                   (ib == SRL_AEROSOL)) ||
                   ((input->meta.sat == SAT_SENTINEL_2) &&
                   (ib == SRS_AEROSOL))))
         {
+            bmeta[ib].data_type = ESPA_INT16;
+            bmeta[ib].fill_value = FILL_VALUE_AERO;
+            strcpy (bmeta[ib].name, "sr_aerosol");
+            strcpy (bmeta[ib].long_name, "surface reflectance aerosol");
+            strcpy (bmeta[ib].category, "image");
+            strcpy (bmeta[ib].data_units, "unitless");
+            bmeta[ib].scale_factor = SCALE_FACTOR_AERO;
+            bmeta[ib].add_offset = OFFSET_AERO;
+            bmeta[ib].valid_range[0] = (MIN_VALID_AERO + BAND_OFFSET_AERO) *
+                MULT_FACTOR_AERO;
+            bmeta[ib].valid_range[1] = (MAX_VALID_AERO + BAND_OFFSET_AERO) *
+                MULT_FACTOR_AERO;
+
+            if (input->meta.sat == SAT_LANDSAT_8 ||
+                input->meta.sat == SAT_LANDSAT_9)
+            {  /* Landsat has 4 characters in the short_name */
+                n_keep_sname = 4;
+            }
+            else if (input->meta.sat == SAT_SENTINEL_2)
+            {  /* Sentinel has 7 characters in the short_name */
+                n_keep_sname = 7;
+            }
+
+            strncpy (bmeta[ib].short_name, in_meta->band[refl_indx].short_name,
+                n_keep_sname);
+            bmeta[ib].short_name[n_keep_sname] = '\0';
+            strcat (bmeta[ib].short_name, "AERO");
+        }
+        else if ((output_type == OUTPUT_SR) && 
+                 (((input->meta.sat == SAT_LANDSAT_8 ||
+                    input->meta.sat == SAT_LANDSAT_9) &&
+                  (ib == SRL_AEROSOL_QA)) ||
+                  ((input->meta.sat == SAT_SENTINEL_2) &&
+                  (ib == SRS_AEROSOL_QA))))
+        {
             /* Common QA band fields */
             bmeta[ib].data_type = ESPA_UINT8;
             bmeta[ib].fill_value = (1 << IPFLAG_FILL);
-            strcpy (bmeta[ib].name, "sr_aerosol");
+            strcpy (bmeta[ib].name, "sr_aerosol_qa");
             strcpy (bmeta[ib].long_name, "surface reflectance aerosol mask");
             strcpy (bmeta[ib].category, "qa");
             strcpy (bmeta[ib].data_units, "quality/feature classification");
@@ -279,7 +316,7 @@ Output_t *open_output
             strncpy (bmeta[ib].short_name, in_meta->band[refl_indx].short_name,
                 n_keep_sname);
             bmeta[ib].short_name[n_keep_sname] = '\0';
-            strcat (bmeta[ib].short_name, "AERO");
+            strcat (bmeta[ib].short_name, "AEROQA");
         }
         else
         {
@@ -428,7 +465,7 @@ int close_output
         /* No aerosol band with the output Landsat TOA product */
         if ((output_type == OUTPUT_TOA) &&
             (sat == SAT_LANDSAT_8 || sat == SAT_LANDSAT_9) &&
-            (ib == SRL_AEROSOL))
+            (ib == SRL_AEROSOL || ib == SRL_AEROSOL_QA))
             continue;
         else if ((sat == SAT_LANDSAT_8 || sat == SAT_LANDSAT_9) &&
                  (output_type == OUTPUT_SR) &&
@@ -486,20 +523,20 @@ int free_output
     {
         /* Free the bitmap data for the Landsat aerosol bands */
         if (output_type == OUTPUT_SR &&
-            output->metadata.band[SRL_AEROSOL].nbits > 0)
+            output->metadata.band[SRL_AEROSOL_QA].nbits > 0)
         {
-            for (b = 0; b < output->metadata.band[SRL_AEROSOL].nbits; b++)
-               free(output->metadata.band[SRL_AEROSOL].bitmap_description[b]);
-            free (output->metadata.band[SRL_AEROSOL].bitmap_description);
+            for (b = 0; b < output->metadata.band[SRL_AEROSOL_QA].nbits; b++)
+               free(output->metadata.band[SRL_AEROSOL_QA].bitmap_description[b]);
+            free (output->metadata.band[SRL_AEROSOL_QA].bitmap_description);
         }
 
         /* Free the bitmap data for the Sentinel aerosol band */
         if (output_type == OUTPUT_SR &&
             output->metadata.nbands == NBANDS_TTL_OUT)
         {
-            for (b = 0; b < output->metadata.band[SRS_AEROSOL].nbits; b++)
-               free(output->metadata.band[SRS_AEROSOL].bitmap_description[b]);
-            free (output->metadata.band[SRS_AEROSOL].bitmap_description);
+            for (b = 0; b < output->metadata.band[SRS_AEROSOL_QA].nbits; b++)
+               free(output->metadata.band[SRS_AEROSOL_QA].bitmap_description[b]);
+            free (output->metadata.band[SRS_AEROSOL_QA].bitmap_description);
         }
 
         /* Free the band data */
@@ -636,7 +673,7 @@ char *upper_case_str
 MODULE:  convert_output
 
 PURPOSE: Applies a scale and offset to the input data and assigns the output
-    to a uint16 array
+to a uint16 array
 
 RETURN VALUE: none
 
@@ -702,3 +739,62 @@ void convert_output
     }
 }
 
+
+/******************************************************************************
+MODULE:  convert_aerosol_output
+
+PURPOSE: Applies a scale to the input aerosol data and assigns the output
+to an int16 array
+
+RETURN VALUE: none
+
+NOTES:
+******************************************************************************/
+void convert_aerosol_output
+(
+    float *aero,        /* I: unscaled aerosol band */
+    uint16 *qaband,     /* I: QA band for the input image, nlines x nsamps */
+    int nlines,         /* I: number of lines */
+    int nsamps,         /* I: number of samples */
+    int16 *out_band     /* O: scaled output for the aerosol band */
+)
+{
+    int curr_pix;           /* pixel loop counter */
+    int npixels;            /* number of pixels in the scene */
+    float tmpf;             /* scaled output value */
+    double min_value;       /* minimum scaled value */
+    double max_value;       /* maximum scaled value */
+    float offset_value;     /* offset to apply */
+    float mult_value;       /* scale value to apply */
+
+    /* Set valid ranges for the aerosol band */
+    offset_value = BAND_OFFSET_AERO;
+    mult_value = MULT_FACTOR_AERO;
+    min_value = (MIN_VALID_AERO + offset_value) * mult_value;
+    max_value = (MAX_VALID_AERO + offset_value) * mult_value;
+
+    if (min_value < 0)
+        min_value = 0;
+    if (max_value > SHRT_MAX)
+        max_value = SHRT_MAX;
+
+    /* Scale and validate the output, skip fill values */
+    npixels = nlines * nsamps;
+    for (curr_pix = 0; curr_pix < npixels; curr_pix++)
+    {
+        if (!level1_qa_is_fill (qaband[curr_pix]))
+        {
+            tmpf = (aero[curr_pix] + offset_value) * mult_value;
+
+            /* Verify the value falls within the specified range */
+            if (tmpf < min_value)
+                out_band[curr_pix] = min_value;
+            else if (tmpf > max_value)
+                out_band[curr_pix] = max_value;
+            else
+                out_band[curr_pix] = roundf (tmpf);
+        }
+        else
+            out_band[curr_pix] = FILL_VALUE_AERO;
+    }
+}

@@ -1801,7 +1801,6 @@ int compute_landsat_sr_refl
         free (tozi);
         free (tp);
     }
-    free (taero);
     free (teps);
  
     /* Write the data to the output file */
@@ -1820,7 +1819,7 @@ int compute_landsat_sr_refl
     /* Loop through the reflectance bands and write the data */
     for (ib = 0; ib <= DNL_BAND7; ib++)
     {
-        /* Scale the output data from float to int16 */
+        /* Scale the output data from float to uint16 */
         convert_output (sband, ib, nlines, nsamps, false, out_band);
 
         /* Write the scaled product */
@@ -1863,21 +1862,26 @@ int compute_landsat_sr_refl
         return (ERROR);
     }
 
-    /* Write the aerosol QA band */
+    /** Write the aerosol band **/
+    /* Scale the output aerosol data from float to int16 (just use the uint16
+       array since it has the same size memory) */
+    convert_aerosol_output (taero, qaband, nlines, nsamps, (int16 *) out_band);
+
+    /* Write the aerosol band */
     printf ("  Aerosol Band %d: %s\n", SRL_AEROSOL+1,
             sr_output->metadata.band[SRL_AEROSOL].file_name);
-    if (put_output_lines (sr_output, ipflag, SRL_AEROSOL, 0, nlines,
-        sizeof (uint8)) != SUCCESS)
+    if (put_output_lines (sr_output, out_band, SRL_AEROSOL, 0, nlines,
+        sizeof (int16)) != SUCCESS)
     {
-        sprintf (errmsg, "Writing aerosol QA output data");
+        sprintf (errmsg, "Writing aerosol data");
         error_handler (true, FUNC_NAME, errmsg);
         return (ERROR);
     }
 
-    /* Free memory for ipflag data */
-    free (ipflag);
+    /* Free the memory for the taero aerosol band */
+    free (taero);
 
-    /* Create the ENVI header for the aerosol QA band */
+    /* Create the ENVI header for the aerosol band */
     if (create_envi_struct (&sr_output->metadata.band[SRL_AEROSOL],
         &xml_metadata->global, &envi_hdr) != SUCCESS)
     {
@@ -1897,8 +1901,51 @@ int compute_landsat_sr_refl
         return (ERROR);
     }
 
-    /* Append the aerosol QA band to the XML file */
+    /* Append the aerosol band to the XML file */
     if (append_metadata (1, &sr_output->metadata.band[SRL_AEROSOL],
+        xml_infile) != SUCCESS)
+    {
+        sprintf (errmsg, "Appending aerosol band to XML file.");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /** Write the aerosol QA band **/
+    printf ("  Aerosol QA Band %d: %s\n", SRL_AEROSOL_QA+1,
+            sr_output->metadata.band[SRL_AEROSOL_QA].file_name);
+    if (put_output_lines (sr_output, ipflag, SRL_AEROSOL_QA, 0, nlines,
+        sizeof (uint8)) != SUCCESS)
+    {
+        sprintf (errmsg, "Writing aerosol QA output data");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Free memory for ipflag data */
+    free (ipflag);
+
+    /* Create the ENVI header for the aerosol QA band */
+    if (create_envi_struct (&sr_output->metadata.band[SRL_AEROSOL_QA],
+        &xml_metadata->global, &envi_hdr) != SUCCESS)
+    {
+        sprintf (errmsg, "Creating ENVI header structure.");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Write the ENVI header */
+    strcpy (envi_file, sr_output->metadata.band[SRL_AEROSOL_QA].file_name);
+    cptr = strchr (envi_file, '.');
+    strcpy (cptr, ".hdr");
+    if (write_envi_hdr (envi_file, &envi_hdr) != SUCCESS)
+    {
+        sprintf (errmsg, "Writing ENVI header file.");
+        error_handler (true, FUNC_NAME, errmsg);
+        return (ERROR);
+    }
+
+    /* Append the aerosol QA band to the XML file */
+    if (append_metadata (1, &sr_output->metadata.band[SRL_AEROSOL_QA],
         xml_infile) != SUCCESS)
     {
         sprintf (errmsg, "Appending aerosol QA band to XML file.");

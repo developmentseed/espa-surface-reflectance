@@ -1,4 +1,4 @@
-## LaSRC Version 3.3.0 Release Notes
+## LaSRC Version 3.4.0 Release Notes
 Release Date: TBD 2022
 
 ### Downloads
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.3.0]
+See git tag [version_3.4.0]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -89,17 +89,7 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Modified the auxiliary file download scripts to download the VIIRS VJ104ANC
-   products with the VNP04ANC products as backup. The operational VIIRS
-   products are HDF5 vs. HDF4 for the MODIS products.
-2. Added a gapfilling algorithm to fill in the gaps in the ozone and water
-   vapor, using weighted averages of monthly averages.
-3. Created a script to generate the monthly averages.  This script should be
-   run nightly from the 1st through the 5th of each month in order to create
-   and update the monthly average for the previous month.  This time range
-   will allow for time lags in the products from the previous month, but also
-   make sure a monthly average is available immediately on the first of each
-   month (even if it isn't quite complete).
-4. Modified the LaSRC code to use these new VIIRS products.
-5. Changed L8_AUX_DIR environment variable for storing the LAADS aux products
-   to LASRC_AUX_DIR. This matches the environment variable used by LaSRC.
+1. Modified the source code to write the aerosols as a band to be delivered
+   with the surface reflectance bands. These are int16 image bands with a
+   valid range of 0-5000 (unscaled). The scale factor for unscaling is 0.001,
+   and the fill value is -9999.
