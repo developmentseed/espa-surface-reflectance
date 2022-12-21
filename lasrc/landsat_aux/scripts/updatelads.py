@@ -36,10 +36,10 @@ USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + \
 # products
 # These are version 006 products
 SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
-TERRA_CMA = '/archive/allData/6/MOD09CMA/'
-TERRA_CMG = '/archive/allData/6/MOD09CMG/'
-AQUA_CMA = '/archive/allData/6/MYD09CMA/'
-AQUA_CMG = '/archive/allData/6/MYD09CMG/'
+TERRA_CMA = '/archive/allData/61/MOD09CMA/'
+TERRA_CMG = '/archive/allData/61/MOD09CMG/'
+AQUA_CMA = '/archive/allData/61/MYD09CMA/'
+AQUA_CMG = '/archive/allData/61/MYD09CMG/'
 
 
 def isLeapYear(year):
