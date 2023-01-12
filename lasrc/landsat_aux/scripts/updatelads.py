@@ -32,7 +32,7 @@ JPSS1_START_YEAR = 2021 # quarterly processing will reprocess back to the
 ##NOTE: For non-ESPA environments, the TOKEN needs to be defined.  This is
 ##the application token that is required for accessing the LAADS data
 ##https://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/
-TOKEN = None
+TOKEN = os.environ.get('LAADS_TOKEN', None)
 USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + sys.version.replace('\n','').replace('\r','')
 
 # leap day start/end of month
