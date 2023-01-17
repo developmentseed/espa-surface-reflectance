@@ -25,7 +25,7 @@ from osgeo import gdalconst
 ##NOTE: For non-ESPA environments, the TOKEN needs to be defined.  This is
 ##the application token that is required for accessing the LAADS data
 ##https://ladsweb.modaps.eosdis.nasa.gov/tools-and-services/data-download-scripts/
-TOKEN = None
+TOKEN = os.environ.get('LAADS_TOKEN', None)
 
 # leap day start/end of month
 ldaySOM = [ 1, 32, 61,  92, 122, 153, 183, 214, 245, 275, 306, 336]
