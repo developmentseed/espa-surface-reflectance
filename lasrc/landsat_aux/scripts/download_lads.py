@@ -110,22 +110,22 @@ def downloadLads (year, doy, destination, token=None):
     
         # make sure the wget was successful or retry up to 5 more times and
         # sleep in between. if successful then break out of the for loop.
-        if retval:
-            retry_count = 1
-            while ((retry_count <= 5) and (retval)):
-                time.sleep(60)
-                logger.info('Retry {0} of wget for {1}'
-                            .format(retry_count, url))
-                retval = subprocess.call(cmd, shell=True, cwd=destination)
-                retry_count += 1
+        #  if retval:
+            #  retry_count = 1
+            #  while ((retry_count <= 5) and (retval)):
+                #  time.sleep(60)
+                #  logger.info('Retry {0} of wget for {1}'
+                            #  .format(retry_count, url))
+                #  retval = subprocess.call(cmd, shell=True, cwd=destination)
+                #  retry_count += 1
     
-            if retval:
-                logger.info('unsuccessful download of {0} (retried 5 times)'
-                            .format(url))
-            else:
-                break
-        else:
-            break
+            #  if retval:
+                #  logger.info('unsuccessful download of {0} (retried 5 times)'
+                            #  .format(url))
+            #  else:
+                #  break
+        #  else:
+            #  break
 
     # make sure the index.html file was removed if it was downloaded
     index_file = '{}/index.html'.format(destination)
