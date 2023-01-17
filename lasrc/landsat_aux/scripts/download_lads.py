@@ -29,8 +29,8 @@ SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
 ##VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
 ##VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
 ###Final operational VIIRS products (HDF5)
-VIIRS_JPSS1 = '/archive/lads/allData/5200/VJ104ANC/'
-VIIRS_NPP = '/archive/lads/allData/5200/VNP04ANC/'
+VIIRS_JPSS1 = '/archive/allData/5200/VJ104ANC/'
+VIIRS_NPP = '/archive/allData/5200/VNP04ANC/'
 
 
 def buildURLs(year, doy):
