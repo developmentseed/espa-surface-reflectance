@@ -111,7 +111,7 @@ def downloadLads (year, doy, destination, token=None):
         # make sure the wget was successful or retry up to 5 more times and
         # sleep in between. if successful then break out of the for loop.
         if retval:
-            retry_count = 1
+            retry_count = 6
             while ((retry_count <= 5) and (retval)):
                 time.sleep(2)
                 logger.info('Retry {0} of wget for {1}'
