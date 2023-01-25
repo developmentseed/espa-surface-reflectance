@@ -22,9 +22,6 @@ NOTES:
 #include "utmtodeg.h"
 #endif
 
-/* Water vapor and ozone fill values (for VIIRS aux) */
-#define WV_FILL 0
-#define OZ_FILL 0
 
 /******************************************************************************
 MODULE:  init_sr_refl
@@ -61,6 +58,7 @@ int init_sr_refl
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
     char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    aux_src_t aux_src,  /* I: Identifies the source of atmospheric aux data */
     float *eps,         /* O: angstrom coefficient */
     int *iaots,         /* O: index for AOTs */
     float *xtv,         /* O: observation zenith angle (deg) */
@@ -178,9 +176,9 @@ int init_sr_refl
 
     /* Read the auxiliary data files used as input to the reflectance
        calculations */
-    retval = read_auxiliary_files (cmgdemnm, rationm, auxnm, dem, andwi, sndwi,
-        ratiob1, ratiob2, ratiob7, intratiob1, intratiob2, intratiob7,
-        slpratiob1, slpratiob2, slpratiob7, wv, oz);
+    retval = read_auxiliary_files (cmgdemnm, rationm, auxnm, aux_src, dem,
+        andwi, sndwi, ratiob1, ratiob2, ratiob7, intratiob1, intratiob2,
+        intratiob7, slpratiob1, slpratiob2, slpratiob7, wv, oz);
     if (retval != SUCCESS)
     {
         sprintf (errmsg, "Reading the auxiliary files");
@@ -239,23 +237,27 @@ int init_sr_refl
 
     cmg_pix = lcmg * CMG_NBLON + scmg;
 
-    if (wv[cmg_pix] != WV_FILL)
-        *uwv = wv[cmg_pix] / 100.0;
+    /* If not FILL unscale the water vapor, otherwise use the default */
+    if (wv[cmg_pix] != WV_FILL[aux_src])
+        *uwv = (float)wv[cmg_pix] / WV_SCALE_FACTOR[aux_src];
     else
-        *uwv = 2.5;
+        *uwv = WV_DEFAULT[aux_src];
 
-    if (oz[cmg_pix] != OZ_FILL)
-        *uoz = oz[cmg_pix] / 400.0;
+    /* If not FILL unscale the ozone, otherwise use the default */
+    if (oz[cmg_pix] != OZ_FILL[aux_src])
+        *uoz = (float)oz[cmg_pix] / OZ_SCALE_FACTOR[aux_src];
     else
-        *uoz = 0.3;
+        *uoz = OZ_DEFAULT[aux_src];
 
+    /* If not FILL compute the atmospheric pressure for the elevation,
+       otherwise use the default */
     dem_pix = lcmg * DEM_NBLON + scmg;
     if (dem[dem_pix] != -9999)
         *pres = ATMOS_PRES_0 * exp (-dem[dem_pix] * ONE_DIV_8500);
     else
         *pres = ATMOS_PRES_0;
     *raot550nm = 0.05;
-//printf ("DEBUG: CMG pixel line,sample: %d, %d\n", lcmg, scmg);
+printf ("DEBUG: CMG pixel line,sample: %d, %d\n", lcmg, scmg);
 printf ("   uwv, uoz, pres: %f, %f, %f\n", *uwv, *uoz, *pres);
 
     /* Successful completion */

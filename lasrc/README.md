@@ -1,5 +1,5 @@
-## LaSRC Version 3.4.0 Release Notes
-Release Date: TBD 2022
+## LaSRC Version 3.3.1 Release Notes
+Release Date: February 2023
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.4.0]
+See git tag [version_3.3.1]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -66,11 +66,12 @@ See git tag [version_3.4.0]
   * XML2 library
   * Auxiliary data products
     1. LAADS Terra and Aqua CMG and CMA data
+       OR VIIRS JPSS-1 or SUOMI NPP data
     2. CMGDEM HDF file
     3. Various input files and model information provided with the LaSRC auxiliary .tar.gz file
 
 ### Auxiliary Data Updates
-The baseline auxiliary files provided don't include the daily climate data.  In order to generate or update the auxiliary files to the most recent day of year (actually the most current auxiliary files available will be 2-3 days prior to the current day of year do to the latency of the underlying LAADS products) the user will want to run the updatelads.py script available in $PREFIX/bin.  This script can be run with the "--help" argument to print the usage information.  In general the --quarterly argument will reprocess/update all the LAADS data back to 2021.  This is good to do every once in a while to make sure any updates to the LAADS data products are captured.  The --today command-line argument will process the LAADS data for the most recent year.  In general, it is suggested to run the script with --quarterly once a quarter.  Then run the script with --today on a nightly basis.  This should provide an up-to-date version of the auxiliary input data for LaSRC.  The easiest way to accomplish this is to set up a nightly and quarterly cron job.  
+The baseline auxiliary files provided don't include the daily climate data.  In order to generate or update the auxiliary files to the most recent day of year (actually the most current auxiliary files available will be 2-3 days prior to the current day of year do to the latency of the underlying LAADS products) the user will want to run the updatelads.py and/or updatelads_modis.py script(s) available in $PREFIX/bin.  This script can be run with the "--help" argument to print the usage information.  In general the --quarterly argument will reprocess/update all the LAADS data backwards in time.  This is good to do every once in a while to make sure any updates to the LAADS data products are captured.  The --today command-line argument will process the LAADS data for the most recent year.  In general, it is suggested to run the script with --quarterly once a quarter.  Then run the script with --today on a nightly basis.  This should provide an up-to-date version of the auxiliary input data for LaSRC.  The easiest way to accomplish this is to set up a nightly and quarterly cron job.
 
 The generate_monthly_climatology script will generate the monthly climatology that is used for filling the gaps in the daily LAADS VIIRS products.  This script should be run nightly starting on the first of every month and going through the fifth of the month.  This will allow the monthly averages for the previous month to be generated and available, even if the previous month isn't complete with all the auxiliary products due to time lags.  By the fifth of the month, all the auxiliary products from the previous month should be availble (under most conditions) and therefore the final monthly average generated should contain data for the entire month.
 
@@ -93,3 +94,9 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
    with the surface reflectance bands. These are int16 image bands with a
    valid range of 0-5000 (unscaled). The scale factor for unscaling is 0.001,
    and the fill value is -9999.
+2. Added support for both MODIS and VIIRS auxiliary products so that we can
+   process historic MODIS auxiliary and forward stream VIIRS auxiliary products.
+   This includes bringing back the MODIS auxiliary scripts to allow the LAADS
+   MODIS auxiliary products to be generated as long as the user desires.
+3. Fixed the MODIS auxiliary WV scale factor. Changed from 200 to 100.
+4. Released the FORTRAN code which processes the VIIRS auxiliary products.

@@ -47,7 +47,8 @@ Output_t *open_output
 (
     Espa_internal_meta_t *in_meta,  /* I: input metadata structure */
     Input_t *input,                 /* I: input band data structure */
-    Myoutput_t output_type          /* I: are we processing TOA, SR outputs? */
+    Myoutput_t output_type,         /* I: are we processing TOA, SR outputs? */
+    char *aux_name                  /* I: auxiliary filename (for SR) */
 )
 {
     char FUNC_NAME[] = "open_output";   /* function name */
@@ -187,6 +188,7 @@ Output_t *open_output
         {
             strcat (bmeta[ib].short_name, "SR");
             strcpy (bmeta[ib].product, "sr_refl");
+            strcpy (bmeta[ib].source, aux_name);
         }
 
         bmeta[ib].nlines = output->nlines;

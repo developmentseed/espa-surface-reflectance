@@ -14,7 +14,7 @@ typedef char byte;
 #endif
 
 /* Surface reflectance version */
-#define SR_VERSION "3.4.0 (Collection 2)"
+#define SR_VERSION "3.3.1 (Collection 2)"
 
 /* Define the default aerosol and EPS value */
 #define DEFAULT_AERO 0.05
@@ -283,4 +283,35 @@ typedef struct {
   double pixsize[2];
 } Img_coord_info_t;
 
+/* Atmospheric Aux Data Source used to index the following arrays */
+typedef enum {
+   MODIS = 0,
+   VIIRS
+} aux_src_t;
+
+/** Defines for MODIS and VIIRS scale and defaults **/
+/* Water vapor scale factor */
+//#define WV_SCALE_FACTOR (int[]) {200, 100}  /** USGS OPS with MODIS bug **/
+#define WV_SCALE_FACTOR (int[]) {100, 100}  /** Fixed wv scale for MODIS **/
+
+/* Water Vapor Default (g/cm^2) - used for scene center computations */
+#define WV_DEFAULT (float[]) {0.5, 2.5}
+
+/* Water Vapor DN Default - use if WV is fill */
+#define WV_DEFAULT_DN (int[]) {0, 250}
+
+/* Water Vapor fill */
+#define WV_FILL (int[]) {0, 0}
+
+/* Ozone scale factor */
+#define OZ_SCALE_FACTOR (int[]) {400, 400}
+
+/* Ozone Default (cm atm) - used for scene center computations */
+#define OZ_DEFAULT (float[]) {0.3, 0.3}
+
+/* Ozone DN Default - use if OZ is fill */
+#define OZ_DEFAULT_DN (int[]) {120, 110}
+
+/* Ozone fill */
+#define OZ_FILL (int[]) {0, 0}
 #endif

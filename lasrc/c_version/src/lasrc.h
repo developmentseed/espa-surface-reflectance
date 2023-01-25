@@ -102,7 +102,8 @@ int compute_landsat_sr_refl
     char *spheranm,     /* I: spherical albedo filename */
     char *cmgdemnm,     /* I: climate modeling grid (CMG) DEM filename */
     char *rationm,      /* I: ratio averages filename */
-    char *auxnm         /* I: auxiliary filename for ozone and water vapor */
+    char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    aux_src_t aux_src   /* I: identifies the source of atmospheric aux data */
 );
 
 int compute_sentinel_sr_refl
@@ -128,7 +129,8 @@ int compute_sentinel_sr_refl
     char *spheranm,     /* I: spherical albedo filename */
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
-    char *auxnm         /* I: auxiliary filename for ozone and water vapor */
+    char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    aux_src_t aux_src   /* I: identifies the source of atmospheric aux data */
 );
 
 int init_sr_refl
@@ -145,6 +147,7 @@ int init_sr_refl
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
     char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    aux_src_t aux_src,  /* I: Identifies the source of atmospheric aux data */
     float *eps,         /* O: angstrom coefficient */
     int *iaots,         /* O: index for AOTs */
     float *xtv,         /* O: observation zenith angle (deg) */

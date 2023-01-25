@@ -447,6 +447,7 @@ int read_auxiliary_files
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
     char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    aux_src_t aux_src,  /* I: indentifies the source of atmospheric aux data */
     int16 *dem,         /* O: CMG DEM data array [DEM_NBLAT x DEM_NBLON] */
     int16 *andwi,       /* O: avg NDWI [RATIO_NBLAT x RATIO_NBLON] */
     int16 *sndwi,       /* O: standard NDWI [RATIO_NBLAT x RATIO_NBLON] */

@@ -51,29 +51,29 @@ gdal.SetConfigOption('GDAL_CACHEMAX', '256')
 gdal.SetConfigOption('GDAL_DISABLE_READDIR_ON_OPEN', 'TRUE')
 
 
-def writeResultsEnvi(auxData, outputFilename, geotrans, prj, 
-                     imageType=gdal.GDT_Byte, bandDesc="Monthly Avgs"):
+def writeResultsEnvi(auxData, outputFilename, imageType=gdal.GDT_Byte,
+    bandDesc="Monthly Avgs"):
     """
     Description: write the output data to the output ENVI file
 
     Args:
       auxData: array of data to write
       outputFilename: filename for writing the auxData (ENVI)
-      geotrans: geo information from GDAL
-      prj: projection information from GDAL
       imageType: data type of the output band
       bandDesc: description for the band names in the ENVI header file
 
     Returns: N/A
     """
+    # if the monthly average file already exists, remove it
+    if os.path.isfile(outputFilename):
+        os.remove(outputFilename)
+
     # create the ENVI driver for output data
     driver = gdal.GetDriverByName('ENVI')
 
     # create the output dataset
     aux_dataset = driver.Create(outputFilename, xsize=auxData.shape[1],
                   ysize=auxData.shape[0], bands=1, eType=imageType)
-    aux_dataset.SetGeoTransform(geotrans)
-    aux_dataset.SetProjection(prj)
 
     # get the output band
     aux_band = aux_dataset.GetRasterBand(1)
@@ -85,39 +85,7 @@ def writeResultsEnvi(auxData, outputFilename, geotrans, prj,
     aux_dataset = None
 
 
-def writeResultsGTiff(auxData, outputFilename, geotrans, prj, 
-                      imageType=gdal.GDT_Byte):
-    """
-    Description: write the output data to the output GTiff file
-
-    Args:
-      auxData: array of data to write
-      outputFilename: filename for writing the auxData (GeoTIFF)
-      geotrans: geo information from GDAL
-      prj: projection information from GDAL
-      imageType: data type of the output band
-
-    Returns: N/A
-    """
-    # create the TIF driver for output data
-    driver = gdal.GetDriverByName('GTiff')
-
-    # create the output dataset
-    aux_dataset = driver.Create(outputFilename, xsize=auxData.shape[1],
-                  ysize=auxData.shape[0], bands=1, eType=imageType)
-    aux_dataset.SetGeoTransform(geotrans)
-    aux_dataset.SetProjection(prj)
-
-    # get the output band
-    aux_band = aux_dataset.GetRasterBand(1)
-    aux_band.SetNoDataValue(0)
-    aux_band.WriteArray(auxData)
-
-    aux_band = None
-    aux_dataset = None
-
-
-def addFiletoAvg(auxfile, init_totals, aux_total, aux_sum, geotrans, prj):
+def addFiletoAvg(auxfile, init_totals, aux_total, aux_sum):
     """
     Description: addFiletoAvg will add the current auxiliary file/SDS to the
     specific SDS monthly average.
@@ -127,8 +95,6 @@ def addFiletoAvg(auxfile, init_totals, aux_total, aux_sum, geotrans, prj):
                auxiliary totals
       init_totals: boolean to specify if the auxiliary totals need initialized
       aux_total: running total for the auxiliary data (uint64)
-      geotrans: GDAL geolocation information
-      prj: GDAL projection information
 
     Returns:
         False: error occurred while processing
@@ -143,9 +109,6 @@ def addFiletoAvg(auxfile, init_totals, aux_total, aux_sum, geotrans, prj):
     if aux_dataset is None:
         logger.error('Failed to open auxiliary file: {}'.format(auxfile))
         return False
-
-    geotrans = aux_dataset.GetGeoTransform()
-    prj = aux_dataset.GetProjectionRef()
 
     # get the band from the file
     aux_band = aux_dataset.GetRasterBand(1)
@@ -181,7 +144,7 @@ def addFiletoAvg(auxfile, init_totals, aux_total, aux_sum, geotrans, prj):
     # free the image data
     aux_image = None
 
-    return True, init_totals, aux_total, aux_sum, geotrans, prj
+    return True, init_totals, aux_total, aux_sum
 
 
 def downloadFiles(dloaddir, year, start_doy, end_doy, token):
@@ -216,7 +179,7 @@ def downloadFiles(dloaddir, year, start_doy, end_doy, token):
         logger.info(msg)
         for myfile in os.listdir(dloaddir):
             name = os.path.join(dloaddir, myfile)
-            if not os.path.isdir(name):
+            if os.path.isfile(name):
                 os.remove(name)
 
     # loop through each day in the year and download the LAADS data
@@ -415,12 +378,8 @@ def main ():
     init_wv_totals = True
     oz_total = None
     oz_count = None
-    oz_geotrans = None
-    oz_prj = None
     wv_total = None
     wv_count = None
-    wv_geotrans = None
-    wv_prj = None
     count = 0
     for doy in range(min_doy, max_doy+1):
         logger.info('Processing DOY {}'.format(doy))
@@ -454,18 +413,16 @@ def main ():
         # if this is the first file in the month then we need to setup and
         # initialize the ozone and water vapor totals
         count = count + 1
-        [status, init_oz_totals, oz_total, oz_count, oz_geotrans, oz_prj] =  \
-            addFiletoAvg(oz_sds, init_oz_totals, oz_total, oz_count,
-                         oz_geotrans, oz_prj)
+        [status, init_oz_totals, oz_total, oz_count] =  \
+            addFiletoAvg(oz_sds, init_oz_totals, oz_total, oz_count)
         if not status:
             msg = ('An error occurred adding {} to the overall total.'
                    .format(oz_sds))
             logger.error(msg)
             return ERROR
 
-        [status, init_wv_totals, wv_total, wv_count, wv_geotrans, wv_prj] =  \
-            addFiletoAvg(wv_sds, init_wv_totals, wv_total, wv_count,
-                         wv_geotrans, wv_prj)
+        [status, init_wv_totals, wv_total, wv_count] =  \
+            addFiletoAvg(wv_sds, init_wv_totals, wv_total, wv_count)
         if not status:
             msg = ('An error occurred adding {} to the overall total.'
                    .format(wv_sds))
@@ -500,12 +457,16 @@ def main ():
     # write data to the output ENVI File
     basename = 'monthly_avg_oz_{:4}_{:02}'.format(aux_year, aux_month)
     outname = '{}/{}.img'.format(auxdir_out, basename)
-    writeResultsEnvi(oz_total, outname, oz_geotrans, oz_prj, gdal.GDT_Byte,
-                     basename)
+    writeResultsEnvi(oz_total, outname, gdal.GDT_Byte, basename)
     basename = 'monthly_avg_wv_{:4}_{:02}'.format(aux_year, aux_month)
     outname = '{}/{}.img'.format(auxdir_out, basename)
-    writeResultsEnvi(wv_total, outname, wv_geotrans, wv_prj, gdal.GDT_UInt16,
-                     basename)
+    writeResultsEnvi(wv_total, outname, gdal.GDT_UInt16, basename)
+
+    # clean up the temporary download directory
+    for myfile in os.listdir(dloaddir):
+        name = os.path.join(dloaddir, myfile)
+        if os.path.isfile(name):
+            os.remove(name)
 
     # successful completion
     return SUCCESS
@@ -518,5 +479,5 @@ if __name__ == "__main__":
                                 ' %(filename)s:%(lineno)d:'
                                 '%(funcName)s -- %(message)s'),
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     sys.exit(main())

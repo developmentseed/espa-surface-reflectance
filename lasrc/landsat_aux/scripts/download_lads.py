@@ -12,8 +12,8 @@ logging.getLogger('requests').setLevel(logging.WARNING)
 # Global static variables
 ERROR = 1
 SUCCESS = 0
-NPP_START_YEAR = 2017
-JPSS1_START_YEAR = 2021 # quarterly processing will reprocess back to the
+NPP_START_YEAR = 2018
+JPSS1_START_YEAR = 2018 # quarterly processing will reprocess back to the
                         # start year to make sure all data is up to date
                         # Landsat 8 was launched on Feb. 11, 2013
                         # Landsat 9 was launched on Sept. 27, 2021
@@ -29,8 +29,10 @@ SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
 ##VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
 ##VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
 ###Final operational VIIRS products (HDF5)
-VIIRS_JPSS1 = '/archive/lads/allData/5200/VJ104ANC/'
-VIIRS_NPP = '/archive/lads/allData/5200/VNP04ANC/'
+##VIIRS_JPSS1 = '/archive/lads/allData/5200/VJ104ANC/'
+##VIIRS_NPP = '/archive/lads/allData/5200/VNP04ANC/'
+VIIRS_JPSS1 = '/archive/allData/5200/VJ104ANC/'
+VIIRS_NPP = '/archive/allData/5200/VNP04ANC/'
 
 
 def buildURLs(year, doy):

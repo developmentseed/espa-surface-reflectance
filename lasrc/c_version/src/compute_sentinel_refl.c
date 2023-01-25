@@ -242,12 +242,6 @@ int read_sentinel_toa_refl
 }
 
 
-/* Water vapor and ozone fill and default values (for VIIRS aux) */
-#define WV_FILL 0
-#define WV_DEFAULT 250
-#define OZ_FILL 0
-#define OZ_DEFAULT 110
-
 /******************************************************************************
 MODULE:  compute_sentinel_sr_refl
 
@@ -303,7 +297,8 @@ int compute_sentinel_sr_refl
     char *spheranm,     /* I: spherical albedo filename */
     char *cmgdemnm,     /* I: climate modeling grid DEM filename */
     char *rationm,      /* I: ratio averages filename */
-    char *auxnm         /* I: auxiliary filename for ozone and water vapor */
+    char *auxnm,        /* I: auxiliary filename for ozone and water vapor */
+    aux_src_t aux_src   /* I: identifies the source of atmospheric aux data */
 )
 {
     char errmsg[STR_SIZE];   /* error message */
@@ -618,12 +613,12 @@ int compute_sentinel_sr_refl
        water vapor is initialized to the value at the center of the scene (uwv)
        ozone is initialized to the value at the center of the scene (uoz) */
     retval = init_sr_refl (nlines, nsamps, input, &space_def, space, anglehdf,
-        intrefnm, transmnm, spheranm, cmgdemnm, rationm, auxnm, &eps, &iaots,
-        &xtv, &xmuv, &xfi, &cosxfi, &raot550nm, &pres, &uoz, &uwv, &xtsstep,
-        &xtsmin, &xtvstep, &xtvmin, tsmax, tsmin, tts, ttv, indts, rolutt,
-        transt, sphalbt, normext, nbfic, nbfi, dem, andwi, sndwi, ratiob1,
-        ratiob2, ratiob7, intratiob1, intratiob2, intratiob7, slpratiob1,
-        slpratiob2, slpratiob7, wv, oz);
+        intrefnm, transmnm, spheranm, cmgdemnm, rationm, auxnm, aux_src, &eps,
+        &iaots, &xtv, &xmuv, &xfi, &cosxfi, &raot550nm, &pres, &uoz, &uwv,
+        &xtsstep, &xtsmin, &xtvstep, &xtvmin, tsmax, tsmin, tts, ttv, indts,
+        rolutt, transt, sphalbt, normext, nbfic, nbfi, dem, andwi, sndwi,
+        ratiob1, ratiob2, ratiob7, intratiob1, intratiob2, intratiob7,
+        slpratiob1, slpratiob2, slpratiob7, wv, oz);
     if (retval != SUCCESS)
     {
         sprintf (errmsg, "Error initializing the lookup tables and "
@@ -924,37 +919,37 @@ int compute_sentinel_sr_refl
                 cmg_pix22 = lcmg1 * CMG_NBLON + scmg1;
 
                 /* Get the water vapor pixels. If the water vapor value is
-                   fill (=0), then use a default value of 250. */
+                   fill, then use a default value. */
                 wv11 = wv[cmg_pix11];
-                if (wv11 == WV_FILL)
-                    wv11 = WV_DEFAULT;
+                if (wv11 == WV_FILL[aux_src])
+                    wv11 = WV_DEFAULT_DN[aux_src];
                 wv12 = wv[cmg_pix12];
-                if (wv12 == WV_FILL)
-                    wv12 = WV_DEFAULT;
+                if (wv12 == WV_FILL[aux_src])
+                    wv12 = WV_DEFAULT_DN[aux_src];
                 wv21 = wv[cmg_pix21];
-                if (wv21 == WV_FILL)
-                    wv21 = WV_DEFAULT;
+                if (wv21 == WV_FILL[aux_src])
+                    wv21 = WV_DEFAULT_DN[aux_src];
                 wv22 = wv[cmg_pix22];
-                if (wv22 == WV_FILL)
-                    wv22 = WV_DEFAULT;
+                if (wv22 == WV_FILL[aux_src])
+                    wv22 = WV_DEFAULT_DN[aux_src];
 
-                /* Get the ozone pixels. If the ozone value is fill (=0), then
-                   use a default value of 110. */
+                /* Get the ozone pixels. If the ozone value is fill, then
+                   use a default value. */
                 uoz11 = oz[cmg_pix11];
-                if (uoz11 == OZ_FILL)
-                    uoz11 = OZ_DEFAULT;
+                if (uoz11 == OZ_FILL[aux_src])
+                    uoz11 = OZ_DEFAULT_DN[aux_src];
 
                 uoz12 = oz[cmg_pix12];
-                if (uoz12 == OZ_FILL)
-                    uoz12 = OZ_DEFAULT;
+                if (uoz12 == OZ_FILL[aux_src])
+                    uoz12 = OZ_DEFAULT_DN[aux_src];
 
                 uoz21 = oz[cmg_pix21];
-                if (uoz21 == OZ_FILL)
-                    uoz21 = OZ_DEFAULT;
+                if (uoz21 == OZ_FILL[aux_src])
+                    uoz21 = OZ_DEFAULT_DN[aux_src];
 
                 uoz22 = oz[cmg_pix22];
-                if (uoz22 == OZ_FILL)
-                    uoz22 = OZ_DEFAULT;
+                if (uoz22 == OZ_FILL[aux_src])
+                    uoz22 = OZ_DEFAULT_DN[aux_src];
 
                 /* Get the surface pressure from the global DEM.  Set to 1013.0
                    (sea level) if the DEM is fill (= -9999), which is likely
@@ -1920,7 +1915,7 @@ int compute_sentinel_sr_refl
         "files ... %s", ctime(&mytime)); fflush(stdout);
 
     /* Open the output file */
-    sr_output = open_output (xml_metadata, input, OUTPUT_SR);
+    sr_output = open_output (xml_metadata, input, OUTPUT_SR, auxnm);
     if (sr_output == NULL)
     {   /* error message already printed */
         error_handler (true, FUNC_NAME, errmsg);

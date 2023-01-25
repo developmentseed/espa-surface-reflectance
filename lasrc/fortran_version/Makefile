@@ -20,9 +20,9 @@ F_EXTRA   = -Wall -O2 -ffixed-line-length-132
 
 C_OBJECTS = qa_index_routine.o setprojinfo.o
 
-F_OBJECTS = possolp.o sub_deg2utm.o sub_utm2deg.o subaeroretwat.o subaeroretv4.o LUTldcm_subr_v5.o LaSRCL8-v3.5.5.o
+F_OBJECTS = possolp.o sub_deg2utm.o sub_utm2deg.o subaeroretwat.o subaeroretv4.o LUTldcm_subr_v5.o LDCMSR-v3.5.7.f
 
-TARGET = LaSRCL8-v3.5.5
+TARGET = LDCMSR-v3.5.7.f
 
 all: $(TARGET)
 

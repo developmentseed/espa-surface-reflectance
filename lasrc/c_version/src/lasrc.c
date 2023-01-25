@@ -62,6 +62,7 @@ int main (int argc, char *argv[])
                                 and ozone*/
     char *cptr = NULL;       /* pointer to the file extension */
     char aux_year[5];        /* string to contain the year of auxiliary file */
+    aux_src_t aux_src;       /* identifies the source of atmospheric aux data */
 
     int retval;              /* return status */
     int ib;                  /* looping variable for input bands */
@@ -283,6 +284,11 @@ int main (int argc, char *argv[])
         }
     }
 
+    /* Is the atmospheric aux file VIIRS (VJ104ANC/VNP04ANC) or MODIS (L8ANC) */
+    aux_src = VIIRS;
+    if (strstr(aux_infile, "L8ANC") != NULL)
+        aux_src = MODIS;
+
     /* Get the auxiliary directory and the full pathname of the auxiliary
        files to be read if processing surface reflectance */
     if (process_sr)
@@ -302,7 +308,10 @@ int main (int argc, char *argv[])
 
         /* Grab the year of the auxiliary input file to be used for the correct
            location of the auxiliary file in the auxiliary directory */
-        strncpy (aux_year, &aux_infile[10], 4);
+        if (aux_src == VIIRS)
+            strncpy (aux_year, &aux_infile[10], 4);
+        else
+            strncpy (aux_year, &aux_infile[5], 4);
         aux_year[4] = '\0';
 
         /* Set up the look-up table files and make sure they exist */
@@ -425,7 +434,7 @@ int main (int argc, char *argv[])
     {
         /* Open the TOA output file, and set up the bands according to whether
            the TOA reflectance bands will be written. */
-        toa_output = open_output (&xml_metadata, input, OUTPUT_TOA);
+        toa_output = open_output (&xml_metadata, input, OUTPUT_TOA, NULL);
         if (toa_output == NULL)
         {   /* error message already printed */
             error_handler (true, FUNC_NAME, errmsg);
@@ -571,7 +580,7 @@ int main (int argc, char *argv[])
             retval = compute_landsat_sr_refl (input, &xml_metadata, xml_infile,
                 qaband, out_band, nlines, nsamps, pixsize, sband, sza, saa,
                 vza, vaa, xts, xmus, use_orig_aero, anglehdf, intrefnm,
-                transmnm, spheranm, cmgdemnm, rationm, auxnm);
+                transmnm, spheranm, cmgdemnm, rationm, auxnm, aux_src);
             if (retval != SUCCESS)
             {
                 sprintf (errmsg, "Error computing Landsat surface reflectance");
@@ -584,7 +593,7 @@ int main (int argc, char *argv[])
             retval = compute_sentinel_sr_refl (input, &xml_metadata, xml_infile,
                 qaband, nlines, nsamps, pixsize, toaband, sband, out_band, xts,
                 xmus, use_orig_aero, anglehdf, intrefnm, transmnm, spheranm,
-                cmgdemnm, rationm, auxnm);
+                cmgdemnm, rationm, auxnm, aux_src);
             if (retval != SUCCESS)
             {
                 sprintf (errmsg, "Error computing Sentinel-2 surface "

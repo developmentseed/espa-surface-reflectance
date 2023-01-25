@@ -286,6 +286,10 @@ def getLadsData (auxdir, year, today, token):
         msg = ('Moving downloaded file {} to {}'
                .format(viirs_anc, outputDir))
         logger.debug(msg)
+        outanc = ('{}/{}'.format(outputDir, os.path.basename(viirs_anc)))
+        if os.path.isfile(outanc):
+            logger.debug('REMOVING ' + outanc)
+            os.remove(outanc)
         shutil.move(viirs_anc, outputDir)
 
     # end for doy
