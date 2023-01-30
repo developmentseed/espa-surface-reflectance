@@ -77,6 +77,9 @@ class SurfaceReflectance():
             parser.add_option ("--write_toa", dest="write_toa", default=False,
                 action="store_true",
                 help="write the intermediate TOA reflectance products")
+            parser.add_option("--use_orig_aero", dest="use_orig_aero",
+                default=False, action="store_true",
+                help="use original aerosol")
             (options, args) = parser.parse_args()
     
             # XML input file
