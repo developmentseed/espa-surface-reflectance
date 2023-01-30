@@ -55,7 +55,7 @@ class SurfaceReflectance():
     #      going to be grabbed from the command line, then it's assumed all
     #      the parameters will be pulled from the command line.
     #######################################################################
-    def runSr (self, xml_infile=None, process_sr=None, write_toa=False):
+    def runSr (self, xml_infile=None, process_sr=None, write_toa=False, use_orig_aero=False):
         # if no parameters were passed then get the info from the
         # command line
         if xml_infile == None:
@@ -169,15 +169,18 @@ class SurfaceReflectance():
         # if any errors occur.
         process_sr_opt_str = '--process_sr=true '
         write_toa_opt_str = ''
+        use_orig_aero_opt_str = ''
 
         if process_sr == 'False':
             process_sr_opt_str = '--process_sr=false '
         if write_toa:
             write_toa_opt_str = '--write_toa '
+        if use_orig_aero:
+            use_orig_aero_opt_str = '--use_orig_aero '
 
         cmdstr = ('lasrc --xml={} --aux={} {}{}--verbose'
                   .format(xml_infile, aux_file, process_sr_opt_str,
-                          write_toa_opt_str))
+                          write_toa_opt_str, use_orig_aero_opt_str))
         msg = 'Executing lasrc command: {}'.format(cmdstr)
         logger.debug (msg)
         (exit_code, output) = subprocess.getstatusoutput (cmdstr)
