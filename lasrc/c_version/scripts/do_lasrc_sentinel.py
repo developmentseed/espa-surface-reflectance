@@ -68,8 +68,11 @@ class SurfaceReflectance():
             parser.add_option ("-i", "--xml", type="string",
                 dest="xml",
                 help="name of XML file", metavar="FILE")
+            parser.add_option("-o", "--use_orig_aero", type="string",
+                dest="use_orig_aero",
+                help="use original aerosol", metavar="AERO")
             (options, args) = parser.parse_args()
-    
+
             # XML input file
             xml_infile = options.xml
             if xml_infile == None:
