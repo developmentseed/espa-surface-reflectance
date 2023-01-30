@@ -668,7 +668,7 @@ void usage ()
     printf ("usage: lasrc "
             "--xml=input_xml_filename "
             "--aux=input_auxiliary_filename "
-            "--process_sr=true:false --write_toa [--use_orig_aero_alg] "
+            "--process_sr=true:false --write_toa [--use_orig_aero] "
             "[--verbose] [--version]\n");
 
     printf ("\nwhere the following parameters are required:\n");
@@ -689,7 +689,7 @@ void usage ()
             "to the output file. This argument has no relevance for Sentinel-2 "
             "products, since they are input as TOA reflectance, and therefore "
             "is ignored.\n");
-    printf ("    -use_orig_aero_alg: specifies if the original FORTRAN-based "
+    printf ("    -use_orig_aero: specifies if the original FORTRAN-based "
             "algorithm should be used for the aerosol inversion. (default is "
             "to use the semi-empirical approach for accessing the look-up "
             "table which provides a speed-up in processing)\n");
@@ -726,7 +726,7 @@ void usage ()
 
     printf ("\nExample: lasrc "
             "--xml=L1C_T10TFR_A016455_20180816T190038.xml "
-            "--aux=VJ104ANC.A2018228.002.2022179071944.h5 --use_orig_aero_alg "
+            "--aux=VJ104ANC.A2018228.002.2022179071944.h5 --use_orig_aero "
             "--verbose\n");
     printf ("   ==> Writes bands 1-12 as surface reflectance but uses the "
             "original FORTRAN aerosol inversion algorithm.\n\n");

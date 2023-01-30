@@ -50,7 +50,7 @@ int get_args
     {
         {"verbose", no_argument, &verbose_flag, 1},
         {"write_toa", no_argument, &write_toa_flag, 1},
-        {"use_orig_aero_alg", no_argument, &use_orig_aero_flag, 1},
+        {"use_orig_aero", no_argument, &use_orig_aero_flag, 1},
         {"xml", required_argument, 0, 'i'},
         {"aux", required_argument, 0, 'a'},
         {"process_sr", required_argument, 0, 'p'},
