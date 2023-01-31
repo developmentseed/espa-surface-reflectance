@@ -91,6 +91,7 @@ class SurfaceReflectance():
             # surface reflectance options
             process_sr = options.process_sr
             write_toa = options.write_toa
+            use_orig_aero = options.use_orig_aero
 
         # get the logger
         logger = logging.getLogger(__name__)
