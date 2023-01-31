@@ -181,7 +181,7 @@ class SurfaceReflectance():
         if use_orig_aero:
             use_orig_aero_opt_str = '--use_orig_aero '
 
-        cmdstr = ('lasrc --xml={} --aux={} {}{}--verbose'
+        cmdstr = ('lasrc --xml={} --aux={} {}{}{}--verbose'
                   .format(xml_infile, aux_file, process_sr_opt_str,
                           write_toa_opt_str, use_orig_aero_opt_str))
         msg = 'Executing lasrc command: {}'.format(cmdstr)
