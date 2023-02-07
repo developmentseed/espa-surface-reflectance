@@ -7,7 +7,6 @@ import fnmatch
 import subprocess
 import time
 from io import StringIO
-logging.getLogger('requests').setLevel(logging.WARNING)
 
 # Global static variables
 ERROR = 1
@@ -33,6 +32,23 @@ SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
 ##VIIRS_NPP = '/archive/lads/allData/5200/VNP04ANC/'
 VIIRS_JPSS1 = '/archive/allData/5200/VJ104ANC/'
 VIIRS_NPP = '/archive/allData/5200/VNP04ANC/'
+
+
+# Determine the logging level. Default is INFO.
+espa_log_level = os.environ.get('ESPA_LOG_LEVEL')
+if espa_log_level == 'DEBUG':
+    log_level = logging.DEBUG
+else:
+    log_level = logging.INFO
+
+# Setup the default logger format and level.  Log to STDOUT.
+logging.basicConfig(format=('%(asctime)s.%(msecs)03d %(process)d'
+                            ' %(levelname)-8s'
+                            ' %(filename)s:%(lineno)d:'
+                            '%(funcName)s -- %(message)s'),
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=log_level,
+                    stream=sys.stdout)
 
 
 def buildURLs(year, doy):

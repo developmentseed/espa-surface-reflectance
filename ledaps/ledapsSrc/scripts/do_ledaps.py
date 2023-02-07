@@ -277,11 +277,18 @@ class Ledaps():
 # ##### end of Ledaps class #####
 
 if __name__ == "__main__":
+    # Determine the logging level. Default is INFO.
+    espa_log_level = os.environ.get('ESPA_LOG_LEVEL')
+    if espa_log_level == 'DEBUG':
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
     # Setup the default logger format and level. Log to STDOUT.
     logging.basicConfig(format=('%(asctime)s.%(msecs)03d %(process)d'
                                 ' %(levelname)-8s'
                                 ' %(filename)s:%(lineno)d:'
                                 '%(funcName)s -- %(message)s'),
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        level=logging.INFO)
+                        level=log_level)
     sys.exit(Ledaps().runLedaps())

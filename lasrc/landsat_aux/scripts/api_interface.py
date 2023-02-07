@@ -2,7 +2,15 @@ import requests
 import logging
 
 
-logging.getLogger('requests').setLevel(logging.WARNING)
+# Determine the logging level. Default is WARNING.
+espa_log_level = os.environ.get('ESPA_LOG_LEVEL')
+if espa_log_level == 'DEBUG':
+    log_level = logging.DEBUG
+else if espa_log_level == 'INFO':
+    log_level = logging.INFO
+else:
+    log_level = logging.WARNING
+logging.getLogger('requests').setLevel(log_level)
 
 
 class APIException(Exception):

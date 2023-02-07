@@ -114,6 +114,12 @@ def get_science_application_name(satellite_sensor_code):
 
 def main():
     '''Determines executable, and calls it with all input arguments '''
+    # Determine the logging level. Default is INFO.
+    espa_log_level = os.environ.get('ESPA_LOG_LEVEL')
+    if espa_log_level == 'DEBUG':
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
 
     # Setup the default logger format and level.  Log to STDOUT.
     logging.basicConfig(format=('%(asctime)s.%(msecs)03d %(process)d'
@@ -121,7 +127,7 @@ def main():
                                 ' %(filename)s:%(lineno)d:'
                                 '%(funcName)s -- %(message)s'),
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        level=logging.INFO,
+                        level=log_level,
                         stream=sys.stdout)
 
     # Get the logger
