@@ -1,4 +1,4 @@
-## LaSRC Version 3.3.1 Release Notes
+## LaSRC Version 3.3.2 Release Notes
 Release Date: February 2023
 
 ### Downloads
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.3.1]
+See git tag [version_3.3.2]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -100,3 +100,5 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
    MODIS auxiliary products to be generated as long as the user desires.
 3. Fixed the MODIS auxiliary WV scale factor. Changed from 200 to 100.
 4. Released the FORTRAN code which processes the VIIRS auxiliary products.
+5. Updated the scripts to set the logging level based on the ESPA_LOG_LEVEL
+   environment variable.
