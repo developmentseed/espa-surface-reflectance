@@ -33,12 +33,12 @@ USERAGENT = 'espa.cr.usgs.gov/updatelads.py 1.4.1--' + sys.version.replace('\n',
 # Specify the base location for the LAADS data as well as the
 # correct subdirectories for each of the instrument-specific ozone
 # products
-# These are version 006 products
+# These are version 061 products
 SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
-TERRA_CMA = '/archive/allData/6/MOD09CMA/'
-TERRA_CMG = '/archive/allData/6/MOD09CMG/'
-AQUA_CMA = '/archive/allData/6/MYD09CMA/'
-AQUA_CMG = '/archive/allData/6/MYD09CMG/'
+TERRA_CMA = '/archive/allData/61/MOD09CMA/'
+TERRA_CMG = '/archive/allData/61/MOD09CMG/'
+AQUA_CMA = '/archive/allData/61/MYD09CMA/'
+AQUA_CMG = '/archive/allData/61/MYD09CMG/'
 
 def isLeapYear (year):
     """
@@ -87,7 +87,7 @@ def geturl(url, token=None, out=None):
     import subprocess
     try:
         # Setup CURL command using silent mode and change location if reported
-        args = ['curl', '--fail', '-sS', '-L', '--retry', '5',
+        args = ['curl', '--fail', '--no-progress-meter', '-L', '--retry', '5',
                 '--retry-delay', '60', '--get', url]
         for (k,v) in list(headers.items()):
             args.extend(['-H', ': '.join([k, v])])
@@ -212,7 +212,7 @@ def downloadLads (year, doy, destination, token=None):
     for url in urlList:
         msg = 'Retrieving {} to {}'.format(url, destination)
         cmd = ('wget -e robots=off -m -np -R .html,.tmp --no-directories '
-               '--header \"Authorization: Bearer {}\" -P {} \"{}\"'
+               '--no-verbose --header \"Authorization: Bearer {}\" -P {} \"{}\"'
                .format(token, destination, url))
         retval = subprocess.call(cmd, shell=True, cwd=destination)
     

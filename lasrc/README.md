@@ -102,3 +102,7 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 4. Released the FORTRAN code which processes the VIIRS auxiliary products.
 5. Updated the scripts to set the logging level based on the ESPA_LOG_LEVEL
    environment variable.
+6. Changed the LAADS script to download MODIS Collection 6.1 vs. Collection 6
+   products, since Collection 6 is no longer available. 
+7. Turned off the progress meter for the wget calls so it doesn't blow up the
+   log files.

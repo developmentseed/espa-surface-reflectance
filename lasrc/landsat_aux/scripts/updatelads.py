@@ -68,7 +68,7 @@ def geturl(url, token=None, out=None):
     import subprocess
     try:
         # Setup CURL command using silent mode and change location if reported
-        args = ['curl', '--fail', '-sS', '-L', '--retry', '5',
+        args = ['curl', '--fail', '--no-progress-meter', '-L', '--retry', '5',
                 '--retry-delay', '60', '--get', url]
         for (k,v) in list(headers.items()):
             args.extend(['-H', ': '.join([k, v])])
