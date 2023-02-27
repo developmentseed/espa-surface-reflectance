@@ -10,8 +10,8 @@ import glob     # list and manipulate filenames
 
 ERROR = 1
 SUCCESS = 0
-VIIRS_STARTING_DATE = "20990101"
-##VIIRS_STARTING_DATE = "20000101"
+##VIIRS_AUX_STARTING_DATE = "20000101"
+VIIRS_AUX_STARTING_DATE = "20990101"
 
 
 #############################################################################
@@ -43,8 +43,11 @@ class SurfaceReflectance():
     #       should be completed.  True or False.  Default is True, otherwise
     #       the processing will halt after the TOA reflectance products are
     #       complete.
-    #   viirs_starting_date - YYYYmmdd string to identify the date when
-    #     VIIRS auxiliary products should start being used
+    #   viirs_aux_starting_date - YYYYmmdd string to identify the date when
+    #     VIIRS auxiliary products should start being used. Default is to
+    #     pull the starting date from the VIIRS_AUX_STARTING_DATE environment
+    #     variable. If that isn't defined, then we will use a date far into
+    #     the future so that MODIS auxiliary is used.
     #
     # Returns:
     #     ERROR - error running the surface reflectance application
@@ -60,10 +63,10 @@ class SurfaceReflectance():
     #      the parameters will be pulled from the command line.
     #######################################################################
     def runSr (self, xml_infile=None, process_sr=None, write_toa=False,
-               viirs_starting_date=VIIRS_STARTING_DATE):
+               viirs_aux_starting_date=None):
         # if no parameters were passed then get the info from the
         # command line
-        if xml_infile == None:
+        if xml_infile is None:
             # Get version number
             cmdstr = ('lasrc --version')
             (exit_code, self.version) = subprocess.getstatusoutput(cmdstr)
@@ -82,33 +85,50 @@ class SurfaceReflectance():
             parser.add_option ("--write_toa", dest="write_toa", default=False,
                 action="store_true",
                 help="write the intermediate TOA reflectance products")
-            parser.add_option ("--viirs_starting_date", type="string",
-                dest="viirs_starting_date",
+            parser.add_option ("--viirs_aux_starting_date", type="string",
+                dest="viirs_aux_starting_date",
                 action='store',
                 metavar='YYYYMMDD',
-                default=VIIRS_STARTING_DATE,
                 help="Acquisition date at which to begin using VIIRS "
-                     "auxiliary data instead of MODIS data.")
+                     "auxiliary data instead of MODIS data. The default is "
+                     "to pull the date from the VIIRS_AUX_STARTING_DATE "
+                     "environment variable. If that isn't set, then a date "
+                     "which is far into the future will be set so that MODIS "
+                     "auxiliary data continues to be used.")
             (options, args) = parser.parse_args()
     
             # XML input file
             xml_infile = options.xml
-            if xml_infile == None:
+            if xml_infile is None:
                 parser.error ('missing input XML file command-line argument');
                 return ERROR
 
             # surface reflectance options
             process_sr = options.process_sr
             write_toa = options.write_toa
-            viirs_starting_date = options.viirs_starting_date
+            viirs_aux_starting_date = options.viirs_aux_starting_date
 
         # get the logger
         logger = logging.getLogger(__name__)
         msg = ('Surface reflectance processing of Landsat file: {}'
                .format(xml_infile))
         logger.info (msg)
-        msg = ('VIIRS Auxiliary processing start date: {}'
-               .format(viirs_starting_date))
+
+        # determine the VIIRS starting date for processing. The user-specified
+        # value is priority. Then look at the VIIRS_AUX_STARTING_DATE
+        # environment variable. Then use the default date far into the future
+        # so that MODIS data is used.
+        if viirs_aux_starting_date is None:
+            logger.debug ('User did not specify the VIIRS aux starting date')
+            viirs_aux_starting_date = os.environ.get('VIIRS_AUX_STARTING_DATE')
+            if viirs_aux_starting_date is None:
+                logger.debug ('VIIRS_AUX_STARTING_DATE environment variable is '
+                              'not set. Using default VIIRS date so MODIS '
+                              'data is processed.')
+                viirs_aux_starting_date = VIIRS_AUX_STARTING_DATE
+
+        msg = ('VIIRS auxiliary processing start date: {}'
+               .format(viirs_aux_starting_date))
         logger.info (msg)
 
         # make sure the XML file exists
@@ -164,7 +184,7 @@ class SurfaceReflectance():
             aux_doy = myday.strftime("%j")
 
             # Select MODIS or VIIRS atmospheric aux data based on date acquired
-            if aux_date < viirs_starting_date:
+            if aux_date < viirs_aux_starting_date:
                 # Use MODIS L8ANC files
                 logger.debug('Using MODIS auxiliary')
                 aux_file = 'L8ANC{}{}.hdf_fused'.format(aux_year, aux_doy)

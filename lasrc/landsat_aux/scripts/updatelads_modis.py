@@ -245,7 +245,7 @@ def getLadsData (auxdir, year, today, token):
     product containing the various ozone, water vapor, temperature, etc. SDSs.
     
     Args:
-      auxdir: name of the base L8_SR auxiliary directory which contains the
+      auxdir: name of the base LASRC_SR auxiliary directory which contains the
               LAADS directory
       year: year of LAADS data to be downloaded and processed (integer)
       today: specifies if we are just bringing the LAADS data up to date vs.
@@ -526,9 +526,9 @@ def main ():
         return ERROR
 
     # determine the auxiliary directory to store the data
-    auxdir = os.environ.get('L8_AUX_DIR')
+    auxdir = os.environ.get('LASRC_AUX_DIR')
     if auxdir is None:
-        msg = 'L8_AUX_DIR environment variable not set... exiting'
+        msg = 'LASRC_AUX_DIR environment variable not set... exiting'
         logger.error(msg)
         return ERROR
 

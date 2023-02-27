@@ -1,4 +1,4 @@
-## LaSRC Version 3.3.2 Release Notes
+## LaSRC Version 3.4.0 Release Notes
 Release Date: February 2023
 
 ### Downloads
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.3.2]
+See git tag [version_3.4.0]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -106,3 +106,10 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
    products, since Collection 6 is no longer available. 
 7. Turned off the progress meter for the wget calls so it doesn't blow up the
    log files.
+8. Added an environment variable to allow us to control the start date for
+   the VIIRS auxiliary data. If this environment variable is not set, then the
+   starting date defaults to the hard-coded value in the LaSRC scripts (which
+   is set to a date in the future so that MODIS is used).
+9. Made sure the MODIS/VIIRS auxiliary scripts are using LASRC_AUX_DIR as the
+   environment variable, similar to the LaSRC scripts, to point to the location
+   of the auxiliary data. L8_AUX_DIR should no longer be used.
