@@ -2714,8 +2714,8 @@ int open_h5_oz_wv_datasets
     hid_t file_id;          /* VIIRS file id */
     hid_t dsid;             /* ozone or water vapor dataset ID */
 
-    /* Open the input file for reading and writing */
-    file_id = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT);
+    /* Open the input file for reading */
+    file_id = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
     if (file_id < 0)
     {
         sprintf (errmsg, "Error opening file: %s", filename);
