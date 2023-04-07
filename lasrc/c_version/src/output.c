@@ -53,7 +53,9 @@ Output_t *open_output
 {
     char FUNC_NAME[] = "open_output";   /* function name */
     char errmsg[STR_SIZE];       /* error message */
+    char *cptr = NULL;           /* pointer to end of directory name */
     char *upper_str = NULL;      /* upper case version of the SI short name */
+    char base_aux_name[STR_SIZE];/* base filename of the auxiliary file */
     char scene_name[STR_SIZE];   /* scene name for the current scene */
     char production_date[MAX_DATE_LEN+1]; /* current date/time for production */
     time_t tp;                   /* time structure */
@@ -98,6 +100,17 @@ Output_t *open_output
             "initializing the output metadata.");
         error_handler (true, FUNC_NAME, errmsg);
         return (NULL);
+    }
+
+    /* Get the base filename for the auxiliary file */
+    if (output_type == OUTPUT_SR)
+    {
+        cptr = strrchr (aux_name, '/');
+        if (cptr == NULL)  /* aux_name doesn't have a directory */
+            cptr = aux_name;
+        else
+            cptr++;        /* bump the pointer to the base filename */
+        strcpy (base_aux_name, cptr);
     }
 
     /* Initialize the internal metadata for the output product. The global
@@ -188,7 +201,6 @@ Output_t *open_output
         {
             strcat (bmeta[ib].short_name, "SR");
             strcpy (bmeta[ib].product, "sr_refl");
-            strcpy (bmeta[ib].source, aux_name);
         }
 
         bmeta[ib].nlines = output->nlines;
@@ -222,7 +234,8 @@ Output_t *open_output
             bmeta[ib].data_type = ESPA_INT16;
             bmeta[ib].fill_value = FILL_VALUE_AERO;
             strcpy (bmeta[ib].name, "sr_aerosol");
-            strcpy (bmeta[ib].long_name, "surface reflectance aerosol");
+            strcpy (bmeta[ib].long_name,
+                "surface reflectance aerosol optical thickness");
             strcpy (bmeta[ib].category, "image");
             strcpy (bmeta[ib].data_units, "unitless");
             bmeta[ib].scale_factor = SCALE_FACTOR_AERO;
@@ -258,7 +271,8 @@ Output_t *open_output
             bmeta[ib].data_type = ESPA_UINT8;
             bmeta[ib].fill_value = (1 << IPFLAG_FILL);
             strcpy (bmeta[ib].name, "sr_aerosol_qa");
-            strcpy (bmeta[ib].long_name, "surface reflectance aerosol mask");
+            strcpy (bmeta[ib].long_name,
+                "surface reflectance aerosol quality assessment");
             strcpy (bmeta[ib].category, "qa");
             strcpy (bmeta[ib].data_units, "quality/feature classification");
     
@@ -363,6 +377,7 @@ Output_t *open_output
                     sprintf (bmeta[ib].name, "sr_band%d", ib+1);
                     sprintf (bmeta[ib].long_name, "band %d surface reflectance",
                         ib+1);
+                    strcpy (bmeta[ib].source, base_aux_name);
                 }
             }
             else if ((input->meta.sat == SAT_SENTINEL_2) &&
@@ -374,6 +389,7 @@ Output_t *open_output
                         SENTINEL_BANDNAME[ib]);
                     sprintf (bmeta[ib].long_name, "band %s surface reflectance",
                         SENTINEL_BANDNAME[ib]);
+                    strcpy (bmeta[ib].source, base_aux_name);
                 }
 
                 /* Copy the Level-1 filename from the reference band, since we
