@@ -1,5 +1,5 @@
 ## Ledaps Version 5.0.2 Release Notes
-Release Date: February 2023
+Release Date: April 2023
 
 ### Downloads
 Ledaps source code
