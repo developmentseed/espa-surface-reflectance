@@ -18,7 +18,7 @@ SUCCESS = 0
 # Landsat 9 was launched on Sept. 27, 2021
 NPP_START_YEAR = 2013
 JPSS1_START_YEAR = 2018
-JPSS2_START_YEAR = 2023
+JPSS2_START_YEAR = 2099  ## turn off for now until it is operational
 
 # Specify the base location for the LAADS VIIRS data as well as the correct
 # subdirectories for each of the instrument-specific ozone and water vapor
