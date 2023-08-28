@@ -10,8 +10,8 @@ import glob     # list and manipulate filenames
 
 ERROR = 1
 SUCCESS = 0
-##VIIRS_AUX_STARTING_DATE = "20230101"
-VIIRS_AUX_STARTING_DATE = "20990101"
+VIIRS_AUX_STARTING_DATE = "20231001"
+##VIIRS_AUX_STARTING_DATE = "20990101"
 
 
 #############################################################################
