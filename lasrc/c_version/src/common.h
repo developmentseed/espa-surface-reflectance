@@ -292,7 +292,9 @@ typedef enum {
 /** Defines for MODIS and VIIRS scale and defaults **/
 /* Water vapor scale factor */
 //#define WV_SCALE_FACTOR (int[]) {200, 100}  /** USGS OPS with MODIS bug **/
-#define WV_SCALE_FACTOR (int[]) {100, 100}  /** Fixed wv scale for MODIS **/
+//#define WV_SCALE_FACTOR (int[]) {100, 100}  /** Fixed wv scale for MODIS **/
+#define WV_SCALE_FACTOR (int[]) {200, 200}  /** USGS OPS with MODIS bug, and
+                                                added bug for VIIRS **/
 
 /* Water Vapor Default (g/cm^2) - used for scene center computations */
 #define WV_DEFAULT (float[]) {0.5, 2.5}

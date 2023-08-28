@@ -9,9 +9,9 @@ DIR_LEDAPS = ledapsSrc
 DIR_LEDAPS_AUX = ledapsAncSrc
 
 #-----------------------------------------------------------------------------
-all: all-ledaps
+all: all-ledaps all-ledaps-aux
 
-install: install-ledaps
+install: install-ledaps install-ledaps-aux
 
 clean: clean-ledaps clean-ledaps-aux
 

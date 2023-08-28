@@ -1,5 +1,5 @@
-## LaSRC Version 3.4.0 Release Notes
-Release Date: April 2023
+## LaSRC Version 3.4.1 Release Notes
+Release Date: TBD 2023
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.4.0]
+See git tag [version_3.4.1]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -90,26 +90,4 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Modified the source code to write the aerosols as a band to be delivered
-   with the surface reflectance bands. These are int16 image bands with a
-   valid range of 0-5000 (unscaled). The scale factor for unscaling is 0.001,
-   and the fill value is -9999.
-2. Added support for both MODIS and VIIRS auxiliary products so that we can
-   process historic MODIS auxiliary and forward stream VIIRS auxiliary products.
-   This includes bringing back the MODIS auxiliary scripts to allow the LAADS
-   MODIS auxiliary products to be generated as long as the user desires.
-3. Fixed the MODIS auxiliary WV scale factor. Changed from 200 to 100.
-4. Released the FORTRAN code which processes the VIIRS auxiliary products.
-5. Updated the scripts to set the logging level based on the ESPA_LOG_LEVEL
-   environment variable.
-6. Changed the LAADS script to download MODIS Collection 6.1 vs. Collection 6
-   products, since Collection 6 is no longer available. 
-7. Turned off the progress meter for the wget calls so it doesn't blow up the
-   log files.
-8. Added an environment variable to allow us to control the start date for
-   the VIIRS auxiliary data. If this environment variable is not set, then the
-   starting date defaults to the hard-coded value in the LaSRC scripts (which
-   is set to a date in the future so that MODIS is used).
-9. Made sure the MODIS/VIIRS auxiliary scripts are using LASRC_AUX_DIR as the
-   environment variable, similar to the LaSRC scripts, to point to the location
-   of the auxiliary data. L8_AUX_DIR should no longer be used.
+1. Automatically build and install the auxiliary scripts with each build.

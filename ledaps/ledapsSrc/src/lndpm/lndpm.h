@@ -35,7 +35,7 @@ NOTES:
 
 /* Defines */
 /* LEDAPS VERSION definitions */
-#define LEDAPS_VERSION "5.0.2 (Collection 2)"
+#define LEDAPS_VERSION "5.1.0 (Collection 2)"
 
 /* define useful constants */
 #define MAX_STRING_LENGTH 1000

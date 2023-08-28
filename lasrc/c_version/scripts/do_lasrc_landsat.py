@@ -10,7 +10,7 @@ import glob     # list and manipulate filenames
 
 ERROR = 1
 SUCCESS = 0
-##VIIRS_AUX_STARTING_DATE = "20000101"
+##VIIRS_AUX_STARTING_DATE = "20230101"
 VIIRS_AUX_STARTING_DATE = "20990101"
 
 
@@ -170,7 +170,7 @@ class SurfaceReflectance():
         # pull the date from the XML filename to determine which auxiliary
         # file should be used for input.
         # Example: LC08_L1TP_041027_20130630_20140312_01_T1.xml uses the
-        # VJ104ANC.A2013181.002.*.h5 HDF5 file or VNP04ANC.A2013181.001.*.h5.
+        # VJ[12]04ANC.A2013181.002.*.h5 HDF5 file or VNP04ANC.A2013181.001.*.h5.
         l89_prefixes_collection = ['LC08', 'LO08', 'LC09', 'LO09']
         if base_xmlfile[0:4] in l89_prefixes_collection:
             # Collection naming convention. Pull the year, month, day from the
@@ -193,8 +193,8 @@ class SurfaceReflectance():
                 logger.debug('Using VIIRS auxiliary')
                 full_aux_dir = ('{}/LADS/{}'.format(auxdir, aux_year))
 
-                # The auxiliary file could be VJ104ANC or VNP04ANC, however
-                # there should only be one, with VJ104ANC being the priority.
+                # The auxiliary file could be VJ[12]04ANC or VNP04ANC, however
+                # there should only be one, with VJ204ANC being the priority.
                 # And LaSRC only wants the base filename, not the entire path.
                 aux_files = glob.glob('{}/V*04ANC.A{}{}.*.h5'
                                       .format(full_aux_dir, aux_year, aux_doy))

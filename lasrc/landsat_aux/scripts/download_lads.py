@@ -3,7 +3,6 @@ import logging
 import sys
 import os
 import shutil
-import fnmatch
 import subprocess
 import time
 from io import StringIO
@@ -11,25 +10,21 @@ from io import StringIO
 # Global static variables
 ERROR = 1
 SUCCESS = 0
-NPP_START_YEAR = 2018
-JPSS1_START_YEAR = 2018 # quarterly processing will reprocess back to the
-                        # start year to make sure all data is up to date
-                        # Landsat 8 was launched on Feb. 11, 2013
-                        # Landsat 9 was launched on Sept. 27, 2021
+
+# Quarterly processing will reprocess back to the start year to make sure all
+# data is up to date. NPP extends beyond the 2013 start date of the L8 launch,
+# so just start at 2013.
+# Landsat 8 was launched on Feb. 11, 2013
+# Landsat 9 was launched on Sept. 27, 2021
+NPP_START_YEAR = 2013
+JPSS1_START_YEAR = 2018
+JPSS2_START_YEAR = 2023
 
 # Specify the base location for the LAADS VIIRS data as well as the correct
 # subdirectories for each of the instrument-specific ozone and water vapor
 # products
 SERVER_URL = 'https://ladsweb.modaps.eosdis.nasa.gov'
-###Original provisional VIIRS products (HDF4)
-#VIIRS_JPSS1 = '/archive/allData/3194/VJ104ANC/'
-#VIIRS_NPP = '/archive/allData/5000/VNP04ANC/'
-###Temporary "operational" VIIRS products (HDF5)
-##VIIRS_JPSS1 = '/archive/allData/4003/VJ104ANC/'
-##VIIRS_NPP = '/archive/allData/4003/VNP04ANC/'
-###Final operational VIIRS products (HDF5)
-##VIIRS_JPSS1 = '/archive/lads/allData/5200/VJ104ANC/'
-##VIIRS_NPP = '/archive/lads/allData/5200/VNP04ANC/'
+VIIRS_JPSS2 = '/archive/allData/4014/VJ204ANC/'
 VIIRS_JPSS1 = '/archive/allData/5200/VJ104ANC/'
 VIIRS_NPP = '/archive/allData/5200/VNP04ANC/'
 
@@ -53,8 +48,8 @@ logging.basicConfig(format=('%(asctime)s.%(msecs)03d %(process)d'
 
 def buildURLs(year, doy):
     """
-    Builds the URLs for the VIIRS JPSS1 and NPP products for the current year
-    and DOY, and put that URL on the list.
+    Builds the URLs for the VIIRS JPSS2, JPSS1, and NPP products for the
+    current year and DOY, and put that URL on the list.
 
     Args:
       year: year of desired LAADS data
@@ -68,13 +63,19 @@ def buildURLs(year, doy):
     """
     urlList = []     # create empty URL list
 
-    # append JPSS1 as the first/priority file (VJ104ANC) as long as it's
-    # within the JPSS1 range
+    # append JPSS2 as the first/priority file (VJ204ANC) as long as it's
+    # within the JPSS2 range
+    if year >= JPSS2_START_YEAR:
+        url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_JPSS2, year, doy))
+        urlList.append(url)
+
+    # append JPSS1 as the next priority (VJ104ANC) as long as it's within the
+    # JPSS1 range
     if year >= JPSS1_START_YEAR:
         url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_JPSS1, year, doy))
         urlList.append(url)
 
-    # append NPP as the secondary file (VNP04ANC)
+    # append NPP as the last priority file (VNP04ANC)
     url = ('{}{}{}/{:03d}/'.format(SERVER_URL, VIIRS_NPP, year, doy))
     urlList.append(url)
 
@@ -87,8 +88,7 @@ def downloadLads (year, doy, destination, token=None):
     interface and download to the desired destination.  If the destination
     directory does not exist, then it is made before downloading.  Existing
     files in the download directory are removed/cleaned.  This will download
-    the JPSS1 file as the priority and the NPP as the backup, for the current
-    year, DOY.
+    files based on priority from buildURLs.
 
     Args:
       year: year of data to download (integer)
@@ -112,9 +112,8 @@ def downloadLads (year, doy, destination, token=None):
         logger.error(msg)
         return ERROR
 
-    # download the files from the list of URLs. The list should be the priority
-    # JPSS1 file first (if it falls within the correct date range), followed by
-    # the backup NPP file.
+    # download the files from the list of URLs. The files in the list should be
+    # based on priority, with the first file being priority.
     msg = 'Downloading data for {}/{} to {}'.format(year, doy, destination)
     logger.info(msg)
     for url in urlList:
@@ -131,7 +130,7 @@ def downloadLads (year, doy, destination, token=None):
         if retval:
             retry_count = 1
             while ((retry_count <= 5) and (retval)):
-                time.sleep(60)
+                time.sleep(5)
                 logger.info('Retry {0} of wget for {1}'
                             .format(retry_count, url))
                 retval = subprocess.call(cmd, shell=True, cwd=destination)
@@ -140,9 +139,9 @@ def downloadLads (year, doy, destination, token=None):
             if retval:
                 logger.info('unsuccessful download of {0} (retried 5 times)'
                             .format(url))
-            else:
+            else: ## found the file and we are done
                 break
-        else:
+        else: ## found the file and we are done
             break
 
     # make sure the index.html file was removed if it was downloaded

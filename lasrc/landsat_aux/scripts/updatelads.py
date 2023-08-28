@@ -17,17 +17,12 @@ import requests
 import logging
 from config_utils import retrieve_cfg
 from api_interface import api_connect
-from download_lads import downloadLads
+from download_lads import *
 from io import StringIO
 
 # Global static variables
 ERROR = 1
 SUCCESS = 0
-NPP_START_YEAR = 2017
-JPSS1_START_YEAR = 2021 # quarterly processing will reprocess back to the
-                        # start year to make sure all data is up to date
-                        # Landsat 8 was launched on Feb. 11, 2013
-                        # Landsat 9 was launched on Sept. 27, 2021
 
 ##NOTE: For non-ESPA environments, the TOKEN needs to be defined.  This is
 ##the application token that is required for accessing the LAADS data
@@ -174,16 +169,16 @@ def getLadsData (auxdir, year, today, token):
         # get the year + DOY string
         datestr = '{}{:03d}'.format(year, doy)
 
-        # if the JPSS1 data for the current year and doy exists already, then
-        # we are going to skip that file if processing for the --today.  For
-        # --quarterly, we will completely reprocess.  If the backup NPP
-        # product exists without the JPSS1, then we will still reprocess in
-        # hopes that the JPSS1 product becomes available.
+        # if the JPSS1 or JPSS2 data for the current year and doy exists
+        # already, then we are going to skip that file if processing for
+        # --today.  For --quarterly, we will completely reprocess.  If the
+        # backup NPP product exists without the JPSS[1|2], then we will still
+        # reprocess in hopes that the JPSS[1|2] product becomes available.
         skip_date = False
         for myfile in os.listdir(outputDir):
-            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.h5'.format(datestr)) \
+            if fnmatch.fnmatch (myfile, 'VJ?04ANC.A{}*.h5'.format(datestr)) \
                     and today:
-                msg = ('JPSS1 product for VJ104ANC.A{} already exists. Skip.'
+                msg = ('JPSS product for VJX04ANC.A{} already exists. Skip.'
                        .format(datestr))
                 logger.info(msg)
                 skip_date = True
@@ -193,19 +188,19 @@ def getLadsData (auxdir, year, today, token):
             continue
 
         # download the daily LAADS files for the specified year and DOY. The
-        # JPSS1 file is the priority, but if that isn't found then the NPP
-        # file will be downloaded.
-        found_vj104anc = False
+        # JPSS2 file is the priority, but if that isn't found then check for
+        # JPSS1 followed by NPP to be downloaded.
+        found_vjx04anc = False
         found_vnp04anc = False
         status = downloadLads (year, doy, dloaddir, token)
         if status == ERROR:
             # warning message already printed
             return ERROR
 
-        # get the JPSS1 file for the current DOY (should only be one)
+        # get the JPSS[1|2] file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.h5'.format(datestr)):
+            if fnmatch.fnmatch (myfile, 'VJ?04ANC.A{}*.h5'.format(datestr)):
                 fileList.append (myfile)
 
         # make sure files were found or search for the NPP file
@@ -237,17 +232,17 @@ def getLadsData (auxdir, year, today, token):
             # the file we'll process.  if more than one was found, then we
             # have a problem as only one file is expected.
             if nfiles == 1:
-                found_vj104anc = True
+                found_vjx04anc = True
                 viirs_anc = dloaddir + '/' + fileList[0]
             else:
-                msg = ('Multiple LAADS VJ104ANC files found for doy {} year {}'
+                msg = ('Multiple LAADS VJX04ANC files found for doy {} year {}'
                        .format(doy, year))
                 logger.error(msg)
                 return ERROR
 
-        # make sure at least one of the JPSS1 or NPP files is present
-        if not found_vj104anc and not found_vnp04anc:
-            msg = ('Neither the JPSS1 nor NPP data is available for doy {} '
+        # make sure at least one of the JPSS[1|2] or NPP files is present
+        if not found_vjx04anc and not found_vnp04anc:
+            msg = ('Neither the JPSS[1|2] nor NPP data is available for doy {} '
                    'year {}. Skipping this date.'.format(doy, year))
             logger.warning(msg)
             continue
@@ -268,7 +263,7 @@ def getLadsData (auxdir, year, today, token):
             day = doy - rdaySOM[indx] + 1
 
         # generate the command-line arguments and executable for gap-filling
-        # the VIIRS product (works the same for either VJ104ANC or VNP04ANC)
+        # the VIIRS product (works the same for either VJX04ANC or VNP04ANC)
         cmdstr = ('gapfill_viirs_aux --viirs_aux {} --month {} --day {} '
                   '--year {}'.format(viirs_anc, month, day, year))
         msg = 'Executing {}'.format(cmdstr)
@@ -337,8 +332,8 @@ def main ():
     parser.add_option ('--today', dest='today', default=False,
         action='store_true',
         help='process LAADS data up through the most recent year and DOY')
-    msg = ('process or reprocess all LAADS data from today back to {}'
-           .format(JPSS1_START_YEAR))
+    msg = ('process or reprocess all LAADS data for this year or back to {}'
+           .format(NPP_START_YEAR))
     parser.add_option ('--quarterly', dest='quarterly', default=False,
         action='store_true', help=msg)
 
@@ -352,7 +347,7 @@ def main ():
     if (today == False) and (quarterly == False) and \
        (syear == 0 or eyear == 0):
         msg = ('Invalid command line argument combination.  Type --help '
-              'for more information.')
+               'for more information.')
         logger.error(msg)
         return ERROR
 
@@ -402,10 +397,10 @@ def main ():
             syear = eyear
 
     elif quarterly:
-        msg = 'Processing LAADS data back to {}'.format(JPSS1_START_YEAR)
+        msg = 'Processing LAADS data back to {}'.format(NPP_START_YEAR)
         logger.info(msg)
         eyear = now.year
-        syear = JPSS1_START_YEAR
+        syear = NPP_START_YEAR
 
     msg = 'Processing LAADS data for {} - {}'.format(syear, eyear)
     logger.info(msg)

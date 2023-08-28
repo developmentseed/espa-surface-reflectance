@@ -188,19 +188,19 @@ def downloadFiles(dloaddir, year, start_doy, end_doy, token):
         datestr = '{}{:03d}'.format(year, doy)
 
         # download the daily LAADS files for the specified year and DOY. The
-        # JPSS1 file is the priority, but if that isn't found then the NPP
-        # file will be downloaded.
-        found_vj104anc = False
+        # JPSS2 file is the priority, but if that isn't found then check for
+        # JPSS1 followed by NPP to be downloaded.
+        found_vjx04anc = False
         found_vnp04anc = False
         status = downloadLads (year, doy, dloaddir, token)
         if status == ERROR:
             # warning message already printed
             return ERROR
 
-        # get the JPSS1 file for the current DOY (should only be one)
+        # get the JPSS[1|2] file for the current DOY (should only be one)
         fileList = []    # create empty list to store files matching date
         for myfile in os.listdir(dloaddir):
-            if fnmatch.fnmatch (myfile, 'VJ104ANC.A{}*.h5'.format(datestr)):
+            if fnmatch.fnmatch (myfile, 'VJ?04ANC.A{}*.h5'.format(datestr)):
                 fileList.append (myfile)
 
         # make sure files were found or search for the NPP file
@@ -232,17 +232,17 @@ def downloadFiles(dloaddir, year, start_doy, end_doy, token):
             # the file we'll process.  if more than one was found, then we
             # have a problem as only one file is expected.
             if nfiles == 1:
-                found_vj104anc = True
+                found_vjx04anc = True
                 viirs_anc = dloaddir + '/' + fileList[0]
             else:
-                msg = ('Multiple LAADS VJ104ANC files found for doy {} year {}'
+                msg = ('Multiple LAADS VJX04ANC files found for doy {} year {}'
                        .format(doy, year))
                 logger.error(msg)
                 return ERROR
 
-        # make sure at least one of the JPSS1 or NPP files is present
-        if not found_vj104anc and not found_vnp04anc:
-            msg = ('Neither the JPSS1 nor NPP data is available for doy {} '
+        # make sure at least one of the JPSS[1|2] or NPP files is present
+        if not found_vjx04anc and not found_vnp04anc:
+            msg = ('Neither the JPSS[1|2] nor NPP data is available for doy {} '
                    'year {}. Skipping this date.'.format(doy, year))
             logger.warning(msg)
             continue
@@ -469,6 +469,8 @@ def main ():
             os.remove(name)
 
     # successful completion
+    msg = ('Successful completion')
+    logger.info(msg)
     return SUCCESS
 
 

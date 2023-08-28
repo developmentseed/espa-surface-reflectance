@@ -9,11 +9,11 @@ DIR_LaSRC = c_version
 DIR_LaSRC_AUX = landsat_aux
 
 #-----------------------------------------------------------------------------
-all: all-lasrc
+all: all-lasrc all-lasrc-aux
 
-install: install-lasrc
+install: install-lasrc install-lasrc-aux
 
-clean: clean-lasrc
+clean: clean-lasrc clean-lasrc-aux
 
 #-----------------------------------------------------------------------------
 all-lasrc:

@@ -1,5 +1,5 @@
-## Ledaps Version 5.0.2 Release Notes
-Release Date: April 2023
+## Ledaps Version 5.1.0 Release Notes
+Release Date: TBD 2023
 
 ### Downloads
 Ledaps source code
@@ -10,7 +10,7 @@ Ledaps auxiliary files
 
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/ledaps_auxiliary/ledaps_aux.1978-2017.tar.gz
 
-See git tag [ledaps-version_5.0.2]
+See git tag [ledaps-version_5.1.0]
 
 ### Installation
   * Install dependent projects and libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git) and ESPA python library (https://eroslab.cr.usgs.gov/lsrd/espa-python-library.git)
@@ -93,5 +93,4 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-  1. Updated the scripts to set the logging level based on the ESPA_LOG_LEVEL
-     environment variable.
+  1. Automatically build and install the auxiliary scripts with each build.
