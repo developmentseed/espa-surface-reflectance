@@ -46,8 +46,7 @@ class SurfaceReflectance():
     #   viirs_aux_starting_date - YYYYmmdd string to identify the date when
     #     VIIRS auxiliary products should start being used. Default is to
     #     pull the starting date from the VIIRS_AUX_STARTING_DATE environment
-    #     variable. If that isn't defined, then we will use a date far into
-    #     the future so that MODIS auxiliary is used.
+    #     variable. If that isn't defined, then the hardcoded date will be used.
     #
     # Returns:
     #     ERROR - error running the surface reflectance application
@@ -92,9 +91,8 @@ class SurfaceReflectance():
                 help="Acquisition date at which to begin using VIIRS "
                      "auxiliary data instead of MODIS data. The default is "
                      "to pull the date from the VIIRS_AUX_STARTING_DATE "
-                     "environment variable. If that isn't set, then a date "
-                     "which is far into the future will be set so that MODIS "
-                     "auxiliary data continues to be used.")
+                     "environment variable. If that isn't set, then the "
+                     "hardcoded date will be used.")
             (options, args) = parser.parse_args()
     
             # XML input file
@@ -116,15 +114,13 @@ class SurfaceReflectance():
 
         # determine the VIIRS starting date for processing. The user-specified
         # value is priority. Then look at the VIIRS_AUX_STARTING_DATE
-        # environment variable. Then use the default date far into the future
-        # so that MODIS data is used.
+        # environment variable. Then use the default/hardcoded date.
         if viirs_aux_starting_date is None:
             logger.debug ('User did not specify the VIIRS aux starting date')
             viirs_aux_starting_date = os.environ.get('VIIRS_AUX_STARTING_DATE')
             if viirs_aux_starting_date is None:
                 logger.debug ('VIIRS_AUX_STARTING_DATE environment variable is '
-                              'not set. Using default VIIRS date so MODIS '
-                              'data is processed.')
+                              'not set. Using default VIIRS starting date.')
                 viirs_aux_starting_date = VIIRS_AUX_STARTING_DATE
 
         msg = ('VIIRS auxiliary processing start date: {}'
