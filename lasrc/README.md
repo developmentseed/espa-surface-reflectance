@@ -1,5 +1,5 @@
-## LaSRC Version 3.5.0 Release Notes
-Release Date: September 2023
+## LaSRC Version 3.5.1 Release Notes
+Release Date: TBD 2023
 
 ### Downloads
 LaSRC (Landsat Surface Reflectance Code) source code
@@ -11,7 +11,7 @@ LaSRC auxiliary files
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/lasrc_aux.2013-2017.tar.gz
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/lasrc_auxiliary/MSILUT.tar.gz
 
-See git tag [version_3.5.0]
+See git tag [version_3.5.1]
 
 ### Installation
   * Install dependent libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git)
@@ -90,10 +90,8 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-1. Automatically build and install the auxiliary scripts with each build.
-2. Start using VIIRS auxiliary products on 10/1/2023.
-3. Add VIIRS JPSS-2 (NOAA-21) products as the primary source for the auxiliary
-   for VIIRS. Then look for JPSS-1 (NOAA-20) followed by VNP04ANC (NPOESS).
-4. To be consistent with the Collection 2 MODIS water vapor scale factor, which
-   was incorrect, keep the same incorrect scale factor when processing the
-   VIIRS products.
+1. Fixed a multi-threading bug in the Landsat aerosol processing.
+2. Updated the Sentinel-2 print information for the use of the VIIRS default
+   auxiliary starting date (to be consistent with Landsat messaging).
+3. Added print statements at the beginning of the main applications to indicate
+   whether the code was built with multi-threading or not.

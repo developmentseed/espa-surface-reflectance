@@ -182,6 +182,11 @@ int main (int argc, char *argv[]) {
     if (param == NULL) EXIT_ERROR("getting runtime parameters", "main");
 
     printf ("\nRunning lndsr ....\n");
+#ifdef _OPENMP
+    printf ("lndsr was compiled using multi-threading via -fopenmp\n");
+#else
+    printf ("lndsr was NOT compiled using multi-threading\n");
+#endif
 
     /* Validate the input metadata file */
     if (validate_xml_file (param->input_xml_file_name) != SUCCESS)

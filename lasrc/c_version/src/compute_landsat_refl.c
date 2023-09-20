@@ -973,7 +973,7 @@ int compute_landsat_sr_refl
     printf ("Aerosol Inversion using %d x %d aerosol window ... %s",
         LAERO_WINDOW, LAERO_WINDOW, ctime(&mytime));
 #ifdef _OPENMP
-    #pragma omp parallel for private (i, j, center_line, center_samp, nearest_line, nearest_samp, curr_pix, center_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, ratio_pix11, ratio_pix12, ratio_pix21, ratio_pix22, rb1, rb2, slpr11, slpr12, slpr21, slpr22, intr11, intr12, intr21, intr22, slprb1, slprb2, slprb7, intrb1, intrb2, intrb7, xndwi, ndwi_th1, ndwi_th2, ib, xtv, xmuv, xts, xmus, xfi, cosxfi, iband, iband1, iaots, pres, uoz, uwv, retval, eps, residual, residual1, residual2, residual3, raot, sraot1, sraot3, xa, xb, xc, xf, epsmin, corf, rotoa, raot550nm, roslamb, tgo, roatm, ttatmg, satm, xrorayp, ros1, ros5, ros4, erelc, troatm)
+    #pragma omp parallel for private (i, j, center_line, center_samp, nearest_line, nearest_samp, curr_pix, center_pix, img, geo, lat, lon, xcmg, ycmg, lcmg, scmg, lcmg1, scmg1, u, v, one_minus_u, one_minus_v, one_minus_u_x_one_minus_v, one_minus_u_x_v, u_x_one_minus_v, u_x_v, ratio_pix11, ratio_pix12, ratio_pix21, ratio_pix22, rb1, rb2, slpr11, slpr12, slpr21, slpr22, intr11, intr12, intr21, intr22, slprb1, slprb2, slprb7, intrb1, intrb2, intrb7, xndwi, ndwi_th1, ndwi_th2, ib, xtv, xmuv, xts, xmus, xfi, cosxfi, iband, iband1, iaots, pres, uoz, uwv, retval, eps, residual, residual1, residual2, residual3, raot, sraot1, sraot3, xc, xf, epsmin, corf, rotoa, raot550nm, roslamb, tgo, roatm, ttatmg, satm, xrorayp, ros1, ros5, ros4, erelc, troatm)
 #else
     tmp_percent = 0;
 #endif

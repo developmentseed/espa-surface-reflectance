@@ -1,5 +1,5 @@
-## Ledaps Version 5.1.0 Release Notes
-Release Date: September 2023
+## Ledaps Version 5.1.1 Release Notes
+Release Date: TBD 2023
 
 ### Downloads
 Ledaps source code
@@ -10,7 +10,7 @@ Ledaps auxiliary files
 
     http://edclpdsftp.cr.usgs.gov/downloads/auxiliaries/ledaps_auxiliary/ledaps_aux.1978-2017.tar.gz
 
-See git tag [ledaps-version_5.1.0]
+See git tag [ledaps-version_5.1.1]
 
 ### Installation
   * Install dependent projects and libraries - ESPA product formatter (https://eroslab.cr.usgs.gov/lsrd/espa-product-formatter.git) and ESPA python library (https://eroslab.cr.usgs.gov/lsrd/espa-python-library.git)
@@ -93,4 +93,5 @@ After compiling the product-formatter raw\_binary libraries and tools, the conve
 ### Product Guide
 
 ## Release Notes
-  1. Automatically build and install the auxiliary scripts with each build.
+  1. Added a print statement to identify if the lndsr application was built
+     using multi-threading via fopenmp or was built without multi-threading.

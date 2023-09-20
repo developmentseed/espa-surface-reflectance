@@ -129,6 +129,11 @@ int main (int argc, char *argv[])
         exit (ERROR);
     }
 
+#ifdef _OPENMP
+    printf ("LaSRC was compiled using multi-threading via -fopenmp\n");
+#else 
+    printf ("LaSRC was NOT compiled using multi-threading\n");
+#endif
     printf ("Starting TOA and surface reflectance processing ...\n");
     if (use_orig_aero)
         printf ("Using the original aerosol inversion algorithm\n");
