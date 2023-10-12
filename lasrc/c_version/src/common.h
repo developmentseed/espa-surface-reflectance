@@ -74,7 +74,7 @@ typedef char byte;
 /* Identify if all the Sentinel-2 bands will be processed. Default is to
    leave off for ESPA processing, therefore bands 9 and 10 will not be
    processed. */
-//#define PROC_ALL_BANDS 1
+#define PROC_ALL_BANDS 1
 
 /* Number of bands corrected to surface reflectance
    * Landsat (bands 1-7).  The atmospheric correction variables store
